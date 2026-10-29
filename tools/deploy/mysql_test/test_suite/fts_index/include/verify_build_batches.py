@@ -54,7 +54,19 @@ def main():
                     cursor.executemany(f"INSERT INTO {name} VALUES(%s,%s)", documents)
                     if name == "postbuilt":
                         if args.freeze:
-                            cursor.execute("ALTER SYSTEM MINOR FREEZE")
+                            # The global minor-freeze command may keep small
+                            # active memtables. Freeze this fixture's tablets
+                            # explicitly, including the incremental FTS tables.
+                            cursor.execute("SELECT DISTINCT m.tablet_id "
+                                           "FROM oceanbase.__all_virtual_tablet_memstore_info m "
+                                           "JOIN oceanbase.__all_table t ON m.tablet_id=t.tablet_id "
+                                           "WHERE m.btree_item_count>0 AND t.database_id IN "
+                                           "(SELECT database_id FROM oceanbase.__all_database "
+                                           "WHERE database_name='fts_build_batches')")
+                            tablets = [int(row[0]) for row in cursor.fetchall()]
+                            assert tablets, "No source tablets to freeze"
+                            for tablet in tablets:
+                                cursor.execute(f"ALTER SYSTEM MINOR FREEZE TABLET_ID={tablet}")
                             deadline = time.monotonic() + 120
                             while True:
                                 # Freeze is asynchronous. Waiting only for old
