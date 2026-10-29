@@ -78,7 +78,7 @@ try:
         raw += [bytes(rng.randrange(256) for _ in range(n)) for n in (1, 2, 3, 7, 16, 31, 63, 64, 65)]
         cursor.executemany("INSERT INTO raw_strings VALUES(%s,%s)", list(enumerate(raw + raw)))
         for collation, charset in collations:
-            expression = f"CAST(v AS CHAR CHARACTER SET {charset}) COLLATE {collation}"
+            expression = f"CAST(v AS CHAR CHARACTER SET `{charset}`) COLLATE `{collation}`"
             capture(f"{collation}/raw-sort", f"SELECT id,HEX(v) FROM raw_strings ORDER BY {expression},id")
             capture(f"{collation}/raw-group", "SELECT COUNT(*),MIN(id),MAX(id) FROM raw_strings "
                     f"GROUP BY {expression} ORDER BY MIN(id)")
