@@ -3712,13 +3712,43 @@ int ObTableScanOp::fetch_next_fts_index_rows()
 {
   int ret = OB_SUCCESS;
   bool has_segment_word = false;
+  ObEvalCtx::BatchInfoScopeGuard guard(eval_ctx_);
+  guard.set_batch_idx(0);
+  guard.set_batch_size(1);
   while (OB_SUCC(ret) && !has_segment_word) {
     ObExpr *ft_expr = nullptr;
     ObExpr *doc_id_expr = nullptr;
     ObDatum *ft_datum = nullptr;
     ObDatum *doc_id_datum = nullptr;
 
-    if (OB_FAIL(ObTableScanOp::inner_get_next_row_implement())) {
+    if (MY_SPEC.is_vectorized()) {
+      // A vectorized SSTable scan can switch to block/batch pushdown. Its
+      // scalar interface cannot consume that state. Fetch one source document
+      // through the batch interface while retaining per-document token buffers.
+      const int64_t saved_size = brs_.size_;
+      const bool saved_end = brs_.end_;
+      bool got_source_row = false;
+      while (OB_SUCC(ret) && !got_source_row) {
+        brs_.skip_->reset(1);
+        if (OB_FAIL(inner_get_next_batch_for_tsc(1))) {
+        } else if (OB_UNLIKELY(brs_.size_ > 1)) {
+          ret = OB_ERR_UNEXPECTED;
+        } else if (brs_.size_ == 1 && !brs_.skip_->at(0)) {
+          got_source_row = true;
+        } else if (brs_.end_) {
+          ret = OB_ITER_END;
+        }
+      }
+      // The caller publishes postings, so source end must not hide a final
+      // document's postings. The next source fetch observes iter_end_.
+      brs_.size_ = saved_size;
+      brs_.end_ = saved_end;
+      brs_.skip_->reset(1);
+      brs_.all_rows_active_ = true;
+    } else {
+      ret = ObTableScanOp::inner_get_next_row_implement();
+    }
+    if (OB_FAIL(ret)) {
       if (OB_ITER_END != ret) {
       }
     } else if (OB_FAIL(get_output_fts_col_expr_by_type(T_FUN_SYS_DOC_ID, doc_id_expr))) {

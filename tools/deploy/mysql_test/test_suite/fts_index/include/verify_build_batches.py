@@ -26,6 +26,8 @@ def main():
     parser.add_argument("--revision", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--reference")
+    parser.add_argument("--freeze", action="store_true",
+                        help="Flush source documents to SSTables before post-building each index")
     args = parser.parse_args()
     report = dict(revision=args.revision, started=time.time(), checks=0, cases=[], passed=False)
     db = pymysql.connect(host="127.0.0.1", port=args.port, user="root",
@@ -51,6 +53,25 @@ def main():
                         cursor.execute(f"ALTER TABLE {name} ADD FULLTEXT INDEX ft(content) WITH PARSER {tokenizer}")
                     cursor.executemany(f"INSERT INTO {name} VALUES(%s,%s)", documents)
                     if name == "postbuilt":
+                        if args.freeze:
+                            cursor.execute("ALTER SYSTEM MINOR FREEZE")
+                            deadline = time.monotonic() + 120
+                            while True:
+                                cursor.execute("SELECT COUNT(*) FROM oceanbase.__all_virtual_tablet_memstore_info "
+                                               "WHERE is_active='NO'")
+                                pending = cursor.fetchone()[0]
+                                if pending == 0:
+                                    break
+                                assert time.monotonic() < deadline, "Source minor freeze did not finish"
+                                time.sleep(0.2)
+                            cursor.execute("SELECT COUNT(*) FROM oceanbase.__all_virtual_tablet_sstable_macro_info "
+                                           "WHERE row_count > 0 AND tablet_id IN "
+                                           "(SELECT tablet_id FROM oceanbase.__all_table WHERE table_name='postbuilt' "
+                                           "AND database_id IN (SELECT database_id FROM oceanbase.__all_database "
+                                           "WHERE database_name='fts_build_batches'))")
+                            blocks = cursor.fetchone()[0]
+                            assert blocks > 0, "No persisted source blocks; SSTable path was not exercised"
+                            report.setdefault("persisted_sources", []).append(dict(tokenizer=tokenizer, blocks=blocks))
                         cursor.execute(f"ALTER TABLE {name} ADD FULLTEXT INDEX ft(content) WITH PARSER {tokenizer}")
 
                 def compare(phase):
