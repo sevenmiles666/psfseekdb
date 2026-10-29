@@ -367,7 +367,19 @@ int ObSRDaaTIterImpl::filter_on_demand(const int64_t count, const double relevan
       relevance_proj_expr->set_evaluated_projected(*eval_ctx);
       ObDatum *filter_res = nullptr;
       filter_expr->clear_evaluated_flag(*eval_ctx);
-      if (OB_FAIL(filter_expr->eval(*eval_ctx, filter_res))) {
+      if (filter_expr->type_ == T_OP_BOOL
+          && filter_expr->arg_cnt_ == 1
+          && filter_expr->args_[0] == relevance_proj_expr
+          && relevance_proj_expr->datum_meta_.type_ == ObDoubleType
+          && filter_expr->get_eval_info(*eval_ctx).evaluated_
+          && !filter_expr->get_eval_info(*eval_ctx).projected_) {
+        // The first row initializes the expression frame through eval(). Later
+        // rows can cast the score already written above without evaluating the
+        // projected argument again. Keep the result datum and flags current.
+        need_project = 0.0 != relevance;
+        filter_expr->locate_datum_for_write(*eval_ctx).set_int32(need_project ? 1 : 0);
+        filter_expr->set_evaluated_flag(*eval_ctx);
+      } else if (OB_FAIL(filter_expr->eval(*eval_ctx, filter_res))) {
       } else {
         need_project = !(filter_res->is_null() || 0 == filter_res->get_int());
       }
