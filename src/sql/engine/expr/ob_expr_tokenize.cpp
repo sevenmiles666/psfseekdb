@@ -196,7 +196,7 @@ int ObExprTokenize::eval_tokenize(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &e
     } else if (OB_FAIL(tokenize_fulltext(param, param.output_mode_, temp_allocator, json_result))) {
     } else if (eligible && nullptr != json_result) {
       ObString binary;
-      if (OB_FAIL(ObJsonWrapper::get_raw_binary(json_result, binary, &temp_allocator))) {
+      if (OB_FAIL(share::ObJsonWrapper::get_raw_binary(json_result, binary, &temp_allocator))) {
       } else if (OB_FAIL(ObJsonExprHelper::pack_json_str_res(expr, ctx, expr_datum, binary))) {
       } else if (generation == hub->generation()) {
         memo.remember(text, parser, expr.args_[0]->obj_meta_.get_collation_type(),
