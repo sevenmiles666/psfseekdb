@@ -3685,9 +3685,20 @@ int ObStaticEngineCG::generate_normal_tsc(ObLogTableScan &op, ObTableScanSpec &s
         // batch from that cache without crossing a document/cache lifetime.
         // Keep unfamiliar projections on the existing scalar path.
         bool batch_postings = op.get_output_exprs().count() == 4;
+        int64_t word_index = -1;
         for (int64_t i = 0; batch_postings && i < op.get_output_exprs().count(); ++i) {
           const ObRawExpr *expr = op.get_output_exprs().at(i);
           batch_postings = OB_NOT_NULL(expr) && expr->is_vectorize_result();
+          if (batch_postings && expr->get_expr_type() == T_FUN_SYS_WORD_SEGMENT) {
+            word_index = i;
+          }
+        }
+        const int64_t id_index = word_index + (spec.is_fts_index_aux_ ? 1 : -1);
+        if (batch_postings) {
+          // Hidden-PK tables expose a numeric document ID. Their scalar
+          // projection/row-cache representation must retain its old path.
+          batch_postings = word_index >= 0 && id_index >= 0 && id_index < 4
+              && ob_is_string_type(op.get_output_exprs().at(id_index)->get_result_type().get_type());
         }
         if (!batch_postings) {
           spec.max_batch_size_ = 0;
