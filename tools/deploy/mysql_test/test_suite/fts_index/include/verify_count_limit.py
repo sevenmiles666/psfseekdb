@@ -57,8 +57,12 @@ try:
             match = "MATCH(body) AGAINST('database audit')"
             c.execute(f'SELECT id,{match} FROM {table} WHERE {match} ORDER BY id')
             scores = c.fetchall()
-            report['ranking_oracles'][tokenizer + '/explicit-score-order'] = [
+            expected_rank = [
                 [row[0]] for row in sorted(scores, key=lambda row: (-row[1], row[0]))[:20]]
+            c.execute(f'SELECT id FROM {table} WHERE {match} ORDER BY {match} DESC,id LIMIT 20')
+            actual_rank = [list(row) for row in c.fetchall()]
+            assert actual_rank == expected_rank, ('Boundary ties lost before secondary-key sorting', tokenizer)
+            report['ranking_oracles'][tokenizer] = dict(expected=expected_rank, actual=actual_rank)
             for name, sql, scoreless in (
                 ('count', f'SELECT COUNT(*) FROM (SELECT id FROM {table} WHERE {match} LIMIT 20) v', True),
                 ('residual', f'SELECT COUNT(*) FROM (SELECT id FROM {table} WHERE {match} AND n>100 LIMIT 65 OFFSET 63) v', True),
@@ -74,8 +78,6 @@ try:
                 ('values', f'SELECT id FROM (SELECT id FROM {table} WHERE {match} LIMIT 65 OFFSET 63) v ORDER BY id', False),
             ):
                 capture(c, tokenizer + '/' + name, sql)
-                if name == 'explicit-score-order':
-                    assert report['cases'][-1]['rows'] == report['ranking_oracles'][tokenizer + '/' + name]
                 c.execute('EXPLAIN EXTENDED ' + sql)
                 text = '\n'.join(str(v) for row in c.fetchall() for v in row)
                 report['plans'].append(dict(name=tokenizer + '/' + name, text=text, scoreless_expected=scoreless))
@@ -97,13 +99,6 @@ try:
             capture(c, tokenizer + '/rollback', f'SELECT COUNT(*) FROM (SELECT id FROM {table} WHERE {match} LIMIT 3000) v')
     if args.reference:
         expected = json.loads(Path(args.reference).read_text())['cases']
-        report['baseline_rank_corrections'] = []
-        for case in expected:
-            if case['name'] in report['ranking_oracles']:
-                oracle = report['ranking_oracles'][case['name']]
-                if case['rows'] != oracle:
-                    report['baseline_rank_corrections'].append(dict(name=case['name'], original_rows=case['rows'], oracle_rows=oracle))
-                    case['rows'] = oracle
         assert report['cases'] == expected, 'Complete results differ'
     report['result_sha256'] = hashlib.sha256(json.dumps(report['cases'], sort_keys=True).encode()).hexdigest()
     report['passed'] = True
