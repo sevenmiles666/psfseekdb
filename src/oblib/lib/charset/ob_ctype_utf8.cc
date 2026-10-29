@@ -120,7 +120,9 @@ static inline size_t ob_well_formed_len_utf8mb4(const ObCharsetInfo *cs,
   return (size_t) (b - b_start);
 }
 
-static int ob_mb_wc_utf8mb4(const ObCharsetInfo *cs __attribute__((unused)),
+// Sorting and hashing call this decoder for every character. Keep its checks
+// inline while retaining the thunk for charset handler function pointers.
+static ALWAYS_INLINE int ob_mb_wc_utf8mb4(const ObCharsetInfo *cs __attribute__((unused)),
                  ob_wc_t * pwc, const uchar *s, const uchar *e)
 {
   uchar c;
