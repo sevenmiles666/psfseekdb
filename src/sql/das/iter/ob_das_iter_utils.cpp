@@ -1114,9 +1114,9 @@ int ObDASIterUtils::create_text_retrieval_tree(ObTableScanParam &scan_param,
     case ObDASOpType::DAS_OP_IR_SCAN:
     case ObDASOpType::DAS_OP_SORT: {
       ObDASCacheLookupIter *lookup_iter = nullptr;
-      if (nullptr != ir_scan_ctdef && ir_scan_ctdef->need_calc_relevance()) {
+      if (nullptr != ir_scan_ctdef) {
         main_lookup_keep_order = true;
-        // TODO: may be optimized to use forward
+        // The cache also restores document-ID projections for scoreless scans.
       }
       if (table_lookup_ctdef->op_type_ != ObDASOpType::DAS_OP_INDEX_PROJ_LOOKUP) {
         ret = OB_ERR_UNEXPECTED;
@@ -1141,8 +1141,8 @@ int ObDASIterUtils::create_text_retrieval_tree(ObTableScanParam &scan_param,
       : static_cast<const ObDASIRAuxLookupCtDef *>(attach_ctdef);
       ObDASCacheLookupIter *lookup_iter = nullptr;
       // below cases need keep order when look up the table
-      // case: Taat or need sort by relevance
-      if (nullptr != ir_scan_ctdef && ir_scan_ctdef->need_calc_relevance()) {
+      // TaaT and sorted streams need ordered lookup even without scores.
+      if (nullptr != ir_scan_ctdef) {
         if (tr_merge_iter->is_taat_mode() || DAS_OP_SORT == aux_lookup_ctdef->get_doc_id_scan_ctdef()->op_type_) {
           doc_id_lookup_keep_order = true;
         }
