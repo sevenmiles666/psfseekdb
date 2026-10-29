@@ -41,7 +41,7 @@ int ObTextDaaTIter::init(const ObTextDaaTParam &param)
         && !iter_param_->need_filter();
     if (scoreless_union_ && dim_iters_->count() > 0 && dim_iters_->count() <= SMALL_UNION_MAX) {
       const sql::ObDatumMeta &meta = iter_param_->id_proj_expr_->datum_meta_;
-      ObDatumBasicFuncs *funcs = ObDatumFuncs::get_basic_func(meta.type_, meta.cs_type_);
+      common::ObDatumBasicFuncs *funcs = ObDatumFuncs::get_basic_func(meta.type_, meta.cs_type_);
       if (OB_ISNULL(funcs) || OB_ISNULL(small_union_cmp_ = funcs->null_first_cmp_)) {
         ret = OB_ERR_UNEXPECTED;
       } else {
