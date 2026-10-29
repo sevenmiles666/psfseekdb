@@ -3681,7 +3681,17 @@ int ObStaticEngineCG::generate_normal_tsc(ObLogTableScan &op, ObTableScanSpec &s
       } else if (ddl_table_schema->is_fts_index_aux() || ddl_table_schema->is_fts_doc_word_aux()) {
         spec.is_fts_ddl_ = true;
         spec.is_fts_index_aux_ = ddl_table_schema->is_fts_index_aux();
-        spec.max_batch_size_ = 0; // TODO: @jinzhu, remove me later after support post-building fts index vectorization.
+        // Each document owns a stable cache of generated postings. Expose a
+        // batch from that cache without crossing a document/cache lifetime.
+        // Keep unfamiliar projections on the existing scalar path.
+        bool batch_postings = op.get_output_exprs().count() == 4;
+        for (int64_t i = 0; batch_postings && i < op.get_output_exprs().count(); ++i) {
+          const ObRawExpr *expr = op.get_output_exprs().at(i);
+          batch_postings = OB_NOT_NULL(expr) && expr->is_vectorize_result();
+        }
+        if (!batch_postings) {
+          spec.max_batch_size_ = 0;
+        }
         if (OB_UNLIKELY(ddl_table_schema->get_parser_name_str().empty())) {
           ret = OB_ERR_UNEXPECTED;
         } else {
