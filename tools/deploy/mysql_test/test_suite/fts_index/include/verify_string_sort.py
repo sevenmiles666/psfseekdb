@@ -44,6 +44,12 @@ try:
             values += ["x" * length, "x" * length, "x" * (length - 1) + "y"]
         values += ["数据" * 10, "数据" * 10, "数据" * 10 + " "]
         values += [rng.choice(["a", "A", "é", "数据库", "", "aa "]) for _ in range(70)]
+        # Cover every ASCII code point, embedded controls and transitions
+        # between ASCII and multibyte code points in complete sorted output.
+        values += [chr(i) for i in range(128)]
+        values += ["prefix" + chr(i) + "suffix" for i in range(128)]
+        values += [chr(i) + "数据库" for i in range(128)]
+        values += ["数据库" + chr(i) for i in range(128)]
         for collation, charset in collations:
             assert re.fullmatch(r"[a-zA-Z0-9_]+", collation)
             assert re.fullmatch(r"[a-zA-Z0-9_]+", charset)
@@ -75,6 +81,7 @@ try:
         cursor.execute("CREATE TABLE raw_strings(id INT PRIMARY KEY,v VARBINARY(1024))")
         raw = [b"", b"\xff", b"\xc0\x80", b"\xed\xa0\x80", b"\xf4\x90\x80\x80", b"\xe4\xb8",
                b"\x80", b"a\0b", b"a ", b"A", b"a"]
+        raw += [bytes([i]) for i in range(128)]
         raw += [bytes(rng.randrange(256) for _ in range(n)) for n in (1, 2, 3, 7, 16, 31, 63, 64, 65)]
         cursor.executemany("INSERT INTO raw_strings VALUES(%s,%s)", list(enumerate(raw + raw)))
         for collation, charset in collations:
