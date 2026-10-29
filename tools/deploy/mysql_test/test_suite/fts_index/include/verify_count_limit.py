@@ -25,7 +25,7 @@ def canonical(v):
 
 
 def capture(c, name, sql, params=()):
-    c.execute(sql, params)
+    c.execute(sql, params if params else None)
     report['cases'].append(dict(name=name, rows=[[canonical(v) for v in r] for r in c.fetchall()]))
 
 
