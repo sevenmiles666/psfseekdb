@@ -1440,6 +1440,10 @@ int ObTableScanOp::inner_open()
   } else if (MY_SPEC.is_fts_ddl_ && OB_FAIL(fts_index_.init(MY_SPEC.is_fts_index_aux_, MY_SPEC.parser_name_,
           MY_SPEC.parser_properties_))) {
   } else {
+    if (MY_SPEC.is_fts_ddl_) {
+      LOG_INFO("FTS posting projection mode", "batch_size", MY_SPEC.max_batch_size_,
+               "output_count", MY_SPEC.output_.count());
+    }
     if (MY_SPEC.report_col_checksum_) {
       if (PHY_TABLE_SCAN == MY_SPEC.get_type()) {
         // heap table ddl doesn't have sample scan, report checksum directly
