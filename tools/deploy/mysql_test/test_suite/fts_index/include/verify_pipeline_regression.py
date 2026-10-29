@@ -24,12 +24,12 @@ def compare(worker):
         for repeat in range(3):
             for parser in ('ik','beng',' IK ','BENG'):
                 for text in texts[worker%3:]+texts[:worker%3]:
-                    c.execute('SELECT TOKENIZE(%s,%s),TOKENIZE(%s,%s,JSON_ARRAY())',(text,parser,text,parser))
+                    c.execute('SELECT TOKENIZE(CAST(%s AS CHAR CHARACTER SET utf8mb4),%s),TOKENIZE(CAST(%s AS CHAR CHARACTER SET utf8mb4),%s,JSON_ARRAY())',(text,parser,text,parser))
                     left,right=c.fetchone()
                     assert json.loads(left)==json.loads(right),(worker,repeat,parser,text)
                     checks+=1
         # Changing values on the same prepared expression cannot reuse an old key.
-        c.execute("PREPARE memo_stmt FROM 'SELECT TOKENIZE(?,?),TOKENIZE(?,?,JSON_ARRAY())'")
+        c.execute("PREPARE memo_stmt FROM 'SELECT TOKENIZE(CAST(? AS CHAR CHARACTER SET utf8mb4),?),TOKENIZE(CAST(? AS CHAR CHARACTER SET utf8mb4),?,JSON_ARRAY())'")
         for text in texts[:6]:
             c.execute("SET @t=%s,@p='beng'",(text,))
             c.execute('EXECUTE memo_stmt USING @t,@p,@t,@p')
