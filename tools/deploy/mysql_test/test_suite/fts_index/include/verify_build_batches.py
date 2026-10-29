@@ -57,8 +57,14 @@ def main():
                             cursor.execute("ALTER SYSTEM MINOR FREEZE")
                             deadline = time.monotonic() + 120
                             while True:
+                                # Freeze is asynchronous. Waiting only for old
+                                # memtables can return before active tables have
+                                # frozen, changing BM25's physical statistics.
                                 cursor.execute("SELECT COUNT(*) FROM oceanbase.__all_virtual_tablet_memstore_info "
-                                               "WHERE is_active='NO'")
+                                               "WHERE (is_active='NO' OR btree_item_count>0) AND tablet_id IN "
+                                               "(SELECT tablet_id FROM oceanbase.__all_table WHERE database_id IN "
+                                               "(SELECT database_id FROM oceanbase.__all_database "
+                                               "WHERE database_name='fts_build_batches'))")
                                 pending = cursor.fetchone()[0]
                                 if pending == 0:
                                     break
