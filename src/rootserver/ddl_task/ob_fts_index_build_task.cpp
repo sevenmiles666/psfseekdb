@@ -92,6 +92,16 @@ int ObFtsIndexBuildTask::init(
 {
   int ret = OB_SUCCESS;
   ObDocIDType docid_type = ObDocIDType::INVALID;
+  int64_t build_parallelism = parallelism;
+  if (INDEX_TYPE_FTS_INDEX_LOCAL == create_index_arg.index_type_ ||
+      INDEX_TYPE_FTS_DOC_WORD_LOCAL == create_index_arg.index_type_) {
+    // Tokenization can dominate the build even for a small source tablet.
+    // Bound the automatic degree by the configured CPU budget and avoid
+    // expanding it beyond four workers on larger machines.
+    const int64_t configured_cpus = config::cpu_count();
+    const int64_t available_cpus = configured_cpus > 0 ? configured_cpus : common::get_cpu_num();
+    build_parallelism = MAX(parallelism, MIN(4L, MAX(1L, available_cpus)));
+  }
   if (OB_UNLIKELY(is_inited_)) {
     ret = OB_INIT_TWICE;
   } else if (OB_ISNULL(local_management_service_ = ::oceanbase::share::server_service<::oceanbase::rootserver::ObLocalManagementService>())) {
@@ -119,7 +129,7 @@ int ObFtsIndexBuildTask::init(
   } else if (OB_FAIL(deep_copy_index_arg(allocator_,
                                          create_index_arg,
                                          create_index_arg_))) {
-  } else if (OB_FAIL(ObFtsIndexBuilderUtil::decide_parallelism(create_index_arg.index_type_, parallelism, parallelism_))) {
+  } else if (OB_FAIL(ObFtsIndexBuilderUtil::decide_parallelism(create_index_arg.index_type_, build_parallelism, parallelism_))) {
   } else {
     LOG_INFO("create_index_arg.index_type_x", K(create_index_arg.index_type_), K(create_index_arg.index_key_));
 
