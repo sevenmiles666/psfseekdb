@@ -571,8 +571,20 @@ int ObCharset::strcmpsp(ObCollationType collation_type,
                         bool cmp_endspace)
 {
   int result = 0;
-  if (is_argument_valid(collation_type, str1, str1_len, str2, str2_len)) {
-    const ObCharsetInfo *cs = get_charset(collation_type);
+  // Comparisons usually revisit an initialized collation. Resolve its handler
+  // once; retain the original validation and lazy initialization on cold or
+  // invalid inputs, including the original diagnostics.
+  const ObCharsetInfo *cs = nullptr;
+  if (OB_LIKELY(collation_type > CS_TYPE_INVALID && collation_type < CS_TYPE_MAX)) {
+    cs = charset_arr_inited[collation_type];
+  }
+  if (OB_UNLIKELY(nullptr == cs || str1_len < 0 || str2_len < 0
+      || (nullptr == str1 && 0 != str1_len)
+      || (nullptr == str2 && 0 != str2_len))) {
+    cs = is_argument_valid(collation_type, str1, str1_len, str2, str2_len)
+        ? get_charset(collation_type) : nullptr;
+  }
+  if (nullptr != cs) {
     result = cs->coll->strnncollsp(cs,
                                 reinterpret_cast<const unsigned char *>(str1),
                                 str1_len,
