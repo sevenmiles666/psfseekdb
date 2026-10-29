@@ -60,13 +60,13 @@ with connect() as conn,conn.cursor() as c:
     c.execute('USE fts_pipeline_ddl')
     c.execute('CREATE TABLE t(id INT PRIMARY KEY,k INT,v VARCHAR(100),g INT GENERATED ALWAYS AS (k+7) STORED)')
     c.executemany('INSERT INTO t(id,k,v) VALUES(%s,%s,%s)',[(i,i%137,'value '+str(i)) for i in range(3000)])
-    c.execute('ALTER TABLE t ADD INDEX idx(k,g)')
-    c.execute('ALTER TABLE t ADD UNIQUE INDEX uniq(v)')
+    c.execute('ALTER TABLE t ADD INDEX idx(k,g) PARALLEL 4')
+    c.execute('ALTER TABLE t ADD UNIQUE INDEX uniq(v) PARALLEL 4')
     for key in (0,1,36,136):
         c.execute('SELECT id,g FROM t FORCE INDEX(idx) WHERE k=%s ORDER BY id',(key,));indexed=c.fetchall()
         c.execute('SELECT id,g FROM t IGNORE INDEX(idx,uniq) WHERE k=%s ORDER BY id',(key,));assert c.fetchall()==indexed
     try:
-        c.execute('ALTER TABLE t ADD UNIQUE INDEX invalid_uniq(k)')
+        c.execute('ALTER TABLE t ADD UNIQUE INDEX invalid_uniq(k) PARALLEL 4')
     except pymysql.MySQLError as e:
         assert e.args[0]==1062,e.args
     else:
