@@ -6955,10 +6955,34 @@ int ObOptimizerUtil::check_can_encode_sortkey(const common::ObIArray<OrderItem> 
   } else {
     can_sort_opt &= config::_enable_newsort();
 
+    // Fulltext index backfill expands each input document into many postings.
+    // Cache their string weights once instead of decoding each word at every
+    // comparison. Keep the ordinary sort policy for other statements.
+    bool is_fts_build_sort = false;
+    if (plan.get_optimizer_context().is_online_ddl()) {
+      for (int64_t i = 0; !is_fts_build_sort && i < order_keys.count(); ++i) {
+        const ObRawExpr *expr = order_keys.at(i).expr_;
+        if (OB_NOT_NULL(expr) && expr->is_column_ref_expr()) {
+          const ObColumnRefRawExpr *column = static_cast<const ObColumnRefRawExpr *>(expr);
+          is_fts_build_sort = (column->get_column_flags() & GENERATED_FTS_WORD_SEGMENT_COLUMN_FLAG) != 0;
+        }
+      }
+    }
+
     for (int64_t i = 0; OB_SUCC(ret) && can_sort_opt && i < order_keys.count(); i++) {
+      const ObRawExpr *expr = order_keys.at(i).expr_;
+      bool can_encode_fts_string = false;
+      if (is_fts_build_sort && OB_NOT_NULL(expr) && expr->is_column_ref_expr()
+          && expr->get_data_type() == ObVarcharType) {
+        const ObColumnRefRawExpr *column = static_cast<const ObColumnRefRawExpr *>(expr);
+        const ObCollationType cs = expr->get_collation_type();
+        can_encode_fts_string = (((column->get_column_flags() & GENERATED_FTS_WORD_SEGMENT_COLUMN_FLAG) != 0
+                                  && (cs == CS_TYPE_UTF8MB4_GENERAL_CI || cs == CS_TYPE_UTF8MB4_BIN))
+                                || (column->is_doc_id_column() && cs == CS_TYPE_BINARY));
+      }
       if (!ObOrderPerservingEncoder::can_encode_sortkey(
-                            order_keys.at(i).expr_->get_data_type(),
-                            order_keys.at(i).expr_->get_collation_type())) {
+                            expr->get_data_type(), expr->get_collation_type())
+          && !can_encode_fts_string) {
         can_sort_opt = false;
       } else if (OB_FAIL(sort_keys.push_back(order_keys.at(i).expr_))) {
       } else { /* do nothing */ }
@@ -6978,9 +7002,9 @@ int ObOptimizerUtil::check_can_encode_sortkey(const common::ObIArray<OrderItem> 
       can_sort_opt = false;
     } else if (card < 1000) {
       can_sort_opt = false;
-    } else if (avg_len < 64 && card < 100000) {
+    } else if (!is_fts_build_sort && avg_len < 64 && card < 100000) {
       can_sort_opt = false;
-    } else if (avg_len > 64 && avg_len < 128 && card < 1500000 ) {
+    } else if (!is_fts_build_sort && avg_len > 64 && avg_len < 128 && card < 1500000 ) {
       can_sort_opt = false;
     } else {
       // do nothing

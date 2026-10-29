@@ -324,7 +324,10 @@ int ObOrderPerservingEncoder::encode_from_string_varlen(
   // therefore src will expand (10+4)/2=>7 times at most when encoding
   if ((to_len + 7 * str.length() + safty_buf_size) > max_buf_len) {
     ret = OB_BUF_NOT_ENOUGH;
-  } else if (str.empty() || (str.length()==1 && *str.ptr()=='\0')) {
+  // Binary NUL is a value, not an empty-string terminator. It must go through
+  // the normal zero-byte escaping below, including for a one-byte string.
+  } else if (str.empty() || ((cs != CS_TYPE_COLLATION_FREE && cs != CS_TYPE_BINARY)
+                            && str.length() == 1 && *str.ptr() == '\0')) {
     if (OB_FAIL(encode_tails(to, max_buf_len, to_len, param.is_memcmp_, cs, str.length()==1 && *str.ptr()=='\0'))) {
     }
   } else if (cs == CS_TYPE_COLLATION_FREE || cs == CS_TYPE_BINARY) {
