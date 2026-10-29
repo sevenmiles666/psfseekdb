@@ -3680,9 +3680,19 @@ int ObTableScanOp::inner_get_next_fts_index_batch(const int64_t max_row_cnt)
       guard.set_batch_size(capacity);
     }
   }
+  // Projection expressions are fixed for this operator. Resolve them once
+  // for the batch instead of searching the output list for every posting.
+  ObExpr *posting_exprs[share::ObFtsIndexBuilderUtil::OB_FTS_INDEX_OR_DOC_WORD_TABLE_COL_CNT] = {};
+  const ObExprOperatorType *expr_types = MY_SPEC.is_fts_index_aux_
+      ? ObFTIndexRowCache::FTS_INDEX_EXPR_TYPE : ObFTIndexRowCache::FTS_DOC_WORD_EXPR_TYPE;
+  for (int64_t i = 0; OB_SUCC(ret) && !brs_.end_
+      && i < share::ObFtsIndexBuilderUtil::OB_FTS_INDEX_OR_DOC_WORD_TABLE_COL_CNT; ++i) {
+    if (OB_FAIL(get_output_fts_col_expr_by_type(expr_types[i], posting_exprs[i]))) {
+    }
+  }
   while (OB_SUCC(ret) && !brs_.end_ && brs_.size_ < capacity) {
     guard.set_batch_idx(brs_.size_);
-    if (OB_FAIL(fill_generated_fts_cols(row))) {
+    if (OB_FAIL(fill_generated_fts_cols(row, posting_exprs))) {
     } else {
       ++brs_.size_;
       if (brs_.size_ < capacity && OB_FAIL(fts_index_.get_next_row(row))) {
@@ -3740,7 +3750,7 @@ int ObTableScanOp::fetch_next_fts_index_rows()
   return ret;
 }
 
-int ObTableScanOp::fill_generated_fts_cols(blocksstable::ObDatumRow *row)
+int ObTableScanOp::fill_generated_fts_cols(blocksstable::ObDatumRow *row, ObExpr *const *prepared_exprs)
 {
   int ret = OB_SUCCESS;
   const ObObjDatumMapType *types = MY_SPEC.is_fts_index_aux_ ? ObFTIndexRowCache::FTS_INDEX_TYPES : ObFTIndexRowCache::FTS_DOC_WORD_TYPES;
@@ -3749,8 +3759,10 @@ int ObTableScanOp::fill_generated_fts_cols(blocksstable::ObDatumRow *row)
     ret = OB_INVALID_ARGUMENT;
   } else {
     for (int64_t i = 0; OB_SUCC(ret) && i < share::ObFtsIndexBuilderUtil::OB_FTS_INDEX_OR_DOC_WORD_TABLE_COL_CNT; ++i) {
-      ObExpr *expr = nullptr;
-      if (OB_FAIL(get_output_fts_col_expr_by_type(expr_types[i], expr))) {
+      ObExpr *expr = nullptr == prepared_exprs ? nullptr : prepared_exprs[i];
+      if (nullptr == prepared_exprs && OB_FAIL(get_output_fts_col_expr_by_type(expr_types[i], expr))) {
+      } else if (OB_ISNULL(expr)) {
+        ret = OB_ERR_UNEXPECTED;
       } else {
         ObDatum &datum = expr->locate_datum_for_write(eval_ctx_);
         ObEvalInfo &eval_info = expr->get_eval_info(eval_ctx_);

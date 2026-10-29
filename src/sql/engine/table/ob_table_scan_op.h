@@ -704,7 +704,7 @@ private:
   int inner_get_next_fts_index_row();
   int inner_get_next_fts_index_batch(const int64_t max_row_cnt);
   int fetch_next_fts_index_rows();
-  int fill_generated_fts_cols(blocksstable::ObDatumRow *row);
+  int fill_generated_fts_cols(blocksstable::ObDatumRow *row, ObExpr *const *prepared_exprs = nullptr);
   int get_output_fts_col_expr_by_type(const ObExprOperatorType &type, ObExpr *&expr);
   bool is_resume_point_saved();
 protected:
