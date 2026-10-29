@@ -39,6 +39,20 @@ int ObTextDaaTIter::init(const ObTextDaaTParam &param)
         && !function_lookup_mode_
         && !iter_param_->need_project_relevance()
         && !iter_param_->need_filter();
+    if (scoreless_union_ && dim_iters_->count() > 0 && dim_iters_->count() <= SMALL_UNION_MAX) {
+      const sql::ObDatumMeta &meta = iter_param_->id_proj_expr_->datum_meta_;
+      ObDatumBasicFuncs *funcs = ObDatumFuncs::get_basic_func(meta.type_, meta.cs_type_);
+      if (OB_ISNULL(funcs) || OB_ISNULL(small_union_cmp_ = funcs->null_first_cmp_)) {
+        ret = OB_ERR_UNEXPECTED;
+      } else {
+        small_union_size_ = dim_iters_->count();
+        small_union_advance_ = (1u << small_union_size_) - 1;
+        for (int64_t i = 0; i < small_union_size_; ++i) {
+          small_union_ids_[i] = nullptr;
+          small_union_iters_[i] = dim_iters_->at(i);
+        }
+      }
+    }
   }
   return ret;
 }
@@ -46,6 +60,9 @@ int ObTextDaaTIter::init(const ObTextDaaTParam &param)
 void ObTextDaaTIter::reset()
 {
   scoreless_union_ = false;
+  small_union_cmp_ = nullptr;
+  small_union_size_ = 0;
+  small_union_advance_ = 0;
   bm25_param_estimator_.reset();
   // this class can know the type of dim_iters_, but ObSRDaaTIterImpl maybe not
   if (OB_NOT_NULL(dim_iters_)) {
@@ -58,6 +75,10 @@ void ObTextDaaTIter::reset()
 
 void ObTextDaaTIter::reuse(const bool switch_tablet)
 {
+  small_union_advance_ = (1u << small_union_size_) - 1;
+  for (int64_t i = 0; i < small_union_size_; ++i) {
+    small_union_ids_[i] = nullptr;
+  }
   if ((OB_NOT_NULL(dim_iters_) && 0 == dim_iters_->count())) {
     // do nothing
   } else {
@@ -88,6 +109,8 @@ int ObTextDaaTIter::do_one_merge_round(int64_t &count)
   int ret = OB_SUCCESS;
   if (!scoreless_union_) {
     ret = ObSRDaaTIterImpl::do_one_merge_round(count);
+  } else if (small_union_size_ > 0) {
+    ret = merge_small_scoreless_union(count);
   } else {
     // A natural-language filter consumes the union of visible postings. Keep
     // the same ordered heap and duplicate handling without collecting scores
@@ -139,6 +162,50 @@ int ObTextDaaTIter::do_one_merge_round(int64_t &count)
         }
       }
     }
+  }
+  return ret;
+}
+
+int ObTextDaaTIter::merge_small_scoreless_union(int64_t &count)
+{
+  int ret = OB_SUCCESS;
+  // For a handful of sorted postings streams, retain their current IDs and
+  // advance only the streams that supplied the previous minimum. This avoids
+  // generic heap push/pop/rebuild without changing order or deduplication.
+  const ObDatum *minimum = nullptr;
+  uint8_t next_advance = 0;
+  for (int64_t i = 0; OB_SUCC(ret) && i < small_union_size_; ++i) {
+    const uint8_t bit = 1u << i;
+    if (small_union_advance_ & bit) {
+      if (OB_FAIL(small_union_iters_[i]->get_next_row())) {
+        if (OB_ITER_END == ret) {
+          ret = OB_SUCCESS;
+          small_union_ids_[i] = nullptr;
+        }
+      } else if (OB_FAIL(small_union_iters_[i]->get_curr_id(small_union_ids_[i]))) {
+      }
+    }
+    if (OB_FAIL(ret) || nullptr == small_union_ids_[i]) {
+    } else if (nullptr == minimum) {
+      minimum = small_union_ids_[i];
+      next_advance = bit;
+    } else {
+      int cmp = 0;
+      if (OB_FAIL(small_union_cmp_(*small_union_ids_[i], *minimum, cmp, nullptr))) {
+      } else if (cmp < 0) {
+        minimum = small_union_ids_[i];
+        next_advance = bit;
+      } else if (cmp == 0) {
+        next_advance |= bit;
+      }
+    }
+  }
+  small_union_advance_ = next_advance;
+  if (OB_FAIL(ret)) {
+  } else if (nullptr == minimum) {
+    ret = OB_ITER_END;
+  } else {
+    ret = cache_result(count, *minimum, 0.0);
   }
   return ret;
 }

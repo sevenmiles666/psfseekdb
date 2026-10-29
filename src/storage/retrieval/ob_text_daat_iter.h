@@ -56,7 +56,12 @@ public:
       bm25_param_estimator_(),
       mode_flag_(sql::ObMatchAgainstMode::NATURAL_LANGUAGE_MODE),
       function_lookup_mode_(false),
-      scoreless_union_(false) {}
+      scoreless_union_(false),
+      small_union_cmp_(nullptr),
+      small_union_size_(0),
+      small_union_advance_(0),
+      small_union_ids_{},
+      small_union_iters_{} {}
   virtual ~ObTextDaaTIter() { reset(); }
 
   int init(const ObTextDaaTParam &param);
@@ -65,11 +70,18 @@ public:
 protected:
   virtual int pre_process() override;
   virtual int do_one_merge_round(int64_t &count) override;
+  int merge_small_scoreless_union(int64_t &count);
 protected:
   ObBM25ParamEstimator bm25_param_estimator_;
   sql::ObMatchAgainstMode mode_flag_;
   bool function_lookup_mode_;
   bool scoreless_union_;
+  static constexpr int64_t SMALL_UNION_MAX = 4;
+  common::ObDatumCmpFuncType small_union_cmp_;
+  int64_t small_union_size_;
+  uint8_t small_union_advance_;
+  const ObDatum *small_union_ids_[SMALL_UNION_MAX];
+  ObISRDaaTDimIter *small_union_iters_[SMALL_UNION_MAX];
 private:
   DISALLOW_COPY_AND_ASSIGN(ObTextDaaTIter);
 };
