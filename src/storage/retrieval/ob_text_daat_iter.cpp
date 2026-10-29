@@ -35,12 +35,17 @@ int ObTextDaaTIter::init(const ObTextDaaTParam &param)
   } else {
     mode_flag_ = param.mode_flag_;
     function_lookup_mode_ = param.function_lookup_mode_;
+    scoreless_union_ = sql::ObMatchAgainstMode::NATURAL_LANGUAGE_MODE == mode_flag_
+        && !function_lookup_mode_
+        && !iter_param_->need_project_relevance()
+        && !iter_param_->need_filter();
   }
   return ret;
 }
 
 void ObTextDaaTIter::reset()
 {
+  scoreless_union_ = false;
   bm25_param_estimator_.reset();
   // this class can know the type of dim_iters_, but ObSRDaaTIterImpl maybe not
   if (OB_NOT_NULL(dim_iters_)) {
@@ -73,6 +78,66 @@ int ObTextDaaTIter::pre_process()
     ret = OB_ITER_END;
   } else if (iter_param_->need_project_relevance()) {
     if (OB_FAIL(bm25_param_estimator_.do_estimation(*iter_param_->eval_ctx_))) {
+    }
+  }
+  return ret;
+}
+
+int ObTextDaaTIter::do_one_merge_round(int64_t &count)
+{
+  int ret = OB_SUCCESS;
+  if (!scoreless_union_) {
+    ret = ObSRDaaTIterImpl::do_one_merge_round(count);
+  } else {
+    // A natural-language filter consumes the union of visible postings. Keep
+    // the same ordered heap and duplicate handling without collecting scores
+    // or updating the relevance collector's per-document dimension sets.
+    ObSRMergeItem item;
+    for (int64_t i = 0; OB_SUCC(ret) && i < next_round_cnt_; ++i) {
+      const int64_t iter_idx = next_round_iter_idxes_[i];
+      ObISRDaaTDimIter *dim_iter = nullptr;
+      if (OB_ISNULL(dim_iter = dim_iters_->at(iter_idx))) {
+        ret = OB_ERR_UNEXPECTED;
+      } else if (OB_FAIL(dim_iter->get_next_row())) {
+        if (OB_ITER_END == ret) {
+          ret = OB_SUCCESS;
+        }
+      } else if (OB_FAIL(dim_iter->get_curr_id(iter_domain_ids_[iter_idx]))) {
+      } else {
+        item.iter_idx_ = iter_idx;
+        if (OB_FAIL(merge_heap_->push(item))) {
+        }
+      }
+    }
+
+    if (OB_FAIL(ret)) {
+    } else if (merge_heap_->empty()) {
+      ret = OB_ITER_END;
+    } else if (next_round_cnt_ != 0 && OB_FAIL(merge_heap_->rebuild())) {
+    } else {
+      next_round_cnt_ = 0;
+      bool curr_doc_end = false;
+      const ObSRMergeItem *top_item = nullptr;
+      int64_t iter_idx = -1;
+      while (OB_SUCC(ret) && !merge_heap_->empty() && !curr_doc_end) {
+        curr_doc_end = merge_heap_->is_unique_champion();
+        if (OB_FAIL(merge_heap_->top(top_item))) {
+        } else {
+          iter_idx = top_item->iter_idx_;
+          if (OB_FAIL(merge_heap_->pop())) {
+          } else {
+            next_round_iter_idxes_[next_round_cnt_++] = iter_idx;
+          }
+        }
+      }
+      if (OB_SUCC(ret)) {
+        const ObDatum *id_datum = nullptr;
+        if (OB_UNLIKELY(iter_idx < 0)
+            || OB_ISNULL(id_datum = iter_domain_ids_[iter_idx])) {
+          ret = OB_ERR_UNEXPECTED;
+        } else if (OB_FAIL(cache_result(count, *id_datum, 0.0))) {
+        }
+      }
     }
   }
   return ret;

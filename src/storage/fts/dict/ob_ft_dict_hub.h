@@ -18,6 +18,7 @@
 #define _OCEANBASE_STORAGE_FTS_DICT_OB_FT_DICT_HUB_H_
 
 #include "lib/charset/ob_charset.h"
+#include "lib/atomic/ob_atomic.h"
 #include "lib/lock/ob_bucket_lock.h"
 #include "storage/fts/dict/ob_ft_dict_def.h"
 
@@ -96,12 +97,14 @@ class ObFTCacheRangeContainer;
 class ObFTDictHub
 {
 public:
-  ObFTDictHub() : is_inited_(false), dict_map_(), rw_dict_lock_() {}
+  ObFTDictHub() : is_inited_(false), dict_map_(), rw_dict_lock_(), generation_(0) {}
   ~ObFTDictHub() {}
 
   int init();
 
   int destroy();
+
+  int64_t generation() const { return ATOMIC_LOAD(&generation_); }
 
   int build_cache(const ObFTDictDesc &desc, ObFTCacheRangeContainer &container);
 
@@ -118,6 +121,7 @@ private:
   // holds info of dict
   hash::ObHashMap<ObFTDictInfoKey, ObFTDictInfo> dict_map_;
   ObBucketLock rw_dict_lock_;
+  int64_t generation_;
 };
 
 } //  namespace storage

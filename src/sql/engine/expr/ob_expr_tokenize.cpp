@@ -30,6 +30,7 @@
 #include "share/ob_json_access_utils.h"
 #include "data_plane/fts/ob_fts_parser_helper.h"
 #include "data_plane/fts/dict/ob_gen_dic_loader.h"
+#include "storage/fts/dict/ob_ft_dict_hub.h"
 #include "data_plane/fts/ob_fts_parser_property.h"
 
 #define USING_LOG_PREFIX SQL_ENG
@@ -39,6 +40,100 @@ namespace oceanbase
 {
 namespace sql
 {
+namespace
+{
+// Only the built-in parsers with their default properties are memoized. Every
+// argument is evaluated on every call; errors and custom parser properties use
+// the ordinary path. Exact byte keys prevent hash collisions from changing SQL
+// results. Each worker bounds cached payload to 256 KiB and discards entries
+// on a dictionary-generation change.
+class TokenizeMemo
+{
+public:
+  static constexpr int64_t ENTRY_COUNT = 8;
+  static constexpr int64_t MAX_BYTES = 256 * 1024;
+  static constexpr int64_t MAX_VALUE_BYTES = 32 * 1024;
+  struct Entry
+  {
+    ObString text_;
+    ObString parser_;
+    ObString result_;
+    ObCollationType collation_;
+    bool text_null_;
+    bool parser_null_;
+    int64_t arg_count_;
+  };
+  TokenizeMemo() : allocator_("FTTokMemo"), hub_(nullptr),
+                   generation_(-1), count_(0), bytes_(0) {}
+
+  void prepare(const storage::ObFTDictHub *hub,
+               const int64_t generation)
+  {
+    if (hub_ != hub || generation_ != generation) {
+      clear();
+      hub_ = hub;
+      generation_ = generation;
+    }
+  }
+
+  const ObString *find(const ObString &text, const ObString &parser,
+                       const ObCollationType collation, const bool text_null,
+                       const bool parser_null, const int64_t arg_count) const
+  {
+    const ObString *result = nullptr;
+    for (int64_t i = 0; nullptr == result && i < count_; ++i) {
+      const Entry &e = entries_[i];
+      if (e.collation_ == collation && e.text_null_ == text_null
+          && e.parser_null_ == parser_null && e.arg_count_ == arg_count
+          && e.text_ == text && e.parser_ == parser) {
+        result = &e.result_;
+      }
+    }
+    return result;
+  }
+
+  void remember(const ObString &text, const ObString &parser,
+                const ObCollationType collation, const bool text_null,
+                const bool parser_null, const int64_t arg_count,
+                const ObString &result)
+  {
+    const int64_t size = text.length() + parser.length() + result.length();
+    if (size <= MAX_VALUE_BYTES) {
+      if (count_ == ENTRY_COUNT || bytes_ + size > MAX_BYTES) {
+        clear();
+      }
+      Entry &e = entries_[count_];
+      // A failed cache allocation must never fail a successful TOKENIZE call.
+      if (OB_SUCCESS == ob_write_string(allocator_, text, e.text_)
+          && OB_SUCCESS == ob_write_string(allocator_, parser, e.parser_)
+          && OB_SUCCESS == ob_write_string(allocator_, result, e.result_)) {
+        e.collation_ = collation;
+        e.text_null_ = text_null;
+        e.parser_null_ = parser_null;
+        e.arg_count_ = arg_count;
+        ++count_;
+        bytes_ += size;
+      } else {
+        clear();
+      }
+    }
+  }
+private:
+  void clear()
+  {
+    allocator_.reset();
+    count_ = 0;
+    bytes_ = 0;
+  }
+  ObArenaAllocator allocator_;
+  const storage::ObFTDictHub *hub_;
+  int64_t generation_;
+  int64_t count_;
+  int64_t bytes_;
+  Entry entries_[ENTRY_COUNT];
+};
+} // namespace
+
 ObExprTokenize::ObExprTokenize(common::ObIAllocator &alloc)
     : ObStringExprOperator(alloc,
                            T_FUN_TOKENIZE,
@@ -53,25 +148,64 @@ ObExprTokenize::~ObExprTokenize() {}
 int ObExprTokenize::eval_tokenize(const ObExpr &expr, ObEvalCtx &ctx, ObDatum &expr_datum)
 {
   int ret = OB_SUCCESS;
-
   ObEvalCtx::TempAllocGuard tmp_alloc_g(ctx);
   common::ObArenaAllocator &temp_allocator = tmp_alloc_g.get_allocator();
-
   ObIJsonBase *json_result = nullptr;
   TokenizeParam param;
+  ObDatum *text_datum = nullptr;
+  ObDatum *parser_datum = nullptr;
+  ObString text;
+  ObString parser;
+  storage::ObFTDictHub *hub = nullptr;
+  int64_t generation = -1;
+  bool eligible = false;
+  bool hit = false;
+  static thread_local TokenizeMemo memo;
 
-  // check param num, which is checked in ObExprOperator::calc_result_typeN.
   if (OB_UNLIKELY(expr.arg_cnt_ < 1 || expr.arg_cnt_ > 3)) {
     ret = OB_INVALID_ARGUMENT;
-  } else if (OB_FAIL(parse_param(expr, ctx, temp_allocator, param))) {
-  } else if (OB_FAIL(tokenize_fulltext(param, param.output_mode_, temp_allocator, json_result))) {
-  } else if (OB_FAIL(ObJsonExprHelper::pack_json_res(expr,
-                                                     ctx,
-                                                     temp_allocator,
-                                                     json_result,
-                                                     expr_datum))) {
+  } else if (expr.arg_cnt_ == 2) {
+    if (OB_FAIL(expr.args_[0]->eval(ctx, text_datum))) {
+    } else if (OB_FAIL(expr.args_[1]->eval(ctx, parser_datum))) {
+    } else if (!parser_datum->is_null()) {
+      parser = parser_datum->get_string();
+      const ObString name = parser.trim();
+      eligible = (0 == name.case_compare("ik") || 0 == name.case_compare("beng"))
+          && OB_SUCCESS == storage::ObFTParseData::instance().get_dict_hub(hub);
+      if (!text_datum->is_null()) {
+        text = text_datum->get_string();
+      }
+      eligible = eligible && text.length() + parser.length() <= TokenizeMemo::MAX_VALUE_BYTES;
+    }
   }
-
+  if (OB_SUCC(ret) && eligible) {
+    generation = hub->generation();
+    memo.prepare(hub, generation);
+    const ObString *cached = memo.find(text, parser,
+        expr.args_[0]->obj_meta_.get_collation_type(), text_datum->is_null(),
+        parser_datum->is_null(), expr.arg_cnt_);
+    if (nullptr != cached && generation == hub->generation()) {
+      if (OB_FAIL(ObJsonExprHelper::pack_json_str_res(expr, ctx, expr_datum, *cached))) {
+      } else {
+        hit = true;
+      }
+    }
+  }
+  if (OB_SUCC(ret) && !hit) {
+    if (OB_FAIL(parse_param(expr, ctx, temp_allocator, param))) {
+    } else if (OB_FAIL(tokenize_fulltext(param, param.output_mode_, temp_allocator, json_result))) {
+    } else if (eligible && nullptr != json_result) {
+      ObString binary;
+      if (OB_FAIL(ObJsonWrapper::get_raw_binary(json_result, binary, &temp_allocator))) {
+      } else if (OB_FAIL(ObJsonExprHelper::pack_json_str_res(expr, ctx, expr_datum, binary))) {
+      } else if (generation == hub->generation()) {
+        memo.remember(text, parser, expr.args_[0]->obj_meta_.get_collation_type(),
+            text_datum->is_null(), parser_datum->is_null(), expr.arg_cnt_, binary);
+      }
+    } else if (OB_FAIL(ObJsonExprHelper::pack_json_res(expr, ctx, temp_allocator,
+                                                     json_result, expr_datum))) {
+    }
+  }
   return ret;
 }
 

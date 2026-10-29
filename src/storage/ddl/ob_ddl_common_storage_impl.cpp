@@ -480,6 +480,13 @@ int oceanbase::storage::ObDDLStorageUtil::get_task_ranges(
     } else if (OB_FALSE_IT(total_size = total_size / 1024 /* Byte -> KB */)) {
     } else if (OB_FAIL(data_plane::ObParallelRangeTaskPlanner::compute_total_task_count(
         params, total_size, expected_task_count))) {
+    } else {
+      // Respect the requested degree for CPU-intensive generated-column work
+      // as well as for large tablets. Storage byte estimates alone miss that
+      // cost. split_multi_ranges still bounds the work by available key ranges.
+      expected_task_count = MAX(expected_task_count, hint_parallelism);
+    }
+    if (OB_FAIL(ret)) {
     } else if (OB_FAIL(tablet_service->split_multi_ranges(tablet_id,
                                                           ObTabletCommon::DEFAULT_GET_TABLET_DURATION_US,
                                                           ranges,

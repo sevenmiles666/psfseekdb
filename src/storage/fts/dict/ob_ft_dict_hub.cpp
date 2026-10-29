@@ -35,6 +35,7 @@ int ObFTDictHub::init()
   if (OB_FAIL(dict_map_.create(K_MAX_DICT_BUCKET, "dict_map"))) {
   } else if (OB_FAIL(rw_dict_lock_.init(K_MAX_DICT_BUCKET))) {
   } else {
+    ATOMIC_INC(&generation_);
     is_inited_ = true;
   }
   return ret;
@@ -43,6 +44,7 @@ int ObFTDictHub::init()
 int ObFTDictHub::destroy()
 {
   int ret = OB_SUCCESS;
+  ATOMIC_INC(&generation_);
   is_inited_ = false;
   return ret;
 }
@@ -132,6 +134,8 @@ int ObFTDictHub::put_dict_info(const ObFTDictInfoKey &key, const ObFTDictInfo &i
   int ret = OB_SUCCESS;
   const int cover_exist_flag = 1;
   if (OB_FAIL(dict_map_.set_refactored(key, info, cover_exist_flag))) {
+  } else {
+    ATOMIC_INC(&generation_);
   }
 
   return ret;
