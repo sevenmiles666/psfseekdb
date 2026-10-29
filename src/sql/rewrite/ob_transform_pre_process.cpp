@@ -179,7 +179,7 @@ int ObTransformPreProcess::transform_one_stmt(common::ObIArray<ObParentDMLStmt> 
     }
     if (OB_SUCC(ret)) {
       if (stmt->get_match_exprs().count() > 0 &&
-          OB_FAIL(preserve_order_for_fulltext_search(stmt, is_happened))) {
+          OB_FAIL(preserve_order_for_fulltext_search(parent_stmts, stmt, is_happened))) {
       } else {
         trans_happened |= is_happened;
       }
@@ -3788,9 +3788,48 @@ int ObTransformPreProcess::do_flatten_conditions(ObDMLStmt *stmt, ObIArray<ObRaw
   return ret;
 }
 
-// full-text index queries on a single base table are processed with order preservation. 
+// A direct COUNT(*) consumer observes only the cardinality of a limited view.
+// Choosing different rows for its implicit full-text order cannot change that
+// cardinality. Keep the test narrow: explicit orders, value consumers, joins,
+// predicates above the view, assignments and FETCH WITH TIES retain scoring.
+static bool has_count_only_parent(const ObIArray<ObParentDMLStmt> &parent_stmts,
+                                  const ObDMLStmt *stmt)
+{
+  bool count_only = false;
+  const ObDMLStmt *parent = parent_stmts.empty() ? nullptr : parent_stmts.at(parent_stmts.count() - 1).stmt_;
+  if (nullptr != stmt && stmt->is_select_stmt() && nullptr != parent && parent->is_select_stmt()) {
+    const ObSelectStmt *child = static_cast<const ObSelectStmt *>(stmt);
+    const ObSelectStmt *select = static_cast<const ObSelectStmt *>(parent);
+    const TableItem *view = select->get_table_size() == 1 ? select->get_table_item(0) : nullptr;
+    const ObAggFunRawExpr *count = select->get_aggr_item_size() == 1 ? select->get_aggr_item(0) : nullptr;
+    count_only = child->has_limit() && !child->has_fetch()
+        && !child->is_fetch_with_ties() && nullptr == child->get_limit_percent_expr()
+        && !child->has_for_update() && !child->has_select_into() && !child->is_contains_assignment()
+        && !select->is_set_stmt()
+        && select->get_from_item_size() == 1 && !select->get_from_item(0).is_joined_
+        && nullptr != view && view->is_generated_table() && view->ref_query_ == child
+        && select->get_from_item(0).table_id_ == view->table_id_
+        && select->get_semi_info_size() == 0 && select->get_condition_size() == 0
+        && select->get_group_expr_size() == 0 && !select->has_rollup() && !select->has_having()
+        && !select->has_distinct() && !select->has_window_function() && !select->has_order_by()
+        && !select->has_for_update() && !select->has_select_into() && !select->is_contains_assignment()
+        && select->get_subquery_expr_size() == 0 && select->get_select_item_size() == 1
+        && nullptr != count && T_FUN_COUNT == count->get_expr_type()
+        && !count->is_param_distinct() && count->get_real_param_count() == 0
+        && select->get_select_item(0).expr_ == count;
+    // Do not discard evaluation or ordering effects in a projected expression.
+    for (int64_t i = 0; count_only && i < child->get_select_item_size(); ++i) {
+      const ObRawExpr *expr = child->get_select_item(i).expr_;
+      count_only = nullptr != expr && expr->is_column_ref_expr();
+    }
+  }
+  return count_only;
+}
+
+// full-text index queries on a single base table are processed with order preservation.
 // (Order is not preserved in multi-table join scenarios.)
-int ObTransformPreProcess::preserve_order_for_fulltext_search(ObDMLStmt *stmt, bool& trans_happened)
+int ObTransformPreProcess::preserve_order_for_fulltext_search(const ObIArray<ObParentDMLStmt> &parent_stmts,
+                                                           ObDMLStmt *stmt, bool& trans_happened)
 {
   int ret = OB_SUCCESS;
   trans_happened = false;
@@ -3800,6 +3839,8 @@ int ObTransformPreProcess::preserve_order_for_fulltext_search(ObDMLStmt *stmt, b
     ret = OB_ERR_UNEXPECTED;
   } else if (stmt->get_table_items().count() != 1 || stmt->get_order_item_size() != 0) {
     // do nothing
+  } else if (has_count_only_parent(parent_stmts, stmt)) {
+    // The parent cannot observe this implicit order, even below LIMIT/OFFSET.
   } else if (stmt->is_select_stmt() && 
              (static_cast<ObSelectStmt*>(stmt)->has_order_by() ||
               static_cast<ObSelectStmt*>(stmt)->has_group_by() ||
