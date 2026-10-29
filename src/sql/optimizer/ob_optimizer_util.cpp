@@ -7015,6 +7015,10 @@ int ObOptimizerUtil::check_can_encode_sortkey(const common::ObIArray<OrderItem> 
     if (OB_SUCCESS != tmp_ret) {
       can_sort_opt = old_can_opt;
     }
+    if (plan.get_optimizer_context().is_online_ddl()) {
+      LOG_TRACE("check encoded DDL sort policy", K(is_fts_build_sort), K(can_sort_opt),
+                K(avg_len), K(card), K(order_keys));
+    }
   }
   return ret;
 }
