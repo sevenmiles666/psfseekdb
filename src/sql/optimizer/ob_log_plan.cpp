@@ -12086,8 +12086,7 @@ int ObLogPlan::prepare_text_retrieval_scan(const ObIArray<ObRawExpr *> &scan_mat
                                                  table_scan->get_index_table_id(),
                                                  match_against,
                                                  table_scan->get_text_retrieval_info()))) {
-  } else if (get_stmt() == get_optimizer_context().get_root_stmt()
-      && OB_FAIL(check_scoreless_text_filter(get_stmt(), match_pred, match_against, scoreless))) {
+  } else if (OB_FAIL(check_scoreless_text_filter(get_stmt(), match_pred, match_against, scoreless))) {
   } else {
     ObTextRetrievalInfo &tr_info = table_scan->get_text_retrieval_info();
     tr_info.match_expr_ = match_against;

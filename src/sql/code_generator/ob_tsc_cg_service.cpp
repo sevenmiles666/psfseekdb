@@ -3836,7 +3836,7 @@ int ObTscCgService::generate_table_lookup_ctdef(const ObLogTableScan &op,
     bool need_proj_relevance_score = false;
 
     if (OB_FAIL(check_lookup_iter_type(scan_ctdef, need_proj_relevance_score))) {
-    } else if (FALSE_IT(lookup_type = (need_proj_relevance_score) ?
+    } else if (FALSE_IT(lookup_type = (need_proj_relevance_score || op.is_text_retrieval_scan()) ?
                                           ObDASOpType::DAS_OP_INDEX_PROJ_LOOKUP :
                                           ObDASOpType::DAS_OP_TABLE_LOOKUP)) {
     } else if (OB_FAIL(ObDASTaskFactory::alloc_das_ctdef(lookup_type, allocator, lookup_ctdef))) {
