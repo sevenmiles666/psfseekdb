@@ -3091,11 +3091,6 @@ int ObTscCgService::check_skip_index_validity(const ObTextRetrievalInfo &tr_info
   int64_t column_id = 0;
   if (OB_ISNULL(schema_guard) || OB_UNLIKELY(!tr_info.need_block_max_scan())) {
     ret = OB_ERR_UNEXPECTED;
-  } else if (tr_info.with_ties_) {
-    // BMW retains at most k document IDs and discards equal-score candidates.
-    // A subsequent sort with secondary keys (or FETCH WITH TIES) needs every
-    // boundary tie. Keep the full scored scan and the existing DAS tie sort.
-    is_valid = false;
   } else if (OB_FAIL(schema_guard->get_table_schema(tr_info.inv_idx_tid_, inv_idx_schema))) {
   } else if (OB_ISNULL(inv_idx_schema)) {
     ret = OB_ERR_UNEXPECTED;
