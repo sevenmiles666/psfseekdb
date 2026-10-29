@@ -11987,6 +11987,56 @@ int ObLogPlan::construct_startup_filter_for_limit(ObRawExpr *limit_expr, ObLogic
   return ret;
 }
 
+// A postings hit is sufficient only when MATCH is consumed exclusively as a
+// natural-language WHERE predicate. Other consumers still require the BM25 value.
+static int check_scoreless_text_filter(const ObDMLStmt *stmt,
+                                       ObRawExpr *predicate,
+                                       ObMatchFunRawExpr *match,
+                                       bool &scoreless)
+{
+  int ret = OB_SUCCESS;
+  scoreless = false;
+  if (OB_ISNULL(stmt) || OB_ISNULL(predicate) || OB_ISNULL(match)) {
+    ret = OB_INVALID_ARGUMENT;
+  } else if (!stmt->is_select_stmt() || stmt->get_table_size() != 1
+      || stmt->get_subquery_expr_size() != 0
+      || NATURAL_LANGUAGE_MODE != match->get_mode_flag()
+      || match->is_es_match() || nullptr != match->get_param_text_expr()
+      || !match->get_columns_boosts().empty()
+      || T_OP_BOOL != predicate->get_expr_type()
+      || predicate->get_param_count() != 1 || predicate->get_param_expr(0) != match) {
+    // Keep scoring for complex statements, boolean/ES queries and thresholds.
+  } else {
+    ObSEArray<ObRawExpr *, 16> exprs;
+    ObStmtExprGetter visitor;
+    visitor.set_relation_scope();
+    visitor.remove_scope(SCOPE_WHERE);
+    if (OB_FAIL(stmt->get_relation_exprs(exprs, visitor))) {
+    } else {
+      scoreless = true;
+    }
+    // Do not skip a shared SELECT/ORDER BY boolean node just because it is also
+    // the WHERE root: non-WHERE consumers are checked separately.
+    for (int64_t i = 0; OB_SUCC(ret) && scoreless && i < exprs.count(); ++i) {
+      bool found = false;
+      if (OB_FAIL(ObRawExprUtils::find_expr(exprs.at(i), match, found))) {
+      } else if (found) {
+        scoreless = false;
+      }
+    }
+    const ObIArray<ObRawExpr *> &conditions = stmt->get_condition_exprs();
+    for (int64_t i = 0; OB_SUCC(ret) && scoreless && i < conditions.count(); ++i) {
+      bool found = false;
+      if (conditions.at(i) == predicate) {
+      } else if (OB_FAIL(ObRawExprUtils::find_expr(conditions.at(i), match, found))) {
+      } else if (found) {
+        scoreless = false;
+      }
+    }
+  }
+  return ret;
+}
+
 int ObLogPlan::prepare_text_retrieval_scan(const ObIArray<ObRawExpr *> &scan_match_exprs,
                                            const ObIArray<ObRawExpr *> &scan_match_filters,
                                            const ObIArray<ObRawExpr *> &all_match_filters,
@@ -11998,6 +12048,7 @@ int ObLogPlan::prepare_text_retrieval_scan(const ObIArray<ObRawExpr *> &scan_mat
   ObRawExpr *match_pred = NULL;
   ObMatchFunRawExpr *match_against = NULL;
   ObMatchFunRawExpr *scan_match_expr = nullptr;
+  bool scoreless = false;
 
   if (OB_UNLIKELY(1 != scan_match_exprs.count())) {
     ret = OB_NOT_SUPPORTED;
@@ -12035,10 +12086,13 @@ int ObLogPlan::prepare_text_retrieval_scan(const ObIArray<ObRawExpr *> &scan_mat
                                                  table_scan->get_index_table_id(),
                                                  match_against,
                                                  table_scan->get_text_retrieval_info()))) {
+  } else if (get_stmt() == get_optimizer_context().get_root_stmt()
+      && OB_FAIL(check_scoreless_text_filter(get_stmt(), match_pred, match_against, scoreless))) {
   } else {
     ObTextRetrievalInfo &tr_info = table_scan->get_text_retrieval_info();
     tr_info.match_expr_ = match_against;
-    tr_info.pushdown_match_filter_ = match_pred;
+    tr_info.need_calc_relevance_ = !scoreless;
+    tr_info.pushdown_match_filter_ = scoreless ? nullptr : match_pred;
     // The mapping table is absent when the data-table rowkey is used as the document ID.
     table_scan->set_doc_id_index_table_id(tr_info.doc_id_idx_tid_);
     if (table_scan->is_vec_adaptive_scan() || table_scan->is_vec_idx_scan_post_filter()) {
