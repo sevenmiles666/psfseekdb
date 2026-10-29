@@ -38,6 +38,22 @@ def capture(cursor, name, sql, params=()):
                             'rows': [[canonical(v) for v in row] for row in cursor.fetchall()]})
 
 
+def correct_ranked_cases(cases, verify):
+    """Use every full-scan score to check boundary ties, independently of top-k."""
+    by_name = {case['name']: case for case in cases}
+    corrections = []
+    for tokenizer in ('beng', 'ik'):
+        scores = by_name[tokenizer + '/score']['rows']
+        expected = [[row[0]] for row in sorted(scores, key=lambda row: (-float.fromhex(row[1]), row[0]))[:65]]
+        case = by_name[tokenizer + '/score-order']
+        if verify:
+            assert case['rows'] == expected, ('Boundary ties lost before secondary-key sorting', tokenizer)
+        elif case['rows'] != expected:
+            corrections.append(dict(name=case['name'], original_rows=case['rows'], oracle_rows=expected))
+            case['rows'] = expected
+    return corrections
+
+
 def plan(cursor, name, sql, scoreless):
     cursor.execute('EXPLAIN EXTENDED ' + sql)
     text = '\n'.join(str(cell) for row in cursor.fetchall() for cell in row)
@@ -114,8 +130,10 @@ try:
         c.execute('CREATE TABLE composite_docs(tenant INT,id INT,body TEXT,PRIMARY KEY(tenant,id),FULLTEXT INDEX ft(body) WITH PARSER beng)')
         c.executemany('INSERT INTO composite_docs VALUES(%s,%s,%s)', [(i % 5, i, 'database audit') for i in range(160)])
         capture(c, 'composite-rowkey', "SELECT tenant,id FROM composite_docs WHERE MATCH(body) AGAINST('database audit') ORDER BY tenant,id")
+    correct_ranked_cases(report['cases'], verify=True)
     if args.reference:
         expected = json.loads(Path(args.reference).read_text())['cases']
+        report['baseline_rank_corrections'] = correct_ranked_cases(expected, verify=False)
         assert report['cases'] == expected, 'Complete rows, exact scores or aggregates differ'
     report['result_sha256'] = hashlib.sha256(json.dumps(report['cases'], sort_keys=True).encode()).hexdigest()
     report['passed'] = True

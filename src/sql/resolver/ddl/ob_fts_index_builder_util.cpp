@@ -1042,7 +1042,9 @@ int ObFtsIndexBuilderUtil::decide_parallelism(
   } else {
     switch (index_type) {
       case share::schema::ObIndexType::INDEX_TYPE_ROWKEY_DOC_ID_LOCAL:
-        decided_parallelism = MAX(original_parallelism, 1L);
+        // Allocate the rowkey/document-ID mapping in source order. Parallelize
+        // the subsequent postings work, whose generated IDs are already fixed.
+        decided_parallelism = 1;
         break;
       case share::schema::ObIndexType::INDEX_TYPE_DOC_ID_ROWKEY_LOCAL:
       case share::schema::ObIndexType::INDEX_TYPE_FTS_INDEX_LOCAL:
