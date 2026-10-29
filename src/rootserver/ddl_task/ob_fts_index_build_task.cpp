@@ -683,6 +683,10 @@ int ObFtsIndexBuildTask::construct_rowkey_doc_arg(obcall::ObCreateIndexArg &arg)
   if (OB_FAIL(deep_copy_index_arg(allocator_, create_index_arg_, arg))) {
   } else if (FALSE_IT(arg.index_type_ = INDEX_TYPE_ROWKEY_DOC_ID_LOCAL)) {
   } else if (FALSE_IT(arg.index_option_.parser_name_.reset())) {
+  } else if (FALSE_IT(arg.parallelism_ = is_fts_task() ? 1 : arg.parallelism_)) {
+    // Keep generated document IDs in source order. Only the subsequent FTS
+    // postings builds use the automatic degree; changing ID allocation also
+    // changes the established implicit ordering of equal-score documents.
   } else if (OB_FAIL(ObFtsIndexBuilderUtil::generate_fts_aux_index_name(arg,
                                                                         &allocator_))) {
   }
