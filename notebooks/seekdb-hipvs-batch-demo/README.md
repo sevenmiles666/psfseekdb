@@ -2,6 +2,8 @@
 
 需要手工填写课程 Notebook 时，请阅读[每个代码单元的完整内容及运行顺序](NOTEBOOK_CELLS_CN.md)。该说明也包含正确目录和旧版辅助库的识别方法。
 
+**用户后续运行记录**：[用户提供的 JSON 及来源说明](results/user-run-20261031/README.md)。该次报告 N=4000 的批量查询加速比为 8.15×，CPU/GPU Recall@10 为 0.640/0.880；与下面独立执行的 9.88× 记录分开保存。
+
 **2026-10-31 Notebook 状态修复**：已补齐启动单元自身需要的 `Path`/`time` 导入，增加数据准备和统计结果的前置检查；查询缺少探针、索引等待超时会明确报错。重新准备数据或测量失败后清除旧统计，避免保存的输出掩盖当前内核没有 `df` 的事实。
 
 修复版已在 Radeon Cloud **全新内核执行 11/11 代码单元成功**，9 项辅助回归通过。[本轮已执行 Notebook](results/state-fix/executed.ipynb) · [完整结果](results/state-fix/summary.json) · [源码及运行文件哈希](results/state-fix/execution.json)。本轮 N=4000：CPU 11614.0 ms、GPU 1175.1 ms，9.88×；CPU/GPU 批量 Recall@10 为 0.640/0.876。下面的 8.78× 表格及根 results 输出保留为此前版本的历史记录，不与本轮混用。
