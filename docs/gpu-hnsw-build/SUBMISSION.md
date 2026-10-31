@@ -1,6 +1,6 @@
 # seekdb：使用 AMD hipVS 加速 HNSW 索引构建
 
-**最新排查与安装修复**：普通 Linux Release 的 `server` 组件已补齐 `seekdb` 主程序安装，避免安装返回成功但只有 worker/bridge。新增部署检查、复现记录和仍未通过的完整打包/Bazel 路径见 [再次排查报告](READINESS_AUDIT_20261031.md)。本轮新实例的完整 GPU 验证因 SSH 拒绝连接而中断，以下历史成绩不代表本轮重新测量。
+**最新排查与安装修复**：普通 Linux Release 的 `server` 组件已补齐 `seekdb` 主程序安装，避免安装返回成功但只有 worker/bridge；另增加外部 Cargo 并行数配置，允许资源受限时将嵌套编译也限制为单任务。新增部署检查、复现记录和仍未通过的完整打包/Bazel 路径见 [再次排查报告](READINESS_AUDIT_20261031.md)。本轮新实例的完整 GPU 验证因 SSH 拒绝连接而中断，用户报告“内核意外死亡”；以下历史成绩不代表本轮重新测量。
 
 **旧版独立复跑（2026-10-31）已完成**：新实例从已发布提交 `0e86b8c38afaf8fe3359041645c9b53c5a8524fe` 重新编译，CPU/GPU 构建中位数为 26.4873 / 3.3030 秒，加速 **8.0192 倍**。GPU 三轮 Recall@10 为 1.000 / 0.999 / 1.000；27 项 SQL、14 项回归、增删改/过滤和隐藏 GPU 后重启均通过。详见[独立复跑报告](RECHECK_20261031.md)及[原始结果](results/radeon-20261031-recheck/)。当前发布版本另含下节构建入口/部署修复及其验收，不将旧版复跑成绩记为修复版成绩。
 
@@ -59,9 +59,10 @@ GPU 功能默认关闭；开启需要 glibc ≥ 2.34 及 hipVS 的 CAGRA/HNSW C 
 课程参考中的 `-DOB_BUILD_CUVS=ON` 与下面的 `-DOB_BUILD_HIPVS=ON` 等价；二者都选择本项目的 AMD HNSW 构建实现。同时指定时值必须一致，避免配置成功但生成不符合预期的二进制。
 
 ```bash
-./build.sh release --init -DOB_BUILD_HIPVS=ON \
+export CARGO_BUILD_JOBS=1
+./build.sh release --init -DOB_BUILD_HIPVS=ON -DSEEKDB_EXTERNAL_CARGO_JOBS=1 \
   -DHIPVS_ROOT=/opt/hipvs -DROCM_ROOT=/opt/rocm
-make -C build_release -j8 seekdb
+make -C build_release -j1 seekdb
 ```
 
 已有依赖的课程镜像可按 seekdb 原构建说明复用依赖缓存，不必重复初始化。本次实际使用镜像的 `/opt/seekdb-deps-cache/.../3rd`。主程序为本次源码重新构建，未使用镜像预装的 seekdb 演示二进制。

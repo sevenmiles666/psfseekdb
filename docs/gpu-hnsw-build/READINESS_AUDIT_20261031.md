@@ -23,6 +23,24 @@ usr/libexec/seekdb/lib/libseekdb_hipvs_hnsw.so
 
 完整结果与本地测试记录见 [本轮记录](results/radeon-20261031-readiness/README.md)。本地使用实际 CMake 和 C++ 编译器，验证生产安装规则的三个行为：`server` 组件包含可执行的主程序、未编译主程序时安装不能假成功、包配置不重复注册这条 Release 规则。这是安装规则测试，没有把小型测试程序当成完整 seekdb 二进制或 GPU 验收。
 
+## 限制嵌套构建并行数
+
+用户随后报告云端“内核意外死亡”，Jupyter Terminal 也无法打开，SSH 端口拒绝连接。目前没有取得 cgroup 的 `memory.events` 或内核 OOM 日志，不能确认崩溃一定由内存不足引起，也不能将它直接等同于官方测评的失败原因。
+
+排查中确认，外部 jemalloc 工作区的 Cargo 启动命令原先写死 `--jobs 4`，因此仅设置顶层 `make -j1` 或 `CARGO_BUILD_JOBS=1` 不能把所有构建都限制到单任务。新增 CMake 参数 `SEEKDB_EXTERNAL_CARGO_JOBS`，默认仍为 4，允许显式设为 1，并拒绝零、负数和非数字。三项新增测试实际执行生产模块生成的 CMake 启动器，记录子进程收到的参数，验证默认值、单任务配置和非法值拒绝；没有把记录参数的测试替身当成真实 Rust/jemalloc 编译。
+
+在确认新实例状态稳定后，资源保守的编译方式为：
+
+```bash
+export CARGO_BUILD_JOBS=1
+./build.sh release -DOB_BUILD_CUVS=ON \
+  -DSEEKDB_EXTERNAL_CARGO_JOBS=1 \
+  -DHIPVS_ROOT=/opt/hipvs -DROCM_ROOT=/opt/rocm
+make -C build_release -j1 seekdb
+```
+
+单任务能降低并行编译的内存需求，但不保证任何内存配额都足以完成 Unity 编译；启动前应读取实际 cgroup 限额并保留日志。本轮没有重新启动云实例来声称该方案已通过完整构建。
+
 ## 运行新增部署检查
 
 在具备依赖、Rust 1.98.1、hipVS 和 ROCm 的 Linux 环境，从完整仓库执行：
@@ -54,5 +72,7 @@ python3 unittest/sql/vector_index/check_hipvs_install.py \
 ## 本轮 GPU 验证状态
 
 新实例从空目录配置、编译到 Rust 阶段后，SSH 端口开始拒绝 TCP 连接。**本轮完整 seekdb 构建、修复后的真实主程序安装、六组新增 SQL 边界用例、新 CPU/GPU 基准和重启尚未完成。** 已准备对应执行脚本，不把未执行完的计划写成通过，不复用历史 GPU 数字作为本轮成绩。
+
+在后续另一个空白实例上准备离线依赖时，首轮缓存只覆盖主 Rust 工作区，遗漏了 `deps/external/Cargo.lock` 中锁定的 `seekdb-jemalloc-sys`，构建因此返回非零。这是本次测试缓存准备遗漏，不是源码缺少 jemalloc；补齐并校验两份锁文件共 123 个依赖后，恢复脚本尚未执行，实例便再次拒绝连接。该次已下载的配置/失败日志单独保存，不能将其描述为源码编译或新 GPU 验收通过。
 
 本轮已完成的是旧安装缺口的云端复现和修复规则的 Linux 本地回归。此前不同提交的完整 GPU 记录仍见 [ENTRY_AUDIT](ENTRY_AUDIT_20261031.md) 和 [RECHECK](RECHECK_20261031.md)。

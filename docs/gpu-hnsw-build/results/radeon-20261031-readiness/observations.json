@@ -29,5 +29,18 @@
   "new_gpu_benchmark_completed": false,
   "new_gpu_restart_completed": false,
   "interruption": "SSH and direct TCP connections to the new instance port were refused before full build and validation completed.",
-  "local_install_rule_tests_completed": true
+  "local_install_rule_tests_completed": true,
+  "subsequent_retry": {
+    "source_commit": "78feac0b2d50009761f993e18ced531f48fe0df7",
+    "configure_returncode": 0,
+    "compile_returncode": 2,
+    "reason": "Our offline test cache omitted seekdb-jemalloc-sys from deps/external/Cargo.lock; not a repository source defect.",
+    "corrected_cache_package_count": 123,
+    "resume_executed": false,
+    "resume_blocker": "SSH port refused connections again."
+  },
+  "user_report": "Kernel unexpectedly died; Jupyter Terminal could not be opened.",
+  "oom_confirmed": false,
+  "oom_logs_available": false,
+  "local_test_count": 23
 }
