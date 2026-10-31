@@ -2,7 +2,7 @@
 
 需要手工填写课程 Notebook 时，请阅读[每个代码单元的完整内容及运行顺序](NOTEBOOK_CELLS_CN.md)。该说明也包含正确目录和旧版辅助库的识别方法。
 
-**用户后续运行记录**：[用户提供的 JSON 及来源说明](results/user-run-20261031/README.md) · [批量耗时 CSV](results/user-run-20261031/summary.csv)。该次报告 N=4000 的批量查询加速比为 8.15×，CPU/GPU Recall@10 为 0.640/0.880；与下面独立执行的 9.88× 记录分开保存。
+**用户后续运行记录**：[用户提供的 JSON 及来源说明](results/user-run-20261031/README.md) · [下载的 Notebook](results/user-run-20261031/downloaded.ipynb) · [批量耗时 CSV](results/user-run-20261031/summary.csv)。用户提供的最终 JSON 报告 8.15×、CPU/GPU Recall@10 为 0.640/0.880；下载的 Notebook 后来局部重跑到 9.42×，但召回、记分牌和最终 JSON 尚未更新，详见[一致性检查](results/user-run-20261031/notebook-check.json)。原始文件和两轮输出保留，与下面独立执行的 9.88× 记录分开保存。
 
 **2026-10-31 Notebook 状态修复**：已补齐启动单元自身需要的 `Path`/`time` 导入，增加数据准备和统计结果的前置检查；查询缺少探针、索引等待超时会明确报错。重新准备数据或测量失败后清除旧统计，避免保存的输出掩盖当前内核没有 `df` 的事实。
 
@@ -24,11 +24,11 @@
 | [lib/](lib/) | 查询辅助代码、服务启动和进程管理 |
 | [run_demo.py](run_demo.py) / [requirements.txt](requirements.txt) | 从头执行入口与 Python 依赖 |
 | [NOTEBOOK_CELLS_CN.md](NOTEBOOK_CELLS_CN.md) | 全部 11 个代码单元及操作顺序 |
-| [results/user-run-20261031/](results/user-run-20261031/) | 用户提供的 8.15× JSON，以及从该 JSON 导出的 CSV；尚无此次完整已执行 `.ipynb` |
+| [results/user-run-20261031/](results/user-run-20261031/) | 用户下载的 Notebook、此前 8.15× JSON/CSV，以及局部重跑后 9.42× 输出与旧 JSON 不一致的核对记录 |
 | [results/state-fix/](results/state-fix/) | 修复版独立执行的 9.88× Notebook、JSON、CSV、图表与哈希记录 |
 | [results/executed.ipynb](results/executed.ipynb) | 较早 8.78× 运行的已执行 Notebook，保留历史输出 |
 
-完整展示包包含上面的源文件、辅助代码、三组已有记录和回归测试。8.15× 记录缺少此次完整已执行 Notebook，不能用 9.88× 或 8.78× 文件替代它。
+完整展示包包含上面的源文件、辅助代码、三组已有记录和回归测试。用户下载的 Notebook 原样归档；其不同轮次输出尚未统一，不能用 9.88× 或 8.78× 文件替代它，也不将局部重跑结果记作新的完整验收。
 
 ## 较早真实运行记录：8.78×（2026-10-31）
 
