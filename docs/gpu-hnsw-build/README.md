@@ -7,6 +7,14 @@ raw results are in [radeon-20261031-entry](results/radeon-20261031-entry).
 The separate historical 8.0777× campaign remains in
 [radeon-20261030-cuvs](results/radeon-20261030-cuvs).
 
+An independent fresh-instance rebuild on 2026-10-31 measured **8.0192×**,
+with GPU Recall@10 of 1.000 / 0.999 / 1.000. It rebuilt published commit
+`0e86b8c3` without production changes; see the
+[fresh-instance report](RECHECK_20261031.md) and
+[separate raw results](results/radeon-20261031-recheck).
+Its [supplementary package](seekdb-hipvs-recheck-20261031.zip) freezes that
+measured version; the main submission package retains the later deployment fixes.
+
 `LIB=HIPVS` uses AMD hipVS to construct a CAGRA base graph on the GPU, converts
 it into a full mutable HNSW graph with a CPU hierarchy, and imports that graph
 into VSAG. The resulting index uses seekdb's normal query, filter, delta-update,

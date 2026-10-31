@@ -1,5 +1,10 @@
 # AMD hipVS HNSW construction measurements
 
+Latest independent rebuild: [2026-10-31 fresh-instance verification](RECHECK_20261031.md)
+measured **8.0192100014×** on the published CUVS implementation, with all
+six runs, DML/filter, hidden-GPU restart, SQL contracts, and kernel tracing
+passing. The earlier campaigns below remain separately identified.
+
 The original 8.208× campaign below is historical. A new full build with the
 course's `LIB=CUVS` alias measured **8.0776661036×**, with CPU/GPU medians
 25.114934700 / 3.109182080 seconds and Recall@10 0.996 / 1.000. All DML,
