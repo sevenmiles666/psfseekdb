@@ -1,4 +1,6 @@
-> **AMD GPU Notebook showcase:** [Seven-section demo and instructions](notebooks/seekdb-hipvs-batch-demo/) · [Executed notebook](notebooks/seekdb-hipvs-batch-demo/results/executed.ipynb). This course-image batch-query demonstration is recorded separately from the HNSW construction experiment.
+> **Competition entry — hipVS-accelerated HNSW construction:** [Build, install and SQL verification](docs/gpu-hnsw-build/SUBMISSION.md) · [Latest readiness audit and remaining gaps](docs/gpu-hnsw-build/READINESS_AUDIT_20261031.md).
+>
+> **Separate batch-query Notebook showcase:** [Instructions](notebooks/seekdb-hipvs-batch-demo/) · [Executed notebook](notebooks/seekdb-hipvs-batch-demo/results/executed.ipynb). This demonstration uses the course image's preinstalled binary; use the competition instructions above to evaluate this repository's HNSW construction code.
 
 <div align="center">
 

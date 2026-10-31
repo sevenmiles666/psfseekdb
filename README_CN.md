@@ -1,4 +1,6 @@
-> **AMD GPU Notebook 展示**：[七章流程与运行说明](notebooks/seekdb-hipvs-batch-demo/) · [已执行 Notebook](notebooks/seekdb-hipvs-batch-demo/results/executed.ipynb)。本演示基于课程镜像进行批量查询，与 HNSW 构建实验分别记录。
+> **赛事提交：使用 hipVS 加速 HNSW 索引构建**：[编译、安装与 SQL 验证](docs/gpu-hnsw-build/SUBMISSION.md) · [最新排查与未通过项目](docs/gpu-hnsw-build/READINESS_AUDIT_20261031.md)。
+>
+> **独立的批量查询 Notebook 展示**：[七章流程](notebooks/seekdb-hipvs-batch-demo/) · [已执行 Notebook](notebooks/seekdb-hipvs-batch-demo/results/executed.ipynb)。该演示依赖课程镜像的预装程序；验收本仓库的 HNSW 构建源码请使用上方赛事入口。
 
 <div align="center">
 
