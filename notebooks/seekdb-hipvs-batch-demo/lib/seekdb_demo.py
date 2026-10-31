@@ -90,6 +90,20 @@ def version():
 
 
 # ---------------- data ----------------
+def require_notebook_state(namespace, names, instruction):
+    """Report an interrupted/out-of-order notebook before using stale outputs."""
+    missing = [name for name in names if name not in namespace]
+    if missing:
+        raise RuntimeError("Notebook prerequisites missing: %s. %s" % (", ".join(missing), instruction))
+
+
+def _probe_vector(probe_id=1):
+    rows = sql_rows("use vec; select pv from probes_100 where id=%d" % probe_id)
+    if not rows or not rows[0] or rows[0][0] in (None, "NULL", ""):
+        raise RuntimeError("Probe %d is missing from probes_100. Run section 3 data preparation successfully before querying." % probe_id)
+    return rows[0][0]
+
+
 def _load_f32(path, n, dim):
     raw = open(path, "rb").read(n * dim * 4)
     return struct.unpack("<%df" % (n * dim), raw)
@@ -134,9 +148,8 @@ def setup_data(n_index=10000, probe_sizes=(100, 500, 1000, 2000, 4000), dim=128)
 def wait_index_ready(table="t_cuvs", k=10, timeout=90, floor=15):
     """Wait for the async vector-index build: a short floor, then poll a probe
     query until its top-k stabilises (more robust than a fixed sleep)."""
+    vec = _probe_vector()
     time.sleep(floor)
-    v = sql_rows("use vec; select pv from probes_100 where id=1")
-    vec = v[0][0] if v else None
     t0 = time.time(); last = None
     while vec and time.time() - t0 < timeout:
         rows = sql_rows("use vec; select c1 from %s order by l2_distance(c2,%s) "
@@ -144,10 +157,10 @@ def wait_index_ready(table="t_cuvs", k=10, timeout=90, floor=15):
         if len(rows) >= k:
             cur = tuple(r[0] for r in rows[:k])
             if cur == last:
-                break
+                return round(time.time() - t0 + floor)
             last = cur
         time.sleep(3)
-    return round(time.time() - t0 + floor)
+    raise TimeoutError("Vector index %s did not return stable top-%d results within %ss; data preparation is incomplete." % (table, k, timeout))
 
 
 # ---------------- benchmarks ----------------
@@ -190,8 +203,7 @@ def sweep(probe_sizes=(100, 500, 1000, 2000, 4000), k=10, warm=True):
 
 def single_query(table, probe_id=1, k=10):
     """Time one APPROXIMATE query (probe vector taken from probes_100)."""
-    rows = sql_rows("use vec; select pv from probes_100 where id=%d" % probe_id)
-    v = rows[0][0]
+    v = _probe_vector(probe_id)
     q = "use vec; select c1 from %s order by l2_distance(c2,%s) approximate limit %d;" % (table, v, k)
     return sql(q, timed=True)[0]
 

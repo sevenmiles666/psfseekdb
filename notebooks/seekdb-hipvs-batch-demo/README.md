@@ -1,5 +1,11 @@
 # seekdb × hipVS：AMD GPU 批量向量检索展示
 
+**2026-10-31 Notebook 状态修复**：已补齐启动单元自身需要的 `Path`/`time` 导入，增加数据准备和统计结果的前置检查；查询缺少探针、索引等待超时会明确报错。重新准备数据或测量失败后清除旧统计，避免保存的输出掩盖当前内核没有 `df` 的事实。
+
+修复版已在 Radeon Cloud **全新内核执行 11/11 代码单元成功**，9 项辅助回归通过。[本轮已执行 Notebook](results/state-fix/executed.ipynb) · [完整结果](results/state-fix/summary.json) · [源码及运行文件哈希](results/state-fix/execution.json)。本轮 N=4000：CPU 11614.0 ms、GPU 1175.1 ms，9.88×；CPU/GPU 批量 Recall@10 为 0.640/0.876。下面的 8.78× 表格及根 results 输出保留为此前版本的历史记录，不与本轮混用。
+
+交互运行请打开本目录的 **`seekdb_hipvs_batch_demo.ipynb`**，选择 **Restart Kernel and Run All Cells（重启内核并运行所有单元）**。须先完成第 3 节的启动及数据导入，再执行查询；显示着旧表格不代表重启后的内核中仍存在对应变量。不要在 `results` 子目录中执行已保存的 Notebook，那里仅用于查看记录。
+
 按用户提供的课程 Notebook 整理，完整包含环境自检、工作原理、启动与数据准备、单查对照、批量提速、召回检查和总结记分牌七部分。图表与结论由本次运行数据生成，不固定展示原截图中的 12.7×。
 
 [完整展示包](../seekdb-hipvs-batch-demo.zip)包含 Notebook、辅助代码、原始结果和回归测试，运行仍需下面说明的课程镜像依赖。
