@@ -1,5 +1,7 @@
 # seekdb × hipVS：AMD GPU 批量向量检索展示
 
+**最新完整复跑与声明核对**：[2026-10-31 报告](results/full-reproduction-20261031/README.md) · [全新内核已执行 Notebook](results/full-reproduction-20261031/executed.ipynb)。11 个代码单元顺序执行成功，本轮查询峰值 9.67×；额外检查实测结果集合不完全相同。Docker 原命令实际返回 127，当前云容器没有 Docker 且禁止用户命名空间，因此重新部署尚未完成。提供 [Docker 复现脚本](reproduce_docker.sh)和[路径核对脚本](verify_course_paths.py)，分别保留成功与受阻记录。
+
 需要手工填写课程 Notebook 时，请阅读[每个代码单元的完整内容及运行顺序](NOTEBOOK_CELLS_CN.md)。该说明也包含正确目录和旧版辅助库的识别方法。
 
 **用户后续运行记录**：[用户提供的 JSON 及来源说明](results/user-run-20261031/README.md) · [下载的 Notebook](results/user-run-20261031/downloaded.ipynb) · [批量耗时 CSV](results/user-run-20261031/summary.csv)。用户提供的最终 JSON 报告 8.15×、CPU/GPU Recall@10 为 0.640/0.880；下载的 Notebook 后来局部重跑到 9.42×，但召回、记分牌和最终 JSON 尚未更新，详见[一致性检查](results/user-run-20261031/notebook-check.json)。原始文件和两轮输出保留，与下面独立执行的 9.88× 记录分开保存。
@@ -24,11 +26,13 @@
 | [lib/](lib/) | 查询辅助代码、服务启动和进程管理 |
 | [run_demo.py](run_demo.py) / [requirements.txt](requirements.txt) | 从头执行入口与 Python 依赖 |
 | [NOTEBOOK_CELLS_CN.md](NOTEBOOK_CELLS_CN.md) | 全部 11 个代码单元及操作顺序 |
+| [reproduce_docker.sh](reproduce_docker.sh) / [verify_course_paths.py](verify_course_paths.py) | Linux GPU 主机上的 Docker 复现入口，以及两种索引与批量过程的实际结果核对 |
+| [results/full-reproduction-20261031/](results/full-reproduction-20261031/) | 最新 9.67× 全新内核执行记录、额外一致性核对、Docker 和 profiler 受阻证据 |
 | [results/user-run-20261031/](results/user-run-20261031/) | 用户下载的 Notebook、此前 8.15× JSON/CSV，以及局部重跑后 9.42× 输出与旧 JSON 不一致的核对记录 |
 | [results/state-fix/](results/state-fix/) | 修复版独立执行的 9.88× Notebook、JSON、CSV、图表与哈希记录 |
 | [results/executed.ipynb](results/executed.ipynb) | 较早 8.78× 运行的已执行 Notebook，保留历史输出 |
 
-完整展示包包含上面的源文件、辅助代码、三组已有记录和回归测试。用户下载的 Notebook 原样归档；其不同轮次输出尚未统一，不能用 9.88× 或 8.78× 文件替代它，也不将局部重跑结果记作新的完整验收。
+完整展示包包含上面的源文件、辅助代码、各组已有记录和回归测试。用户下载的 Notebook 原样归档，原来的不同轮次输出不变；最新完整复跑单独保存在 `full-reproduction-20261031/`，不将局部重跑结果记作新的完整验收。
 
 ## 较早真实运行记录：8.78×（2026-10-31）
 

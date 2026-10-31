@@ -11,9 +11,28 @@ root = Path(__file__).resolve().parents[3]
 spec = importlib.util.spec_from_file_location('batch_demo',root/'notebooks/seekdb-hipvs-batch-demo/lib/seekdb_demo.py')
 demo = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(demo)
+verify_spec = importlib.util.spec_from_file_location('course_path_checks', root/'notebooks/seekdb-hipvs-batch-demo/verify_course_paths.py')
+course_checks = importlib.util.module_from_spec(verify_spec)
+verify_spec.loader.exec_module(course_checks)
 
 
 class BatchDemoTest(unittest.TestCase):
+    def test_agreement_rejects_missing_or_duplicate_neighbors(self):
+        for rows in ([], [('0', '1')], [('0', '1'), ('0', '1')]):
+            with self.subTest(rows=rows):
+                with self.assertRaisesRegex(RuntimeError, 'exactly k distinct'):
+                    course_checks.group_results(rows, probes=1, k=2)
+        with self.assertRaisesRegex(RuntimeError, 'Unexpected probe'):
+            course_checks.group_results([('1', '2')], probes=1, k=1)
+
+    def test_agreement_reports_different_results_instead_of_success(self):
+        result = course_checks.agreement({0: {1, 2}, 1: {3, 4}}, {0: {1, 2}, 1: {3, 5}})
+        self.assertEqual(result['identical_topk_sets'], 1)
+        self.assertEqual(result['mean_topk_overlap'], 0.75)
+        for left, right in (({}, {}), ({0: set()}, {0: set()}), ({0: {1}}, {1: {1}})):
+            with self.assertRaises(RuntimeError):
+                course_checks.agreement(left, right)
+
     def test_missing_probe_has_actionable_error(self):
         with patch.object(demo,'sql_rows',return_value=[]):
             with self.assertRaisesRegex(RuntimeError,'section 3'):
