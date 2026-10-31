@@ -1,3 +1,5 @@
+> **AMD GPU Notebook showcase:** [Seven-section demo and instructions](notebooks/seekdb-hipvs-batch-demo/) · [Executed notebook](notebooks/seekdb-hipvs-batch-demo/results/executed.ipynb). This course-image batch-query demonstration is recorded separately from the HNSW construction experiment.
+
 <div align="center">
 
 <picture>

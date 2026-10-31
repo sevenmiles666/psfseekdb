@@ -1,3 +1,5 @@
+> **AMD GPU Notebook 展示**：[七章流程与运行说明](notebooks/seekdb-hipvs-batch-demo/) · [已执行 Notebook](notebooks/seekdb-hipvs-batch-demo/results/executed.ipynb)。本演示基于课程镜像进行批量查询，与 HNSW 构建实验分别记录。
+
 <div align="center">
 
 <picture>
