@@ -2,7 +2,7 @@
 
 需要手工填写课程 Notebook 时，请阅读[每个代码单元的完整内容及运行顺序](NOTEBOOK_CELLS_CN.md)。该说明也包含正确目录和旧版辅助库的识别方法。
 
-**用户后续运行记录**：[用户提供的 JSON 及来源说明](results/user-run-20261031/README.md)。该次报告 N=4000 的批量查询加速比为 8.15×，CPU/GPU Recall@10 为 0.640/0.880；与下面独立执行的 9.88× 记录分开保存。
+**用户后续运行记录**：[用户提供的 JSON 及来源说明](results/user-run-20261031/README.md) · [批量耗时 CSV](results/user-run-20261031/summary.csv)。该次报告 N=4000 的批量查询加速比为 8.15×，CPU/GPU Recall@10 为 0.640/0.880；与下面独立执行的 9.88× 记录分开保存。
 
 **2026-10-31 Notebook 状态修复**：已补齐启动单元自身需要的 `Path`/`time` 导入，增加数据准备和统计结果的前置检查；查询缺少探针、索引等待超时会明确报错。重新准备数据或测量失败后清除旧统计，避免保存的输出掩盖当前内核没有 `df` 的事实。
 
@@ -16,7 +16,21 @@
 
 **运行依赖**：课程 `seekdb-hipvs` 镜像预装的 `/seekdb_workspace/bin/seekdb`、`libseekdb_cuvs_bridge.so`、hipVS/ROCm 和数据集。本目录提供 Notebook、运行管理、查询辅助和验证代码；没有声称重新实现镜像内部的 GPU C++ 算子。仓库另一个 HNSW 构建项目测量的是建索引时间，本演示测量的是查询，两者分别记录。
 
-## 本次真实运行（2026-10-31）
+## 文件与运行记录
+
+| 文件或目录 | 用途 |
+| --- | --- |
+| [seekdb_hipvs_batch_demo.ipynb](seekdb_hipvs_batch_demo.ipynb) | 交互运行的源 Notebook，配合本目录 `lib/` 使用 |
+| [lib/](lib/) | 查询辅助代码、服务启动和进程管理 |
+| [run_demo.py](run_demo.py) / [requirements.txt](requirements.txt) | 从头执行入口与 Python 依赖 |
+| [NOTEBOOK_CELLS_CN.md](NOTEBOOK_CELLS_CN.md) | 全部 11 个代码单元及操作顺序 |
+| [results/user-run-20261031/](results/user-run-20261031/) | 用户提供的 8.15× JSON，以及从该 JSON 导出的 CSV；尚无此次完整已执行 `.ipynb` |
+| [results/state-fix/](results/state-fix/) | 修复版独立执行的 9.88× Notebook、JSON、CSV、图表与哈希记录 |
+| [results/executed.ipynb](results/executed.ipynb) | 较早 8.78× 运行的已执行 Notebook，保留历史输出 |
+
+完整展示包包含上面的源文件、辅助代码、三组已有记录和回归测试。8.15× 记录缺少此次完整已执行 Notebook，不能用 9.88× 或 8.78× 文件替代它。
+
+## 较早真实运行记录：8.78×（2026-10-31）
 
 | 探针数 N | CPU 毫秒 | GPU 毫秒 | 加速比 |
 | ---: | ---: | ---: | ---: |
@@ -99,4 +113,4 @@ CALL dbms_vector.batch_knn('t_cuvs','probes_4000',10,'bk_out');
 - `lib/sdb.py` 从本仓库 `.github/script/seekdb/sdb.py` 原样复用，保留其进程归属校验；`start_server.py` 增加端口归属保护，不使用原课程脚本中的递归删除方式。
 - 数据集、seekdb、hipVS/ROCm 二进制不加入本目录，使用课程镜像提供的版本。公开 Notebook 只显示 telemetry JSON 已解析，不打印完整运行标识。
 - 镜像工作区附带的 Apache-2.0 许可文本保留为 `LICENSE.course`；新增包装代码遵循仓库许可，不将课程原型冒称为本次独立开发的 GPU 后端。
-- 本目录不是 Qoder Sites 网站，也没有声称通过此演示完成另一赛题的索引构建验收。
+- 本目录是批量查询演示；本赛题的 HNSW 索引构建实现与验收见 [赛事提交说明](../../docs/gpu-hnsw-build/SUBMISSION.md)，查询结果不作为构建成绩。
