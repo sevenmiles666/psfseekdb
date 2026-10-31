@@ -76,6 +76,12 @@ add_executable(seekdb)
 if(OB_BUILD_HIPVS)
   add_dependencies(seekdb seekdb_hipvs_hnsw_worker)
 endif()
+# Release builds expose the same server component as the GPU worker. Without
+# the main executable, a successful component install cannot start a server.
+# Packaging profiles register their complete install layout in Pack.cmake.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT SEEKDB_CMAKE_PACKAGE_BUILD)
+  install(TARGETS seekdb RUNTIME DESTINATION usr/bin COMPONENT server)
+endif()
 if(WIN32)
   get_filename_component(CLANG_BIN_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
   get_filename_component(LLVM_ROOT ${CLANG_BIN_DIR} DIRECTORY)
