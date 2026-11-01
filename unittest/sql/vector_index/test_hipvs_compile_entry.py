@@ -29,6 +29,9 @@ class CompileEntryTest(unittest.TestCase):
         self.script = self.root / "compile.sh"
         # Write LF so a Windows checkout can be tested under WSL too.
         self.script.write_bytes((ROOT / ".github/script/seekdb/compile.sh").read_bytes().replace(b"\r\n", b"\n"))
+        entry = self.workspace / ".github/script/seekdb/compile.sh"
+        entry.parent.mkdir(parents=True)
+        entry.write_bytes(self.script.read_bytes())
         self.record = self.workspace / "args.json"
         (self.workspace / "build.sh").write_text(
             '#!/usr/bin/env bash\n'
@@ -114,6 +117,35 @@ class CompileEntryTest(unittest.TestCase):
     def test_build_failure_is_preserved(self):
         result = self.run_entry(MAKE_FAIL="1")
         self.assertEqual(result.returncode, 9)
+
+    def run_farm(self, profile=None, **overrides):
+        farm = self.root / "farm_compile.sh"
+        farm.write_bytes((ROOT / ".github/script/seekdb/scripts/farm_compile.sh").read_bytes().replace(b"\r\n", b"\n"))
+        # Wrap the real farm script so it exercises the real compile entry.
+        self.script = self.root / "run-farm.sh"
+        mode = 'unset PACKAGE_TYPE\n' if profile is None else f'export PACKAGE_TYPE={profile}\n'
+        self.script.write_text('#!/bin/bash\n' + mode +
+                               'export WORKSPACE="$GITHUB_WORKSPACE"\n' +
+                               f'exec bash "{farm}"\n')
+        return self.run_entry(**overrides)
+
+    def test_farm_default_reaches_release_with_gpu_enabled(self):
+        result = self.run_farm()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        args = json.loads(self.record.read_text())
+        self.assertEqual(args[0], "release")
+        self.assertIn("-DOB_BUILD_HIPVS=ON", args)
+
+    def test_farm_legacy_debug_uses_relwithdebinfo_profile(self):
+        result = self.run_farm("debug")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(self.record.read_text())[0], "release")
+        self.assertIn("legacy debug profile", result.stdout)
+
+    def test_farm_preserves_cpu_choice_and_build_failure(self):
+        result = self.run_farm("release", SEEKDB_BUILD_HIPVS="OFF", MAKE_FAIL="1")
+        self.assertEqual(result.returncode, 9)
+        self.assertIn("-DOB_BUILD_HIPVS=OFF", json.loads(self.record.read_text()))
 
 
 if __name__ == "__main__":

@@ -2,6 +2,8 @@
 
 **2026-11-01 最新完整验收**：已恢复 13 个上游打包原件，真实 TGZ 配置、完整 GPU 编译、CPack 两个运行包、解包启动、27 项 SQL、六轮 CPU/GPU 构建、增删改/过滤及隐藏 GPU 后重启均通过。本次 CPU/GPU 中位数 24.6685 / 3.1972 秒，加速 7.7157 倍，GPU Recall@10 为 1.000 / 0.999 / 0.999，重启后 1.000。编译提交 cfae4ba9、仅增时区数据的包提交 f18737e6 与后续文档提交分别追溯，见 [本轮完整报告](PACKAGING_AUDIT_20261101.md)及[原始证据](results/radeon-20261101-package/README.md)。下文旧日期的“完整 CPack 未通过”是当时状态；官方成绩仍以平台回执为准。
 
+**2026-11-01 旧入口补齐**：Farm 编译入口已复用 GPU 构建校验，修复默认使用不支持的 debug 命令；obtest 部署入口补齐 GPU worker/bridge 和失败检查。编译及部署共 17 项针对性回归通过，范围及运行方式见 [旧入口修复说明](SECONDARY_ENTRY_FIX_20261101.md)。未声称已定位或修复官方 `failMsg=8`。
+
 **2026-11-01 通用编译入口修复**：本 AMD 分支的 `.github/script/seekdb/compile.sh` 默认显式启用 CUVS/HIPVS，并核对配置及 GPU worker/bridge 产物，避免该入口静默生成 CPU 版本。8 项入口回归通过；未将其视作官方 `failMsg=8` 的已确认原因，也未声称本次完整重编译 GPU。用法、CPU 构建开关及验证范围见 [入口修复说明](COMPILE_ENTRY_FIX_20261101.md)。
 
 **最新排查与安装修复**：普通 Linux Release 的 `server` 组件已补齐 `seekdb` 主程序安装，避免安装返回成功但只有 worker/bridge；另增加外部 Cargo 并行数配置，允许资源受限时将嵌套编译也限制为单任务。新增部署检查、复现记录和仍未通过的完整打包/Bazel 路径见 [再次排查报告](READINESS_AUDIT_20261031.md)。本轮新实例的完整 GPU 验证因 SSH 拒绝连接而中断，用户报告“内核意外死亡”；以下历史成绩不代表本轮重新测量。

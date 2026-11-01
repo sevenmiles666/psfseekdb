@@ -2,7 +2,7 @@
 
 本轮修复了两个实际复现的打包缺口：缺少 `tools/systemd/profile` 原件导致 TGZ 配置失败，缺少 `tools/timezone_V1.log` 导致 CPack 安装阶段失败。全部 13 个文件从既有上游提交 `706253423cfbc7e907ebfe577109d74b152d6dbe` 原样恢复，逐文件 SHA256 与 Git blob 见 [来源记录](results/radeon-20261101-package/restored-package-provenance.json)。未修改 GPU 构图、查询或依赖版本。
 
-以平台最新失败提交 `6dc14ba31001c7e6b1db2fdf7acba0f7c60a6f41` 为父版本，`cfae4ba92b14d3010f7c7aa6a87d064dfd7c0075` 恢复 12 个 profile 并完成从空目录开始的完整 GPU TGZ 构建；`f18737e699ad0b29e38759fa821fec79e3940545` 仅再恢复时区数据，用同一二进制完成实际 CPack 和解包运行。最终交付的文档、证据和材料包在此后添加，未声称再次全量编译。
+以平台最新失败提交 `6dc14ba31001c7e6b1db2fdf7acba0f7c60a6f41` 为父版本，`cfae4ba92b14d3010f7c7aa6a87d064dfd7c0075` 恢复 12 个 profile 并完成从空目录开始的完整 GPU TGZ 构建；`f18737e699ad0b29e38759fa821fec79e3940545` 仅再恢复时区数据，用同一二进制完成实际 CPack 和解包运行。最终交付另合并远端 `5e35ceace74b4533ff88adfea84e58ecb2d0f42d` 的 Farm/obtest 入口修复，其 17 项 Linux 入口/部署回归单独执行，原始输出也收录在本轮证据。该合并只改变 shell 入口、对应测试和换行属性，没有改 C++、GPU 或 CMake 源码。文档、证据和材料包随后更新，未声称合并版再次全量编译。
 
 ## 真实验证结果
 
