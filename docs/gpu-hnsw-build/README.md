@@ -1,5 +1,7 @@
 # GPU construction of native HNSW indexes
 
+**2026-11-01 最新完整验收**：已恢复 13 个上游打包原件，真实 TGZ 配置、完整 GPU 编译、CPack 两个运行包、解包启动、27 项 SQL、六轮 CPU/GPU 构建、增删改/过滤及隐藏 GPU 后重启均通过。本次 CPU/GPU 中位数 24.6685 / 3.1972 秒，加速 7.7157 倍，GPU Recall@10 为 1.000 / 0.999 / 0.999，重启后 1.000。编译提交 cfae4ba9、仅增时区数据的包提交 f18737e6 与后续文档提交分别追溯，见 [本轮完整报告](PACKAGING_AUDIT_20261101.md)及[原始证据](results/radeon-20261101-package/README.md)。下文旧日期的“完整 CPack 未通过”是当时状态；官方成绩仍以平台回执为准。
+
 Latest submission: [Chinese instructions](SUBMISSION.md) and
 [2026-10-31 build/deployment acceptance](ENTRY_AUDIT_20261031.md).
 The fully rebuilt course-flag binary measured **7.7807×** construction speedup;
