@@ -324,6 +324,20 @@ if [ ${NEED_SHARE_CACHE} == "ON" ]; then
     fi
 fi
 
+# A warm dependency cache does not need extraction tools. On a cold cache,
+# report every missing RPM extractor before downloading the first package.
+if [[ "${IS_TAR_PLATFORM}" != "true" && "$ID" != "arch" && "$ID" != "garuda" ]]; then
+    missing_extractors=()
+    for extractor in rpm2cpio cpio; do
+        command -v "$extractor" >/dev/null 2>&1 || missing_extractors+=("$extractor")
+    done
+    if (( ${#missing_extractors[@]} > 0 )); then
+        echo_err "missing RPM extraction tools: ${missing_extractors[*]}"
+        echo_err "install rpm2cpio and cpio (Debian/Ubuntu: apt-get install rpm2cpio cpio)"
+        exit 1
+    fi
+fi
+
 if [[ ! -f "${DEP_FILE}" ]]; then
     echo_err "check dependencies profile for ${DEP_FILE}... NOT FOUND"
     exit 2

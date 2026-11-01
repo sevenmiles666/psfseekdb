@@ -1,5 +1,7 @@
 # seekdb：使用 AMD hipVS 加速 HNSW 索引构建
 
+**2026-11-01 原生入口排查**：在镜像默认 PATH 下复现原入口因缺 RPM 解包工具退出 5，原 Rust 初始化因缺 rustup 退出 127。新增精确 Rust 版本准备、失败阶段日志及冷缓存前提诊断；23 项 Linux 回归通过，真实依赖初始化及 GPU 配置通过，并刻意在主编译前停止。系统 RPM 解包工具仍须由构建环境提供。验证范围、缓存条件和官方根因未确认的边界见 [环境排查报告](ENTRY_ENVIRONMENT_AUDIT_20261101.md)。
+
 **2026-11-01 最新完整验收**：已恢复 13 个上游打包原件，真实 TGZ 配置、完整 GPU 编译、CPack 两个运行包、解包启动、27 项 SQL、六轮 CPU/GPU 构建、增删改/过滤及隐藏 GPU 后重启均通过。本次 CPU/GPU 中位数 24.6685 / 3.1972 秒，加速 7.7157 倍，GPU Recall@10 为 1.000 / 0.999 / 0.999，重启后 1.000。编译提交 cfae4ba9、仅增时区数据的包提交 f18737e6 与后续文档提交分别追溯，见 [本轮完整报告](PACKAGING_AUDIT_20261101.md)及[原始证据](results/radeon-20261101-package/README.md)。下文旧日期的“完整 CPack 未通过”是当时状态；官方成绩仍以平台回执为准。
 
 **2026-11-01 旧入口补齐**：Farm 编译入口已复用 GPU 构建校验，修复默认使用不支持的 debug 命令；obtest 部署入口补齐 GPU worker/bridge 和失败检查。编译及部署共 17 项针对性回归通过，范围及运行方式见 [旧入口修复说明](SECONDARY_ENTRY_FIX_20261101.md)。未声称已定位或修复官方 `failMsg=8`。
@@ -71,9 +73,9 @@ export CARGO_BUILD_JOBS=1
 make -C build_release -j1 seekdb
 ```
 
-已有依赖的课程镜像可按 seekdb 原构建说明复用依赖缓存，不必重复初始化。本次实际使用镜像的 `/opt/seekdb-deps-cache/.../3rd`。主程序为本次源码重新构建，未使用镜像预装的 seekdb 演示二进制。
+依赖缓存必须对应当前源码清单；不能仅凭镜像存在旧目录就跳过初始化。此前完整 GPU 验收复用了镜像的 `/opt/seekdb-deps-cache/.../3rd`，本次原生入口补验另按精确清单真实初始化私有缓存。冷缓存的 Ubuntu 环境需先安装 `rpm2cpio/cpio`，见环境排查报告。主程序为源码重新构建，未使用镜像预装的 seekdb 演示二进制。
 
-Windows 导出源码时须保留 Linux LF 换行。镜像自带 Rust 1.97.1 低于仓库锁定版本，本次使用独立安装目录的 1.98.1，并核对官方安装包 SHA-256；清单见 [rust-packages.json](results/radeon-20261030-cuvs/rust-packages.json)。本次解析后的 Rust 依赖锁文件也已保存。
+Windows 导出源码时须保留 Linux LF 换行。镜像自带 Rust 1.97.1 低于仓库锁定版本；当前 native init 和通用编译入口会准备并核对 1.98.1。此前完整 GPU 验收使用手工准备的独立工具链，其官方包校验和解析后的锁文件仍按原始证据保留；不能据此宣称此前已验证自动初始化入口。
 
 ## 启动与验证样例
 

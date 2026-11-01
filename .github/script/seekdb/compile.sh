@@ -4,7 +4,8 @@
 # Optional: FORWARDING_HOST, MAKE_ARGS, DEP_CACHE_DIR, CCACHE_DIR,
 #           SEEKDB_CCACHE_MAX_SIZE, SEEKDB_BUILD_HIPVS (ON by default on this
 #           AMD competition branch; explicitly set OFF for a CPU build),
-#           HIPVS_ROOT, ROCM_ROOT
+#           HIPVS_ROOT, ROCM_ROOT, SEEKDB_RUST_INSTALL_ROOT,
+#           RUSTUP_INIT_URL, RUSTUP_DIST_SERVER, RUSTUP_UPDATE_ROOT
 
 if [[ -f ~/.bashrc ]]; then
   # shellcheck disable=SC1090
@@ -40,6 +41,8 @@ BUILD_TARGET="${PACKAGE_TYPE:-debug}"
 BUILD_DIR="build_${BUILD_TARGET}"
 compile_ret=0
 compile_start=$SECONDS
+compile_phase=preflight
+trap 'compile_status=$?; echo "[compile.sh] final phase=$compile_phase exit=$compile_status" >&2' EXIT
 
 # This branch submits the AMD backend. Do not silently use the project's
 # CPU-only default when the judge enters through this generic build script.
@@ -64,8 +67,22 @@ if [[ ! -f "$WORKSPACE/build.sh" ]]; then
   echo "[compile.sh] No build.sh at $WORKSPACE/build.sh" >&2
   exit 1
 else
+  # The Radeon image ships standalone Rust 1.97.1 without rustup. Prepare
+  # the repository pin in this shell so both build.sh invocations inherit it.
+  phase_start=$SECONDS
+  compile_phase=rust-toolchain
+  # shellcheck source=deps/init/setup_rust.sh
+  source "$WORKSPACE/deps/init/setup_rust.sh"
+  export SEEKDB_RUST_INSTALL_ROOT="${SEEKDB_RUST_INSTALL_ROOT:-$TASK_DIR/rust}"
+  seekdb_prepare_rust "$WORKSPACE" "$SEEKDB_RUST_INSTALL_ROOT" || exit $?
+  echo "[compile.sh] cargo=$(command -v cargo) rustc=$(command -v rustc)"
+  cargo --version
+  rustc --version
+  echo "[compile.sh] rust setup elapsed=$((SECONDS - phase_start))s"
+
   # Step 1: Build init（与 buildbase 一致，只传 init，先拉取/安装 deps 再才能用 cmake）
   phase_start=$SECONDS
+  compile_phase=dependencies
   set +e
   bash "$WORKSPACE/build.sh" init 2>&1 | tee "$TASK_DIR/compile_init.output"
   phase_ret=${PIPESTATUS[0]}
@@ -83,6 +100,7 @@ else
   fi
 
   phase_start=$SECONDS
+  compile_phase=configure
   set +e
   bash "$WORKSPACE/build.sh" "$BUILD_TARGET" "${CONFIGURE_ARGS[@]}" 2>&1 | tee "$TASK_DIR/compile_configure.output"
   phase_ret=${PIPESTATUS[0]}
@@ -104,6 +122,7 @@ else
     ccache -z || true
   fi
   phase_start=$SECONDS
+  compile_phase=build
   # MAKE and MAKE_ARGS intentionally support a command plus separate arguments.
   # shellcheck disable=SC2086
   (cd "$WORKSPACE/$BUILD_DIR" && $MAKE $MAKE_ARGS seekdb) 2>&1 | tee "$TASK_DIR/compile.output"
@@ -114,6 +133,7 @@ else
   fi
   set -e
   if [[ $compile_ret -eq 0 && "$GPU_BUILD" == ON ]]; then
+    compile_phase=gpu-artifacts
     if [[ ! -x "$WORKSPACE/$BUILD_DIR/src/observer/seekdb_hipvs_hnsw_worker" ||
           ! -s "$WORKSPACE/$BUILD_DIR/lib/libseekdb_hipvs_hnsw.so" ]]; then
       echo "[compile.sh] GPU build is incomplete: worker or bridge missing" >&2
@@ -123,5 +143,8 @@ else
   fi
 fi
 
+if [[ $compile_ret -eq 0 ]]; then
+  compile_phase=complete
+fi
 echo "[compile.sh] total elapsed=$((SECONDS - compile_start))s"
 exit "$compile_ret"

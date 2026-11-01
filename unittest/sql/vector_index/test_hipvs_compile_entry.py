@@ -32,6 +32,18 @@ class CompileEntryTest(unittest.TestCase):
         entry = self.workspace / ".github/script/seekdb/compile.sh"
         entry.parent.mkdir(parents=True)
         entry.write_bytes(self.script.read_bytes())
+        setup = self.workspace / "deps/init/setup_rust.sh"
+        setup.parent.mkdir(parents=True)
+        setup.write_bytes((ROOT / "deps/init/setup_rust.sh").read_bytes())
+        manifest = self.workspace / "rust/rust-toolchain.toml"
+        manifest.parent.mkdir()
+        manifest.write_text('[toolchain]\nchannel = "1.98.1"\n')
+        self.tools = self.root / "tools"
+        self.tools.mkdir()
+        for name in ("cargo", "rustc"):
+            tool = self.tools / name
+            tool.write_text(f'#!/bin/sh\necho "{name} 1.98.1 (fixture)"\n')
+            tool.chmod(0o755)
         self.record = self.workspace / "args.json"
         (self.workspace / "build.sh").write_text(
             '#!/usr/bin/env bash\n'
@@ -65,7 +77,7 @@ class CompileEntryTest(unittest.TestCase):
             env.pop(name, None)
         env.update(HOME=str(self.home), GITHUB_WORKSPACE=str(self.workspace),
                    SEEKDB_TASK_DIR=str(self.task), MAKE=str(self.make), MAKE_ARGS="-j1",
-                   PACKAGE_TYPE="release")
+                   PACKAGE_TYPE="release", PATH=str(self.tools) + os.pathsep + env["PATH"])
         env.update(overrides)
         return subprocess.run(["bash", str(self.script)], env=env, text=True,
                               capture_output=True, timeout=30)
