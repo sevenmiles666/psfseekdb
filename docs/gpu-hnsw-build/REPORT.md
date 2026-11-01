@@ -1,6 +1,8 @@
 # AMD hipVS HNSW construction measurements
 
-Latest independent rebuild: [2026-10-31 fresh-instance verification](RECHECK_20261031.md)
+**2026-11-01 当前验收（4855acac7）**：最小镜像中29个真实RPM无系统安装完成初始化，28项Linux回归、完整GPU TGZ构建、真实CPack、27项SQL、六轮CPU/GPU、DML/过滤及隐藏GPU重启均通过；中位数24.9432/2.9940秒，加速8.3310倍。独立空缓存Rust安装最终完成（约61分钟，原包装器一小时超时单独保留），TGZ和默认Release真实入口通过初始化/配置检查。版本、缓存条件、日志轮转限制和原始证据见[本轮报告](COLD_ENTRY_AUDIT_20261101.md)。以下较早结果保留原版本归属；本地验收不能替代正式成绩。
+
+Earlier independent rebuild: [2026-10-31 fresh-instance verification](RECHECK_20261031.md)
 measured **8.0192100014×** on the published CUVS implementation, with all
 six runs, DML/filter, hidden-GPU restart, SQL contracts, and kernel tracing
 passing. The earlier campaigns below remain separately identified.
