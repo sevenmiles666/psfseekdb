@@ -1,6 +1,8 @@
 # seekdb × hipVS：AMD GPU 批量向量检索展示
 
-**最新完整复跑与声明核对**：[2026-10-31 报告](results/full-reproduction-20261031/README.md) · [全新内核已执行 Notebook](results/full-reproduction-20261031/executed.ipynb)。11 个代码单元顺序执行成功，本轮查询峰值 9.67×；额外检查实测结果集合不完全相同。Docker 原命令实际返回 127，当前云容器没有 Docker 且禁止用户命名空间，因此重新部署尚未完成。提供 [Docker 复现脚本](reproduce_docker.sh)和[路径核对脚本](verify_course_paths.py)，分别保留成功与受阻记录。
+**2026-11-01 原目录单文件修复**：[同名 Notebook 与逐步替换说明](original-file/README.md) · [实际验证](results/original-file-run-20261101/README.md)。修复用户这次提供的原文件，保留原目录和数据库路径，不修改磁盘上的原 `lib/seekdb_demo.py`。11 个代码单元全新执行成功，查询峰值 9.33×，此结果与下面各轮单独保存。
+
+**2026-10-31 完整复跑与声明核对**：[报告](results/full-reproduction-20261031/README.md) · [全新内核已执行 Notebook](results/full-reproduction-20261031/executed.ipynb)。11 个代码单元顺序执行成功，该轮查询峰值 9.67×；额外检查实测结果集合不完全相同。Docker 原命令实际返回 127，当前云容器没有 Docker 且禁止用户命名空间，因此重新部署尚未完成。提供 [Docker 复现脚本](reproduce_docker.sh)和[路径核对脚本](verify_course_paths.py)，分别保留成功与受阻记录。
 
 需要手工填写课程 Notebook 时，请阅读[每个代码单元的完整内容及运行顺序](NOTEBOOK_CELLS_CN.md)。该说明也包含正确目录和旧版辅助库的识别方法。
 
@@ -26,6 +28,8 @@
 | [lib/](lib/) | 查询辅助代码、服务启动和进程管理 |
 | [run_demo.py](run_demo.py) / [requirements.txt](requirements.txt) | 从头执行入口与 Python 依赖 |
 | [NOTEBOOK_CELLS_CN.md](NOTEBOOK_CELLS_CN.md) | 全部 11 个代码单元及操作顺序 |
+| [original-file/](original-file/) | 保持课程原文件名、无需更换原 lib 文件的单 Notebook 修复及操作步骤 |
+| [results/original-file-run-20261101/](results/original-file-run-20261101/) | 原目录验证的 9.33× 完整执行记录和原 helper 未修改、服务复用证据 |
 | [reproduce_docker.sh](reproduce_docker.sh) / [verify_course_paths.py](verify_course_paths.py) | Linux GPU 主机上的 Docker 复现入口，以及两种索引与批量过程的实际结果核对 |
 | [results/full-reproduction-20261031/](results/full-reproduction-20261031/) | 最新 9.67× 全新内核执行记录、额外一致性核对、Docker 和 profiler 受阻证据 |
 | [results/user-run-20261031/](results/user-run-20261031/) | 用户下载的 Notebook、此前 8.15× JSON/CSV，以及局部重跑后 9.42× 输出与旧 JSON 不一致的核对记录 |

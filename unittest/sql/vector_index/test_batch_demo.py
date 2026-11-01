@@ -1,4 +1,5 @@
 import importlib.util
+import ast
 import json
 from types import SimpleNamespace
 from pathlib import Path
@@ -16,7 +17,40 @@ course_checks = importlib.util.module_from_spec(verify_spec)
 verify_spec.loader.exec_module(course_checks)
 
 
+def original_notebook_runtime():
+    path = root/'notebooks/seekdb-hipvs-batch-demo/original-file/seekdb_hipvs_batch_demo_executed.ipynb'
+    notebook = json.loads(path.read_text(encoding='utf-8'))
+    code = ''.join(notebook['cells'][2]['source']).replace('%matplotlib inline', '')
+    tree = ast.parse(code)
+    source = next(ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
+                  and any(isinstance(target, ast.Name) and target.id == '_COURSE_RUNTIME_FIXES' for target in node.targets))
+    namespace = dict(vars(demo))
+    exec(compile(source, 'course_notebook_runtime_fixes', 'exec'), namespace)
+    return namespace
+
+
 class BatchDemoTest(unittest.TestCase):
+    def test_original_notebook_repair_reports_sql_errors(self):
+        runtime = original_notebook_runtime()
+        error = subprocess.CompletedProcess(['mysql'], 1, stdout='', stderr='ERROR: query failed')
+        with patch.object(subprocess, 'run', return_value=error):
+            with self.assertRaisesRegex(RuntimeError, 'query failed'):
+                runtime['sql']('select 1', timed=True)
+
+    def test_original_notebook_repair_checks_missing_probe(self):
+        runtime = original_notebook_runtime()
+        runtime['sql_rows'] = lambda query: []
+        with self.assertRaisesRegex(RuntimeError, 'section 3'):
+            runtime['single_query']('t_cuvs')
+
+    def test_original_notebook_does_not_replace_foreign_server(self):
+        runtime = original_notebook_runtime()
+        with patch('pathlib.Path.is_file', return_value=True), patch('pathlib.Path.iterdir', return_value=[]), \
+             patch('socket.create_connection'), patch.object(subprocess, 'Popen') as spawn:
+            with self.assertRaisesRegex(RuntimeError, 'belongs to another server'):
+                runtime['start_observer']('/workspace/run/obs1')
+            spawn.assert_not_called()
+
     def test_agreement_rejects_missing_or_duplicate_neighbors(self):
         for rows in ([], [('0', '1')], [('0', '1'), ('0', '1')]):
             with self.subTest(rows=rows):
