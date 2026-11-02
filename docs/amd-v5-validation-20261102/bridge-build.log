@@ -1,0 +1,2 @@
+{"command": ["bash", "tools/hipvs_bridge/build.sh", "/workspace/amd-v5-repair-20261102/bridge/libseekdb_cuvs_bridge.so"]}
+built /workspace/amd-v5-repair-20261102/bridge/libseekdb_cuvs_bridge.so

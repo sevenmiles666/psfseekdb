@@ -1,0 +1,60 @@
+{
+  "completed": true,
+  "source_commit": "d4840ee3ea658250810883a63b299b428290d3c0",
+  "scope": "V5 baseline eligibility and small SQL smoke; not formal 250K/4096 judging or a speedup claim",
+  "datasets": [
+    {
+      "name": "sift10k",
+      "rows": 10000,
+      "dimension": 128,
+      "queries": 64,
+      "topk": {
+        "10": {
+          "recall_at_k": 1.0,
+          "complete_unique_legal_ids": true
+        },
+        "100": {
+          "recall_at_k": 1.0,
+          "complete_unique_legal_ids": true
+        }
+      },
+      "ddl_seconds": 1.6998554160818458
+    },
+    {
+      "name": "generated256",
+      "rows": 10000,
+      "dimension": 256,
+      "queries": 64,
+      "topk": {
+        "10": {
+          "recall_at_k": 1.0,
+          "complete_unique_legal_ids": true
+        },
+        "100": {
+          "recall_at_k": 1.0,
+          "complete_unique_legal_ids": true
+        }
+      },
+      "ddl_seconds": 1.5162042398005724
+    }
+  ],
+  "stage": "passed",
+  "updated_utc": "2026-11-02T11:10:10Z",
+  "gpu_device_fds": [
+    "/dev/kfd",
+    "/dev/dri/renderD129"
+  ],
+  "cpu_vsag_basic_query": true,
+  "restart": {
+    "items_sift10k": {
+      "recall_at_100": 1.0,
+      "complete_unique_legal_ids": true
+    },
+    "items_generated256": {
+      "recall_at_100": 1.0,
+      "complete_unique_legal_ids": true
+    }
+  },
+  "snapshot_events_captured": 4,
+  "timing_note": "The legacy ddl_seconds field includes independent ground-truth preparation after DDL; it is not a formal build timing. No performance claim is made."
+}

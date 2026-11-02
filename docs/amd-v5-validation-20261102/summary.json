@@ -1,0 +1,92 @@
+{
+  "completed": true,
+  "source_commit": "d4840ee3ea658250810883a63b299b428290d3c0",
+  "official_v5": "634888d9b037153fa143d2c913ba4b25503e1d62",
+  "official_v5_ancestor_exit": 0,
+  "product_diff_from_v5": false,
+  "performance_optimization": false,
+  "official_score": null,
+  "build_entry": "official V5 bridge + Release with CUVS ON and TRACE OFF",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "prepared_rpm_packages": 30,
+  "locked_cargo_packages": 70,
+  "optional_package_unavailable": {
+    "name": "obshell-4.5.0.1-52026082614.el8.x86_64.rpm",
+    "url": "https://mirrors.oceanbase.com/oceanbase/community/stable/el/8/x86_64/obshell-4.5.0.1-52026082614.el8.x86_64.rpm",
+    "http_status": 404,
+    "scope": "not needed by core Release build; full packaging not validated"
+  },
+  "binary_sha256": "835370b020476cefb859bea9161583f0a9099736b89c4c5adf61da3031c240f2",
+  "bridge_sha256": "030b36246e3fc4e92743e432d00979f7a729fdf36fb8b6ff482b75fb008e9da6",
+  "datasets": [
+    {
+      "name": "sift10k",
+      "rows": 10000,
+      "dimension": 128,
+      "queries": 64,
+      "topk": {
+        "10": {
+          "recall_at_k": 1.0,
+          "complete_unique_legal_ids": true
+        },
+        "100": {
+          "recall_at_k": 1.0,
+          "complete_unique_legal_ids": true
+        }
+      },
+      "ddl_plus_ground_truth_seconds": 1.6998554160818458
+    },
+    {
+      "name": "generated256",
+      "rows": 10000,
+      "dimension": 256,
+      "queries": 64,
+      "topk": {
+        "10": {
+          "recall_at_k": 1.0,
+          "complete_unique_legal_ids": true
+        },
+        "100": {
+          "recall_at_k": 1.0,
+          "complete_unique_legal_ids": true
+        }
+      },
+      "ddl_plus_ground_truth_seconds": 1.5162042398005724
+    }
+  ],
+  "restart": {
+    "items_sift10k": {
+      "recall_at_100": 1.0,
+      "complete_unique_legal_ids": true
+    },
+    "items_generated256": {
+      "recall_at_100": 1.0,
+      "complete_unique_legal_ids": true
+    }
+  },
+  "cpu_vsag_basic_query": true,
+  "gpu_device_fds": [
+    "/dev/kfd",
+    "/dev/dri/renderD129"
+  ],
+  "snapshot_events": 4,
+  "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+  "finished_utc": "2026-11-02T11:12:39Z",
+  "limitations": [
+    "No official 250K datasets or nq=4096 performance acceptance",
+    "No claimed speedup over V5; product code unchanged",
+    "No CPack/RPM/DEB validation; optional obshell URL returned 404",
+    "Prepared dependency cache supplied to native build; not organizer private offline image"
+  ],
+  "data_sources": {
+    "/seekdb_workspace/datasets/base.f32": {
+      "bytes": 5120000,
+      "sha256": "87adaaad625b3bd309a8292e43d342a3dfb4094e990a404b2290d8880269a442"
+    },
+    "/seekdb_workspace/datasets/query.f32": {
+      "bytes": 51200,
+      "sha256": "b51c0999f4e93ad1aa03b2e9b3185f38f2873f43a3ba1dca119825637e8f26f4"
+    }
+  }
+}

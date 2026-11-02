@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "test_source": "official frozen V5 test_persistence.cpp",
+  "rows": 10000,
+  "dimension": 32,
+  "snapshot_write_read": true,
+  "shape_mismatch_rejected": true,
+  "not_an_official_score": true
+}

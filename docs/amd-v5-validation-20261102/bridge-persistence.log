@@ -1,0 +1,9 @@
+{"command": ["/opt/rocm/bin/hipcc", "-O2", "-I/workspace/amd-v5-repair-20261102/source/tools/hipvs_bridge", "/workspace/amd-v5-repair-20261102/source/tools/hipvs_bridge/test_persistence.cpp", "-L/workspace/amd-v5-repair-20261102/bridge", "-lseekdb_cuvs_bridge", "-o", "/workspace/amd-v5-repair-20261102/bridge/persistence-test"]}
+{"command": ["/workspace/amd-v5-repair-20261102/bridge/persistence-test", "write", "/workspace/amd-v5-repair-20261102/bridge/persisted.cagra"]}
+write: n=10000 top1=0 distance=0
+{"command": ["/workspace/amd-v5-repair-20261102/bridge/persistence-test", "read", "/workspace/amd-v5-repair-20261102/bridge/persisted.cagra"]}
+[seekdb_cuvs] snapshot shape mismatch: 10000 x 32, expected 9999 x 32
+[seekdb_cuvs] deserialize failed: (null)
+[seekdb_cuvs] snapshot shape mismatch: 10000 x 32, expected 10000 x 33
+[seekdb_cuvs] deserialize failed: (null)
+read: n=10000 top1=0 distance=0

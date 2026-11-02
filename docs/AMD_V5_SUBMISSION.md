@@ -16,6 +16,10 @@ https://github.com/AMD-DEV-CONTEST/Oceanbase-2026-competition-AMD-Doc
 bridge ABI 及 CPU VSAG 基本功能，不迁入旧版“GPU 构图后改用 CPU VSAG 查询”的实现。
 本提交只增加资格检查脚本和说明；尚未新增性能优化，不承诺正式分数或完整隐藏用例通过。
 
+**2026-11-02 验证完成**：本机及 GPU 实例的 V5 祖先检查通过；官方 bridge 与完整 Release 构建通过，
+128/256 维各 10K 行的 Top-10/100、GPU 快照重载和 CPU VSAG 基本查询通过。
+范围、原始记录及 obshell 下载 404 的安装包限制见 [验证报告](AMD_V5_VALIDATION.md)。
+
 在仓库根目录执行：
 
 ```bash
