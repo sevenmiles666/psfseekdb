@@ -1,5 +1,9 @@
 # AMD V5 性能优化与配对验证
 
+这是第一轮优化记录；后续 `competition/amd-v5-perf2` 的参数、配对结果和
+原始证据见 [第二轮性能优化](AMD_V5_PERFORMANCE_2.md)。本页保留原测量，
+不将不同版本的结果混用。
+
 优化分支：`competition/amd-v5-perf`，从 `df1c8f48785294c120755c28da163249c43fd21d`
 建立，仍包含冻结 V5 `634888d9b037153fa143d2c913ba4b25503e1d62`。
 原 `competition/amd-v5-fix` 分支保留，便于回退。

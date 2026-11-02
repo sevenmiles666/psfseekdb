@@ -6,6 +6,9 @@
 后续性能改动位于其后代分支 `competition/amd-v5-perf`，见
 [性能优化与配对验证](AMD_V5_PERFORMANCE.md)。下面记录基础恢复版本的范围。
 
+第二轮优化位于 `competition/amd-v5-perf2`，见
+[第二轮性能优化](AMD_V5_PERFORMANCE_2.md)。原分支和提交均保留。
+
 官方来源：
 https://github.com/AMD-DEV-CONTEST/Oceanbase-2026-competition-AMD-Doc
 

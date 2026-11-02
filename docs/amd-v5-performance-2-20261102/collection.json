@@ -1,0 +1,56 @@
+{
+  "evidence_bytes": 33751584,
+  "evidence_sha256": "987bf4152b9752ab807d775f9701018e5947546d8ae2bdf4a0c7c721957eef58",
+  "compared_with_scored": [
+    {
+      "dataset": "sift250k",
+      "scored_seconds": [
+        17.118102258071303,
+        18.128673005849123,
+        17.543847996741533
+      ],
+      "selected_seconds": [
+        12.159499954432249,
+        12.046195665374398,
+        12.092234337702394
+      ],
+      "scored_median": 17.543847996741533,
+      "selected_median": 12.092234337702394,
+      "speedup_over_scored": 1.450835925503159
+    },
+    {
+      "dataset": "gaussian256",
+      "scored_seconds": [
+        18.71823820285499,
+        19.232818480581045,
+        19.17958800122142
+      ],
+      "selected_seconds": [
+        14.886526849120855,
+        14.48556031100452,
+        15.19437912106514
+      ],
+      "scored_median": 19.17958800122142,
+      "selected_median": 14.886526849120855,
+      "speedup_over_scored": 1.2883856789170467
+    }
+  ],
+  "execution": {
+    "completed": true,
+    "utc": "2026-11-02T15:50:10Z",
+    "frozen_commit": "634888d9b037153fa143d2c913ba4b25503e1d62",
+    "scored_commit": "f224065668dbf09bbfd24154321637235cf79baf",
+    "main_source_commit": "d4840ee3ea658250810883a63b299b428290d3c0",
+    "scope": "public/generated paired GPU development validation; not official Hidden data or score",
+    "sha256": {
+      "release-selected/seekdb_cuvs_bridge.c": "970959e84fae685a9264c44935aa470280ba6f32c4aba9cdcdf16ab0edf19d18",
+      "release-selected/libseekdb_cuvs_bridge.so": "4410574cf5184aa8cd6f3b1dd1b869e653c27ef01f52db9737d8cb2a6d06556c",
+      "frozen-100-w4/libseekdb_cuvs_bridge.so": "030b36246e3fc4e92743e432d00979f7a729fdf36fb8b6ff482b75fb008e9da6",
+      "scored-80-w16/libseekdb_cuvs_bridge.so": "6da366a8a1cee20732d2dd7ba04d1a1a944b49ccad83591347a86be9b999da46",
+      "source/build_release/src/observer/seekdb": "9b6673109ec8439b7e55b772fd41b6aa695b98be2ec55e5929ab65ebc8a8397a",
+      "benchmark_bridge.py": "a6174bc0f77de0c1a051aff3209aaff1bc303cbe0f760481895bf1cf3f6cd085",
+      "benchmark_sql.py": "6260e32578e1229062b5e71ddf73e40c69bb3b9662201d54c8d6f8b04262a3ee"
+    },
+    "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "scope": "independent generated seed 20261103, not official Hidden",
+  "recall": {
+    "10": {
+      "candidate_worst": 0.9506103515625002,
+      "threshold": 0.94587890625,
+      "passed": true
+    },
+    "100": {
+      "candidate_worst": 0.904912109375,
+      "threshold": 0.89369384765625,
+      "passed": true
+    }
+  },
+  "query_ratio": 1.0232410633611995,
+  "vram_ratio": 1.0,
+  "passed": true
+}

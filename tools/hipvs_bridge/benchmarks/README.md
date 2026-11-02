@@ -1,5 +1,9 @@
 # V5 GPU paired benchmarks
 
+Paired tuning reports: [first round](../../../docs/AMD_V5_PERFORMANCE.md),
+[second round](../../../docs/AMD_V5_PERFORMANCE_2.md). Each report keeps its own
+source hashes and results; do not combine measurements from different builds.
+
 These are development benchmarks, not the private official scoring harness.
 Run on Linux x86-64 with AMD GPU, ROCm 7.2.4, hipVS and a GPU-enabled V5 seekdb.
 Python dependencies used for validation: NumPy 2.4.6 and PyMySQL 1.1.2.
