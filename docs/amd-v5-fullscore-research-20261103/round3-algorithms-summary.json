@@ -1,0 +1,86 @@
+[
+  {
+    "label": "r3-iter192",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.9552978515625001,
+        "threshold": 0.9466845703125001,
+        "passed": true
+      },
+      "100": {
+        "value": 0.907138671875,
+        "threshold": 0.89474853515625,
+        "passed": true
+      }
+    },
+    "query_ratio": 0.8480522270079649,
+    "build_ratio": 0.3741013212319176,
+    "vram_ratio": 0.5880011512385552,
+    "passed": false
+  },
+  {
+    "label": "r3-iter256",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.9550537109375001,
+        "threshold": 0.9466845703125001,
+        "passed": true
+      },
+      "100": {
+        "value": 0.9059033203125,
+        "threshold": 0.89474853515625,
+        "passed": true
+      }
+    },
+    "query_ratio": 0.8327239447509848,
+    "build_ratio": 0.2741623275877587,
+    "vram_ratio": 0.588232697338951,
+    "passed": false
+  },
+  {
+    "label": "r3-pq64",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.959912109375,
+        "threshold": 0.9466845703125001,
+        "passed": true
+      },
+      "100": {
+        "value": 0.91500732421875,
+        "threshold": 0.89474853515625,
+        "passed": true
+      }
+    },
+    "query_ratio": 0.8463811066370481,
+    "build_ratio": 0.41543222324092793,
+    "vram_ratio": 2.126515490866913,
+    "passed": false
+  },
+  {
+    "label": "r3-pq128",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.96259765625,
+        "threshold": 0.9466845703125001,
+        "passed": true
+      },
+      "100": {
+        "value": 0.91864990234375,
+        "threshold": 0.89474853515625,
+        "passed": true
+      }
+    },
+    "query_ratio": 0.842430800980442,
+    "build_ratio": 0.26256319892134855,
+    "vram_ratio": 2.0817820826597937,
+    "passed": false
+  }
+]

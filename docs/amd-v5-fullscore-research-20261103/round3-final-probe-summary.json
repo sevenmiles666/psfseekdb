@@ -1,0 +1,42 @@
+[
+  {
+    "label": "r3-pq-fast8",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.9026123046875001,
+        "threshold": 0.9466845703125001,
+        "passed": false
+      },
+      "100": {
+        "value": 0.8401562499999999,
+        "threshold": 0.89474853515625,
+        "passed": false
+      }
+    },
+    "query_ratio": 0.8908702200773501,
+    "build_ratio": 1.4298050261828514,
+    "vram_ratio": 1.2675461090517213,
+    "passed": false
+  },
+  {
+    "label": "r3-pq-fast16",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.929150390625,
+        "threshold": 0.9466845703125001,
+        "passed": false
+      },
+      "100": {
+        "value": 0.8749755859375,
+        "threshold": 0.89474853515625,
+        "passed": false
+      }
+    },
+    "query_ratio": 0.9072151876612533,
+    "build_ratio": 1.1203504568041098,
+    "vram_ratio": 2.2066590061695135,
+    "passed": false
+  }
+]

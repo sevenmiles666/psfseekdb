@@ -1,0 +1,128 @@
+[
+  {
+    "label": "r3-i192-g128-n50-s8",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.9523925781250001,
+        "threshold": 0.9466845703125001,
+        "passed": true
+      },
+      "100": {
+        "value": 0.9073876953125,
+        "threshold": 0.89474853515625,
+        "passed": true
+      }
+    },
+    "query_ratio": 0.7464783543090677,
+    "build_ratio": 1.8890693971877344,
+    "vram_ratio": 0.5457887823488297,
+    "passed": false
+  },
+  {
+    "label": "r3-i192-g128-n32-s8",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.9430419921875002,
+        "threshold": 0.9466845703125001,
+        "passed": false
+      },
+      "100": {
+        "value": 0.8956518554687499,
+        "threshold": 0.89474853515625,
+        "passed": true
+      }
+    },
+    "query_ratio": 0.7501944041819032,
+    "build_ratio": 2.3426035084658716,
+    "vram_ratio": 0.5457913791275256,
+    "passed": false
+  },
+  {
+    "label": "r3-i128-g128-n32-s8",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.935546875,
+        "threshold": 0.9466845703125001,
+        "passed": false
+      },
+      "100": {
+        "value": 0.884990234375,
+        "threshold": 0.89474853515625,
+        "passed": false
+      }
+    },
+    "query_ratio": 0.7596120199502431,
+    "build_ratio": 2.9716631670769234,
+    "vram_ratio": 0.5457896479417282,
+    "passed": false
+  },
+  {
+    "label": "r3-i128-g96-n32-s8",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.9063720703125002,
+        "threshold": 0.9466845703125001,
+        "passed": false
+      },
+      "100": {
+        "value": 0.8427294921875,
+        "threshold": 0.89474853515625,
+        "passed": false
+      }
+    },
+    "query_ratio": 1.0434458836797351,
+    "build_ratio": 3.4479414292527544,
+    "vram_ratio": 0.3153441489166023,
+    "passed": false
+  },
+  {
+    "label": "r3-i128-g64-n32-s8",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.8410888671875001,
+        "threshold": 0.9466845703125001,
+        "passed": false
+      },
+      "100": {
+        "value": 0.7587963867187499,
+        "threshold": 0.89474853515625,
+        "passed": false
+      }
+    },
+    "query_ratio": 1.4650047601968907,
+    "build_ratio": 3.7748216395744967,
+    "vram_ratio": 0.3119938716022774,
+    "passed": false
+  },
+  {
+    "label": "r3-i128-g128-n20-s16",
+    "dataset": "gaussian256",
+    "rc": 0,
+    "recall": {
+      "10": {
+        "value": 0.93427734375,
+        "threshold": 0.9466845703125001,
+        "passed": false
+      },
+      "100": {
+        "value": 0.8893261718750001,
+        "threshold": 0.89474853515625,
+        "passed": false
+      }
+    },
+    "query_ratio": 0.5697576604204874,
+    "build_ratio": 3.6828333878100983,
+    "vram_ratio": 0.5458065270032525,
+    "passed": false
+  }
+]
