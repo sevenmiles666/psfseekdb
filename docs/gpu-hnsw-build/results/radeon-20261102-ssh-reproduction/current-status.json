@@ -1,0 +1,10 @@
+{
+  "stage": "build-passed",
+  "state": "passed",
+  "source_commit": "f3cfe8b1738c2ce0d71a7cd04e8c2c69f6f938c1",
+  "cpp_jobs": 4,
+  "dependency_mode": "verified offline Rust/crates; network RPM init",
+  "source_transport": "host shallow git clone uploaded after cloud GitHub TLS failure",
+  "updated_utc": "2026-11-02T09:46:01.605250+00:00",
+  "tracked_files_unchanged": 9512
+}

@@ -1,0 +1,15 @@
+{
+  "recorded_utc": "2026-11-02T09:30:14Z",
+  "cache": [
+    "CMAKE_BUILD_TYPE:STRING=RelWithDebInfo",
+    "HIPVS_ROOT:PATH=/opt/hipvs",
+    "OB_BUILD_CUVS:UNINITIALIZED=ON",
+    "OB_BUILD_HIPVS:UNINITIALIZED=ON",
+    "ROCM_ROOT:PATH=/opt/rocm",
+    "SEEKDB_EXTERNAL_CARGO_JOBS:STRING=4"
+  ],
+  "observer_hipvs_macro": true,
+  "worker_target": true,
+  "bridge_target": true,
+  "main_build_in_progress": true
+}

@@ -1,0 +1,27 @@
+{
+  "tls_verification": true,
+  "inherited_proxy_preserved": true,
+  "results": [
+    {
+      "url": "https://github.com/sevenmiles666/psfseekdb.git/info/refs?service=git-upload-pack",
+      "seconds": 8.01,
+      "exit": 28,
+      "http_status": "000",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout\n"
+    },
+    {
+      "url": "https://api.github.com/repos/sevenmiles666/psfseekdb/commits/f3cfe8b1738c2ce0d71a7cd04e8c2c69f6f938c1",
+      "seconds": 1.047,
+      "exit": 0,
+      "http_status": "200",
+      "error": ""
+    },
+    {
+      "url": "https://raw.githubusercontent.com/sevenmiles666/psfseekdb/f3cfe8b1738c2ce0d71a7cd04e8c2c69f6f938c1/build.sh",
+      "seconds": 8.01,
+      "exit": 28,
+      "http_status": "000",
+      "error": "curl: (28) Proxy CONNECT aborted due to timeout\n"
+    }
+  ]
+}

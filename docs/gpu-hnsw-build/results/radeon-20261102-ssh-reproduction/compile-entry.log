@@ -1,0 +1,754 @@
+{"command": ["bash", "/workspace/amd-repro-20261102/source-host/.github/script/seekdb/compile.sh"]}
+[compile.sh] WORKSPACE=/workspace/amd-repro-20261102/source-host
+[compile.sh] pwd=/workspace/amd-repro-20261102/source-host
+total 388
+drwxr-xr-x 22 root root  4096 Nov  2 09:26 .
+drwxr-xr-x  6 root root  4096 Nov  2 09:26 ..
+drwxr-xr-x  3 root root  4096 Nov  2 09:20 .agents
+-rw-r--r--  1 root root   280 Nov  2 09:26 .akfarm
+-rw-r--r--  1 root root    71 Nov  2 09:26 .akperformancetest
+-rw-r--r--  1 root root   729 Nov  2 09:26 .bazelrc
+-rw-r--r--  1 root root     6 Nov  2 09:26 .bazelversion
+drwxr-xr-x  2 root root  4096 Nov  2 09:26 .devcontainer
+drwxr-xr-x  7 root root  4096 Nov  2 09:26 .git
+-rw-r--r--  1 root root   579 Nov  2 09:26 .gitattributes
+drwxr-xr-x  6 root root  4096 Nov  2 09:26 .github
+-rw-r--r--  1 root root 10521 Nov  2 09:26 .gitignore
+-rw-r--r--  1 root root  2638 Nov  2 09:26 .gitlab-ci.yml
+-rw-r--r--  1 root root 23169 Nov  2 09:26 .secignore
+-rw-r--r--  1 root root 12842 Nov  2 09:26 .secignore.opensource
+-rw-r--r--  1 root root   851 Nov  2 09:26 AGENTS.md
+-rw-r--r--  1 root root 13881 Nov  2 09:26 CMakeLists.txt
+-rw-r--r--  1 root root  3256 Nov  2 09:26 CODE_OF_CONDUCT.md
+-rw-r--r--  1 root root  2878 Nov  2 09:26 CONTRIBUTING.md
+[compile.sh] build.sh: -f=1 -x=1
+[compile.sh] AMD backend=ON (no automatic CPU fallback at build time)
+[compile.sh] nproc=8
+[compile.sh] cgroup cpu.max=1600000 100000
+[compile.sh] cgroup memory.max=59055800320
+[setup-rust] Reusing Rust/Cargo 1.98.1
+[compile.sh] cargo=/workspace/amd-repro-20261102/tooling/rust-1.98.1/bin/cargo rustc=/workspace/amd-repro-20261102/tooling/rust-1.98.1/bin/rustc
+cargo 1.98.1 (797e8a9bc 2026-08-05)
+rustc 1.98.1 (48a229cea 2026-09-01)
+[compile.sh] rust setup elapsed=0s
+[build.sh] command: /workspace/amd-repro-20261102/source-host/build.sh init
+[dep_create.sh] [NOTICE] 'Ubuntu 24.04.4 LTS (x86_64)' is compatible with CentOS 9, use el9 dependencies list
+[dep_create.sh] oceanbase.el9.x86_64.deps has been not initialized, due to /workspace/amd-repro-20261102/source-host/deps/3rd/6cbf427016d9c5328b3f45ad0bb925b5 not exists
+[dep_create.sh] disable share dep cache due to env DEP_CACHE_DIR not set
+[dep_create.sh] using Python/system libarchive for RPM extraction
+[dep_create.sh] check dependencies profile for oceanbase.el9.x86_64.deps... FOUND
+[dep_create.sh] check repository address in profile...
+[dep_create.sh] target: default, repo: http://mirrors.oceanbase.com/oceanbase/development-kit/el/8/x86_64/
+[dep_create.sh] target: community, repo: http://mirrors.oceanbase.com/oceanbase/community/stable/el/8/x86_64/
+[dep_create.sh] target: el9, repo: http://mirrors.oceanbase.com/oceanbase/development-kit/el/9/x86_64/
+[dep_create.sh] start to download dependencies...
+[dep_create.sh] downloading package <devdeps-gtest-1.8.0-242026020914.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-gtest-1.8.0-242026020914.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-libcurl-static-8.12.1-132025040210.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-libcurl-static-8.12.1-132025040210.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-libunwind-static-1.6.2-402025072120.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-libunwind-static-1.6.2-402025072120.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-libaio-0.3.112-12022092915.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-libaio-0.3.112-12022092915.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-relaxed-rapidjson-1.0.0-52023011719.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-relaxed-rapidjson-1.0.0-52023011719.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-openssl-static-1.1.1u-22023100710.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-openssl-static-1.1.1u-22023100710.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-libxml2-2.13.6-22025032016.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-libxml2-2.13.6-22025032016.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-xz-5.2.2-42022090615.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-xz-5.2.2-42022090615.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-zlib-static-1.2.13-82024102414.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-zlib-static-1.2.13-82024102414.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-boost-1.74.0-22022110914.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-boost-1.74.0-22022110914.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-abseil-cpp-20211102.0-82026020911.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-abseil-cpp-20211102.0-82026020911.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-s2geometry-0.10.0-222026021017.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-s2geometry-0.10.0-222026021017.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-icu-69.1-362026020911.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-icu-69.1-362026020911.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-protobuf-c-abiv1-1.4.1-100000202026031815.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-protobuf-c-abiv1-1.4.1-100000202026031815.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-grpc-abiv1-1.46.7-572026031815.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-grpc-abiv1-1.46.7-572026031815.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-roaringbitmap-croaring-3.0.0-42024042816.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-roaringbitmap-croaring-3.0.0-42024042816.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-vsag-abiv1-1.1.0-1752026041310.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-vsag-abiv1-1.1.0-1752026041310.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <devdeps-fast-float-6.1.3-42024112122.el8.x86_64.rpm>
+[dep_create.sh] unpack package <devdeps-fast-float-6.1.3-42024112122.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <obdevtools-binutils-2.30-12022100413.el8.x86_64.rpm>
+[dep_create.sh] unpack package <obdevtools-binutils-2.30-12022100413.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <obdevtools-bison-2.4.1-12022100413.el8.x86_64.rpm>
+[dep_create.sh] unpack package <obdevtools-bison-2.4.1-12022100413.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <obdevtools-ccache-3.7.12-12022100417.el8.x86_64.rpm>
+[dep_create.sh] unpack package <obdevtools-ccache-3.7.12-12022100417.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <obdevtools-cmake-3.30.3-52024111819.el8.x86_64.rpm>
+[dep_create.sh] unpack package <obdevtools-cmake-3.30.3-52024111819.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <obdevtools-flex-2.5.35-12022100417.el8.x86_64.rpm>
+[dep_create.sh] unpack package <obdevtools-flex-2.5.35-12022100417.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <obdevtools-gcc-12.3.0-32024122017.el8.x86_64.rpm>
+[dep_create.sh] unpack package <obdevtools-gcc-12.3.0-32024122017.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <obdevtools-llvm-17.0.6-202026032415.el8.x86_64.rpm>
+[dep_create.sh] unpack package <obdevtools-llvm-17.0.6-202026032415.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <obshell-4.4.1.1-32026031914.el8.x86_64.rpm>
+[dep_create.sh] unpack package <obshell-4.4.1.1-32026031914.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <ob-deploy-4.1.0-2.el8.x86_64.rpm>
+[dep_create.sh] unpack package <ob-deploy-4.1.0-2.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <obclient-2.2.3-1.el8.x86_64.rpm>
+[dep_create.sh] unpack package <obclient-2.2.3-1.el8.x86_64.rpm>... SUCCESS
+[dep_create.sh] downloading package <libobclient-2.2.3-1.el8.x86_64.rpm>
+[dep_create.sh] unpack package <libobclient-2.2.3-1.el8.x86_64.rpm>... SUCCESS
+[setup-rust] Reusing Rust/Cargo 1.98.1
+[build.sh] dependency initialization completed in 2m58s
+[compile.sh] dependency init elapsed=178s
+Set cache size limit to 3.0 GB
+Cleaned cache
+[build.sh] command: /workspace/amd-repro-20261102/source-host/build.sh tgz -DOB_USE_CCACHE=ON -DNEED_PARSER_CACHE=OFF -DOB_BUILD_CUVS=ON -DOB_BUILD_HIPVS=ON -DHIPVS_ROOT=/opt/hipvs -DROCM_ROOT=/opt/rocm
+[build.sh] configuring CMake tgz build: /workspace/amd-repro-20261102/source-host/build_tgz
+-- ARCHITECTURE: x86_64
+-- Using C++20 standard
+-- build without pie
+-- ob-compile not found, compile locally.
+-- Ubuntu 24.04 detected, using libaio1t64
+-- The CXX compiler identification is Clang 17.0.6
+-- The C compiler identification is Clang 17.0.6
+-- The ASM compiler identification is Clang with GNU-like command-line
+-- Found assembler: /workspace/amd-repro-20261102/source-host/deps/3rd/usr/local/oceanbase/devtools/bin/clang-17
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /workspace/amd-repro-20261102/source-host/deps/3rd/usr/local/oceanbase/devtools/bin/clang++-17 - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /workspace/amd-repro-20261102/source-host/deps/3rd/usr/local/oceanbase/devtools/bin/clang-17 - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Found Python3: /opt/venv/bin/python3.12 (found version "3.12.3") found components: Interpreter
+/workspace/amd-repro-20261102/source-host/tools/cmake/emit_bazel_source_inventory.py:36: DeprecationWarning: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  _AST_STR = getattr(ast, "Str", None)
+/workspace/amd-repro-20261102/source-host/tools/cmake/emit_bazel_source_inventory.py:37: DeprecationWarning: ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  _AST_NUM = getattr(ast, "Num", None)
+/workspace/amd-repro-20261102/source-host/tools/cmake/emit_bazel_source_inventory.py:38: DeprecationWarning: ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  _AST_NAME_CONSTANT = getattr(ast, "NameConstant", None)
+/workspace/amd-repro-20261102/source-host/tools/cmake/emit_bazel_source_inventory.py:48: DeprecationWarning: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  if _AST_STR is not None and isinstance(node, _AST_STR):
+/workspace/amd-repro-20261102/source-host/tools/cmake/emit_bazel_source_inventory.py:52: DeprecationWarning: ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  and isinstance(node, _AST_NAME_CONSTANT)
+/workspace/amd-repro-20261102/source-host/tools/cmake/emit_bazel_source_inventory.py:64: DeprecationWarning: ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead
+  and isinstance(node, _AST_NUM)
+-- STDC_SHARED_LIB: /workspace/amd-repro-20261102/source-host/deps/3rd/usr/local/oceanbase/devtools/lib64/libstdc++.so.6.0.30
+-- [rust] cargo: /workspace/amd-repro-20261102/tooling/rust-1.98.1/bin/cargo
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- [rust] config target ready -> /workspace/amd-repro-20261102/source-host/build_tgz/rust-target/exports/libconfig.a
+-- [rust] local target ready -> /workspace/amd-repro-20261102/source-host/build_tgz/rust-target/exports/liblocal.a
+-- [rust] sql_nio target ready -> /workspace/amd-repro-20261102/source-host/build_tgz/rust-target/exports/libsql_nio.a
+-- Performing Test COMPILER_SUPPORTS_VLA_CXX_EXTENSION
+-- Performing Test COMPILER_SUPPORTS_VLA_CXX_EXTENSION - Failed
+-- Performing Test COMPILER_SUPPORTS_ENUM_CONSTEXPR_WARNING
+-- Performing Test COMPILER_SUPPORTS_ENUM_CONSTEXPR_WARNING - Success
+-- Ubuntu 24.04 detected, using libaio1t64 package and linking to /usr/lib/x86_64-linux-gnu/libaio.so.1t64
+-- oblib_add_library compress
+-- oblib_add_library zstd_1_3_8
+-- oblib_add_library restore
+-- ob_lib_add_target oblib_lib
+-- Looking for posix_spawn_file_actions_addclosefrom_np
+-- Looking for posix_spawn_file_actions_addclosefrom_np - found
+-- ob_lib_add_target oblib_lib_simd
+-- ob_lib_add_target oblib_lib_bitmap
+-- ob_add_new_object_target ob_malloc_object
+-- ob_lib_add_target oblib_common
+-- ob_lib_add_target oblib_rpc
+-- oblib_add_library oblib_grpc
+-- oblib_extra_objects /workspace/amd-repro-20261102/source-host/build_tgz/src/oblib/lib/compress/zstd_1_3_8/zstd_1_3_8_objs.o
+-- ob_add_new_object_target ob_share
+-- ob_add_new_object_target ob_share_extra
+-- observer_add_target ob_data_plane
+-- observer_add_target ob_query
+-- ob_add_new_object_target ob_sql
+-- ob_add_new_object_target ob_sql_extra
+-- observer_add_target ob_sql_simd
+-- observer_add_target ob_pl
+-- observer_add_target syspack_source
+-- observer_add_target ob_standby_runtime
+-- observer_add_target ob_standby
+-- observer_add_target ob_rootserver
+-- observer_add_target ob_logservice
+-- observer_add_target ob_storage_tablet_autoincrement_state
+-- ob_add_new_object_target ob_storage
+-- observer_add_target ob_storage_simd
+-- observer_add_target ob_server
+-- system package release directory: /workspace/amd-repro-20261102/source-host/build_tgz/syspack_release
+-- CPack generator: TGZ
+-- CPack components: server;libs
+-- Configuring done (2.5s)
+-- Generating done (0.4s)
+-- Build files have been written to: /workspace/amd-repro-20261102/source-host/build_tgz
+[compile.sh] configure elapsed=3s
+Statistics zeroed
+[  1%] [rust] cargo build workspace (release)
+[  1%] Building CXX object src/oblib/lib/restore/CMakeFiles/restore.dir/ob_io_device.cpp.o
+[  1%] Building jemalloc with Cargo
+[  2%] Building CXX object src/oblib/grpc/CMakeFiles/oblib_grpc.dir/ob_grpc_context.cpp.o
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling seekdb-jemalloc-sys v0.2.2+5.3.1
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+[  2%] Built target restore
+[  2%] Building CXX object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/ob_zstd_wrapper.cpp.o
+   Compiling syn v3.0.9
+[  2%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/debug.c.o
+[  2%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/entropy_common.c.o
+[  3%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/error_private.c.o
+[  3%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/fse_compress.c.o
+[  3%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/fse_decompress.c.o
+[  3%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/hist.c.o
+[  4%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/huf_compress.c.o
+[  4%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/huf_decompress.c.o
+[  4%] Building CXX object src/oblib/grpc/CMakeFiles/oblib_grpc.dir/ob_grpc_server.cpp.o
+[  4%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/pool.c.o
+[  4%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/threading.c.o
+[  5%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/xxhash.c.o
+[  5%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_common.c.o
+[  5%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_compress.c.o
+[  5%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_ddict.c.o
+[  6%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_decompress.c.o
+[  6%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_decompress_block.c.o
+[  6%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_double_fast.c.o
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+[  6%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_fast.c.o
+   Compiling cc v1.10.0
+[  7%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_lazy.c.o
+[  7%] Building CXX object src/oblib/grpc/CMakeFiles/oblib_grpc.dir/standbyservice.pb.cc.o
+   Compiling hashbrown v0.17.1
+[  7%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_ldm.c.o
+[  7%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstd_opt.c.o
+   Compiling serde_core v1.0.229
+   Compiling equivalent v1.0.3
+   Compiling indexmap v2.14.2
+[  7%] Building CXX object src/oblib/grpc/CMakeFiles/oblib_grpc.dir/standbyservice.grpc.pb.cc.o
+[  8%] Building C object src/oblib/lib/compress/zstd_1_3_8/CMakeFiles/zstd_1_3_8_objs.dir/zstd_src/zstdmt_compress.c.o
+   Compiling syn v2.0.119
+[  8%] Built target zstd_1_3_8_objs
+[  8%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib_simd.dir/Unity/unity_oblib_lib_simd_oblib_lib_simd_codec_simd_0_c___cxx.cxx.o
+[  8%] Built target oblib_lib_simd
+[  8%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib_bitmap.dir/Unity/unity_oblib_lib_bitmap_oblib_lib_bitmap_common_0_c___cxx.cxx.o
+   Compiling serde v1.0.229
+   Compiling autocfg v1.5.1
+[  8%] Built target oblib_grpc
+[  8%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_wide_integer_0_c___cxx.cxx.o
+   Compiling num-traits v0.2.19
+   Compiling serde_derive v1.0.229
+[  8%] Built target oblib_lib_bitmap
+[  8%] Building CXX object src/oblib/rpc/CMakeFiles/oblib_rpc.dir/Unity/unity_oblib_rpc_oblib_rpc_common_0_c___cxx.cxx.o
+   Compiling libc v0.2.191
+   Compiling itoa v1.0.18
+   Compiling scratch v1.0.9
+[  9%] Building CXX object src/oblib/rpc/CMakeFiles/oblib_rpc.dir/Unity/unity_oblib_rpc_oblib_rpc_obmysql_packet_0_c___cxx.cxx.o
+[  9%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_udt_0_c___cxx.cxx.o
+   Compiling link-cplusplus v1.0.12
+   Compiling termcolor v1.4.1
+   Compiling unicode-width v0.2.3
+   Compiling utf8parse v0.2.2
+   Compiling anstyle-parse v1.0.0
+   Compiling codespan-reporting v0.13.1
+[  9%] Building CXX object src/oblib/rpc/CMakeFiles/oblib_rpc.dir/Unity/unity_oblib_rpc_oblib_rpc_frame_0_c___cxx.cxx.o
+   Compiling rustix v1.1.6
+   Compiling thiserror v2.0.21
+   Compiling getrandom v0.4.3
+   Compiling cfg-if v1.0.5
+   Compiling anstyle v1.0.14
+   Compiling anstyle-query v1.1.5
+   Compiling memchr v2.8.3
+[  9%] Building CXX object src/oblib/rpc/CMakeFiles/oblib_rpc.dir/Unity/unity_oblib_rpc_oblib_rpc_obmysql_0_c___cxx.cxx.o
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling colorchoice v1.0.5
+   Compiling cxxbridge-flags v1.0.205
+   Compiling zmij v1.0.23
+   Compiling num-conv v0.2.2
+   Compiling minimal-lexical v0.2.1
+   Compiling time-core v0.1.9
+   Compiling time-macros v0.2.32
+[  9%] Built target oblib_rpc
+[  9%] Building C object src/oblib/lib/CMakeFiles/seekdb_hipvs_hnsw.dir/vector/hipvs_hnsw_bridge.c.o
+[  9%] Linking C shared library ../../../lib/libseekdb_hipvs_hnsw.so
+[  9%] Built target seekdb_hipvs_hnsw
+[  9%] Generating wrapped syspack source files
+[  9%] Built target generate_syspack_source
+   Compiling nom v7.1.3
+   Compiling cxx v1.0.205
+   Compiling anstream v1.0.0
+   Compiling cxx-build v1.0.205
+   Compiling synstructure v0.13.2
+   Compiling ring v0.17.14
+   Compiling thiserror-impl v2.0.21
+   Compiling linux-raw-sys v0.12.1
+   Compiling deranged v0.5.9
+   Compiling serde_json v1.0.154
+   Compiling clap_lex v1.1.1
+   Compiling strsim v0.11.1
+   Compiling bitflags v2.13.2
+   Compiling powerfmt v0.2.1
+   Compiling winnow v1.0.4
+   Compiling time v0.3.55
+   Compiling toml_parser v1.1.5+spec-1.1.0
+[  9%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_number_0_c___cxx.cxx.o
+   Compiling clap_builder v4.6.7
+   Compiling asn1-rs-derive v0.6.0
+   Compiling rusticata-macros v4.1.0
+[ 10%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_mysqlclient_0_c___cxx.cxx.o
+   Compiling asn1-rs-impl v0.2.0
+   Compiling serde_spanned v1.1.2
+   Compiling toml_datetime v0.7.5+spec-1.1.0
+   Compiling displaydoc v0.2.7
+[ 10%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_xml_0_c___cxx.cxx.o
+   Compiling winnow v0.7.15
+   Compiling once_cell v1.21.4
+   Compiling fastrand v2.5.0
+   Compiling cbindgen v0.29.4
+   Compiling tempfile v3.27.0
+   Compiling toml v0.9.12+spec-1.1.0
+   Compiling asn1-rs v0.7.2
+   Compiling clap v4.6.7
+   Compiling local v0.1.0 (/workspace/amd-repro-20261102/source-host/rust/local)
+   Compiling getrandom v0.2.17
+   Compiling num-integer v0.1.47
+   Compiling crc32fast v1.5.3
+   Compiling untrusted v0.9.0
+   Compiling log v0.4.34
+   Compiling oid-registry v0.8.1
+   Compiling heck v0.5.0
+   Compiling unsafe-libyaml v0.2.11
+   Compiling zeroize v1.9.1
+   Compiling ryu v1.0.23
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling rustls-pki-types v1.15.1
+[ 10%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_enumset_0_c___cxx.cxx.o
+   Compiling seekdb-external-sources v0.0.0 (/workspace/amd-repro-20261102/source-host/deps/external)
+    Finished `release` profile [optimized] target(s) in 28.16s
+[ 10%] Built target seekdb_jemalloc_build
+[ 11%] Generating zstd_1_3_8_objs.o
+[ 11%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_lob_0_c___cxx.cxx.o
+   Compiling num-bigint v0.4.8
+   Compiling cxxbridge-macro v1.0.205
+[ 12%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_datum_0_c___cxx.cxx.o
+   Compiling foldhash v0.2.0
+   Compiling rustls v0.23.46
+   Compiling simd-adler32 v0.3.10
+   Compiling adler2 v2.0.1
+   Compiling miniz_oxide v0.9.1
+[ 12%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_log_0_c___cxx.cxx.o
+   Compiling der-parser v10.0.0
+   Compiling sql-nio v0.1.0 (/workspace/amd-repro-20261102/source-host/rust/sql-nio)
+[ 12%] Built target zstd_1_3_8
+   Compiling rustls-webpki v0.103.16
+[ 12%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_common_mixed_0_c___cxx.cxx.o
+   Compiling config v0.1.0 (/workspace/amd-repro-20261102/source-host/rust/config)
+   Compiling lazy_static v1.5.1
+   Compiling subtle v2.6.1
+   Compiling data-encoding v2.11.1
+   Compiling kv v0.1.0 (/workspace/amd-repro-20261102/source-host/rust/kv)
+   Compiling x509-parser v0.18.1
+   Compiling mio v1.2.4
+   Compiling flate2 v1.1.10
+   Compiling socket2 v0.6.5
+   Compiling slab v0.4.12
+[ 12%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_timezone_0_c___cxx.cxx.o
+[ 13%] Building C object src/oblib/lib/CMakeFiles/seekdb_hipvs_hnsw_worker.dir/vector/hipvs_hnsw_worker.c.o
+[ 13%] Linking C executable ../../observer/seekdb_hipvs_hnsw_worker
+[ 13%] Built target seekdb_hipvs_hnsw_worker
+[ 13%] Building CXX object src/oblib/lib/CMakeFiles/malloc_hook.dir/alloc/malloc_hook.cpp.o
+[ 14%] Building CXX object src/oblib/lib/CMakeFiles/malloc_hook.dir/alloc/malloc_hook_extended.cpp.o
+[ 14%] Linking CXX static library libmalloc_hook.a
+[ 14%] Built target malloc_hook
+[ 14%] Building CXX object src/oblib/lib/CMakeFiles/ob_malloc_object.dir/Unity/unity_ob_malloc_object_ob_malloc_object_list_common_alloc_0_c___cxx.cxx.o
+[ 15%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_reloc_json_type_0_c___cxx.cxx.o
+[ 15%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_common_0_c___cxx.cxx.o
+[ 16%] Building CXX object src/oblib/lib/CMakeFiles/ob_malloc_object.dir/Unity/unity_ob_malloc_object_ob_malloc_object_list_common_alloc_1_c___cxx.cxx.o
+[ 16%] Built target ob_malloc_object
+[ 16%] Building CXX object src/oblib/lib/compress/CMakeFiles/compress.dir/none/ob_none_compressor.cpp.o
+[ 16%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/Unity/unity_oblib_common_oblib_common_storage_0_c___cxx.cxx.o
+[ 16%] Building CXX object src/oblib/lib/compress/CMakeFiles/compress.dir/ob_compressor.cpp.o
+[ 16%] Building CXX object src/oblib/lib/compress/CMakeFiles/compress.dir/ob_compressor_pool.cpp.o
+[ 16%] Building CXX object src/oblib/common/CMakeFiles/oblib_common.dir/timezone/ob_timezone_util.cpp.o
+[ 17%] Building CXX object src/oblib/lib/compress/CMakeFiles/compress.dir/zlib/ob_zlib_compressor.cpp.o
+[ 17%] Building CXX object src/oblib/lib/compress/CMakeFiles/compress.dir/zstd_1_3_8/ob_zstd_compressor_1_3_8.cpp.o
+[ 17%] Built target compress
+[ 17%] Linking CXX static library libob_malloc.a
+[ 17%] Built target ob_malloc
+[ 18%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_downsink_qt_0_c___cxx.cxx.o
+[ 18%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_charset_0_c___cxx.cxx.o
+[ 18%] Built target oblib_common
+[ 18%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_utility_0_c___cxx.cxx.o
+[ 19%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_codec_0_c___cxx.cxx.o
+[ 19%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_common_0_c___cxx.cxx.o
+    Finished `release` profile [optimized + debuginfo] target(s) in 52.06s
+[ 19%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_downsink_0_c___cxx.cxx.o
+[ 19%] Built target rust_staticlibs_build
+[ 19%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_thread_0_c___cxx.cxx.o
+[ 20%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_common_mixed_0_c___cxx.cxx.o
+[ 20%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_lock_0_c___cxx.cxx.o
+[ 20%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_ob_vector_util_0_c___cxx.cxx.o
+[ 20%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_common_mixed_1_c___cxx.cxx.o
+[ 21%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_oblog_0_c___cxx.cxx.o
+[ 21%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_signal_0_c___cxx.cxx.o
+[ 21%] Building C object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_common_mixed_0_c_c.c.o
+[ 21%] Building C object src/oblib/lib/CMakeFiles/oblib_lib.dir/Unity/unity_oblib_lib_oblib_lib_signal_0_c_c.c.o
+[ 22%] Building CXX object src/oblib/lib/CMakeFiles/oblib_lib.dir/oblog/ob_log_compressor.cpp.o
+[ 23%] Building CXX object src/observer/CMakeFiles/ob_main.dir/main.cpp.o
+[ 23%] Building CXX object src/observer/CMakeFiles/ob_main.dir/ob_command_line_parser.cpp.o
+[ 23%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_geo_2_c___cxx.cxx.o
+[ 23%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs.cpp.o
+[ 23%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs_compilation/ob_datum_funcs_all.cpp.o
+[ 23%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs_compilation/ob_datum_funcs_compilation_0.cpp.o
+[ 23%] Built target oblib_lib
+[ 23%] Building CXX object src/data_plane/CMakeFiles/ob_data_plane.dir/Unity/unity_ob_data_plane_runtime/0_cxx.cxx.o
+[ 23%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_geo_1_c___cxx.cxx.o
+[ 24%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs_compilation/ob_datum_funcs_compilation_1.cpp.o
+[ 24%] Built target ob_data_plane
+[ 24%] Building CXX object src/query/CMakeFiles/ob_query.dir/Unity/unity_ob_query_runtime/0_cxx.cxx.o
+[ 24%] Built target ob_main
+[ 24%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_resolver_ddl_1_c___cxx.cxx.o
+[ 24%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs_compilation/ob_datum_funcs_compilation_2.cpp.o
+[ 24%] Built target ob_query
+[ 24%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_datum_cast.cpp.o
+[ 24%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs_compilation/ob_datum_funcs_compilation_3.cpp.o
+[ 24%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs_compilation/ob_datum_funcs_compilation_4.cpp.o
+[ 25%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs_compilation/ob_datum_funcs_compilation_5.cpp.o
+[ 25%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_resolver_dcl_0_c___cxx.cxx.o
+[ 25%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs_compilation/ob_datum_funcs_compilation_6.cpp.o
+[ 25%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_obj_cast_runtime.cpp.o
+[ 25%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_datum_funcs_compilation/ob_datum_funcs_compilation_7.cpp.o
+[ 25%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_resolver_0_c___cxx.cxx.o
+[ 25%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_str_datum_funcs_compilation/ob_str_datum_funcs_all.cpp.o
+[ 26%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_str_datum_funcs_compilation/ob_str_datum_funcs_compilation_0.cpp.o
+[ 27%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func.cpp.o
+[ 27%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_str_datum_funcs_compilation/ob_str_datum_funcs_compilation_1.cpp.o
+[ 27%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_str_datum_funcs_compilation/ob_str_datum_funcs_compilation_2.cpp.o
+[ 27%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func_compile/ob_expr_cmp_func_compile_init.cpp.o
+[ 27%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func_compile/ob_expr_cmp_func_part0.cpp.o
+[ 27%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func_compile/ob_expr_cmp_func_part1.cpp.o
+[ 27%] Building CXX object src/share/CMakeFiles/ob_share_extra.dir/datum/ob_str_datum_funcs_compilation/ob_str_datum_funcs_compilation_3.cpp.o
+[ 28%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func_compile/ob_expr_cmp_func_part2.cpp.o
+[ 28%] Built target ob_share_extra
+[ 29%] Building CXX object src/sql/CMakeFiles/ob_sql_simd.dir/Unity/unity_ob_sql_simd_ob_sql_simd_common_0_c___cxx.cxx.o
+[ 29%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func_compile/ob_expr_cmp_func_part3.cpp.o
+[ 30%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_3_c___cxx.cxx.o
+[ 30%] Built target ob_sql_simd
+[ 31%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/sql_parser_mysql_mode_lex.c.o
+[ 31%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_config_0_c___cxx.cxx.o
+[ 31%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/sql_parser_mysql_mode_tab.c.o
+[ 31%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func_compile/ob_expr_cmp_func_part4.cpp.o
+[ 32%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_geo_0_c___cxx.cxx.o
+[ 34%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func_compile/ob_expr_cmp_func_part5.cpp.o
+[ 34%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func_compile/ob_expr_cmp_func_part6.cpp.o
+[ 34%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ftsblex_lex.c.o
+[ 34%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_cmp_func_compile/ob_expr_cmp_func_part7.cpp.o
+[ 34%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ftsparser_tab.c.o
+[ 35%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/fts_base.c.o
+[ 35%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/fts_parse.c.o
+[ 35%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/non_reserved_keywords_mysql_mode.c.o
+[ 35%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ob_non_reserved_keywords.c.o
+[ 36%] Building CXX object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ob_sql_parser.cpp.o
+[ 36%] Building CXX object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/parse_malloc.cpp.o
+[ 36%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_plan_cache_0_c___cxx.cxx.o
+[ 36%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_str_cmp_func_compile/ob_expr_str_cmp_func_all.cpp.o
+[ 37%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_str_cmp_func_compile/ob_expr_str_cmp_func_part_0.cpp.o
+[ 37%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/parse_node.c.o
+[ 37%] Building CXX object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/parse_node_hash.cpp.o
+[ 38%] Building CXX object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ob_fast_parser.cpp.o
+[ 38%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_str_cmp_func_compile/ob_expr_str_cmp_func_part_1.cpp.o
+[ 38%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_str_cmp_func_compile/ob_expr_str_cmp_func_part_2.cpp.o
+[ 38%] Building CXX object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ob_parser_charset_utils.cpp.o
+[ 38%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/sql_parser_base.c.o
+[ 38%] Building CXX object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/parser_utility.cpp.o
+[ 39%] Building C object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/type_name.c.o
+[ 39%] Building CXX object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ob_parse_simd.cpp.o
+[ 39%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_str_cmp_func_compile/ob_expr_str_cmp_func_part_3.cpp.o
+[ 40%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_str_cmp_func_compile/ob_expr_str_cmp_func_part_4.cpp.o
+[ 40%] Building CXX object src/sql/parser/CMakeFiles/ob_sql_server_parser_objects.dir/ob_parser.cpp.o
+[ 40%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_common_mixed_1_c___cxx.cxx.o
+[ 40%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_str_cmp_func_compile/ob_expr_str_cmp_func_part_5.cpp.o
+[ 40%] Built target ob_sql_server_parser_objects
+[ 40%] Building CXX object src/pl/CMakeFiles/ob_pl.dir/Unity/unity_ob_pl_pl_common_c___cxx.cxx.o
+[ 40%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_str_cmp_func_compile/ob_expr_str_cmp_func_part_6.cpp.o
+[ 40%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_common_1_c___cxx.cxx.o
+[ 40%] Building CXX object src/sql/CMakeFiles/ob_sql_extra.dir/engine/expr/ob_expr_str_cmp_func_compile/ob_expr_str_cmp_func_part_7.cpp.o
+[ 40%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_8_c___cxx.cxx.o
+[ 40%] Built target ob_sql_extra
+[ 40%] Building CXX object src/pl/CMakeFiles/syspack_source.dir/syspack_codegen/syspack_source.cpp.o
+[ 40%] Built target syspack_source
+[ 40%] Building CXX object src/standby/CMakeFiles/ob_standby_runtime.dir/Unity/unity_ob_standby_runtime_common/0_cxx.cxx.o
+[ 40%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_common_2_c___cxx.cxx.o
+[ 41%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_cache_0_c___cxx.cxx.o
+[ 41%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_optimizer_stat_1_c___cxx.cxx.o
+[ 41%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_DUMP_SCHEMA_0_c___cxx.cxx.o
+[ 41%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_SCHEMA_CPPS_0_c___cxx.cxx.o
+[ 41%] Built target ob_standby_runtime
+[ 41%] Building CXX object src/standby/CMakeFiles/ob_standby.dir/Unity/unity_ob_standby_common/0_cxx.cxx.o
+[ 41%] Built target ob_standby
+[ 41%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_base_common_0_c___cxx.cxx.o
+[ 42%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_optimizer_0_c___cxx.cxx.o
+[ 42%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_common_mixed_0_c___cxx.cxx.o
+[ 42%] Building CXX object src/pl/CMakeFiles/ob_pl.dir/Unity/unity_ob_pl_pl_cache_c___cxx.cxx.o
+[ 43%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_base_maintenance_0_c___cxx.cxx.o
+[ 43%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_query_0_c___cxx.cxx.o
+[ 43%] Building CXX object src/pl/CMakeFiles/ob_pl.dir/Unity/unity_ob_pl_pl_recompile_c___cxx.cxx.o
+[ 44%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_LOAD_SCHEMA_0_c___cxx.cxx.o
+[ 44%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_transaction_id_0_c___cxx.cxx.o
+[ 44%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_common_0_c___cxx.cxx.o
+[ 45%] Building CXX object src/pl/CMakeFiles/ob_pl.dir/Unity/unity_ob_pl_pl_sys_package_c___cxx.cxx.o
+[ 45%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_storage_common_0_c___cxx.cxx.o
+[ 45%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_resource_limit_calculator_0_c___cxx.cxx.o
+[ 46%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_io_0_c___cxx.cxx.o
+[ 46%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_storage_freeze_0_c___cxx.cxx.o
+[ 46%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_redolog_0_c___cxx.cxx.o
+[ 46%] Building CXX object src/pl/CMakeFiles/ob_pl.dir/parser/ob_pl_parser.cpp.o
+[ 46%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_resource_0_c___cxx.cxx.o
+[ 46%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_schema_0_c___cxx.cxx.o
+[ 46%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_executor_0_c___cxx.cxx.o
+[ 46%] Building C object src/pl/CMakeFiles/ob_pl.dir/parser/pl_non_reserved_keywords_mysql_mode.c.o
+[ 46%] Building C object src/pl/CMakeFiles/ob_pl.dir/parser/pl_parser_base.c.o
+[ 47%] Building C object src/pl/CMakeFiles/ob_pl.dir/parser/pl_parser_mysql_mode_lex.c.o
+[ 47%] Building C object src/pl/CMakeFiles/ob_pl.dir/parser/pl_parser_mysql_mode_tab.c.o
+[ 47%] Built target ob_pl
+[ 47%] Building CXX object src/logservice/CMakeFiles/ob_logservice.dir/Unity/unity_ob_logservice_ob_logservice_common_0_c___cxx.cxx.o
+[ 48%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_sql_mixed_0_c___cxx.cxx.o
+[ 49%] Building CXX object src/logservice/CMakeFiles/ob_logservice.dir/Unity/unity_ob_logservice_ob_logservice_common_mixed_0_c___cxx.cxx.o
+[ 49%] Building CXX object src/logservice/CMakeFiles/ob_logservice.dir/Unity/unity_ob_logservice_ob_logservice_common_util_0_c___cxx.cxx.o
+[ 49%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_vector_fixed_0_c___cxx.cxx.o
+[ 49%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_runtime_common_1_c___cxx.cxx.o
+[ 49%] Building CXX object src/logservice/CMakeFiles/ob_logservice.dir/Unity/unity_ob_logservice_ob_logservice_palf_0_c___cxx.cxx.o
+[ 49%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_resolver_ddl_2_c___cxx.cxx.o
+[ 50%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_schema_1_c___cxx.cxx.o
+[ 50%] Building CXX object src/logservice/CMakeFiles/ob_logservice.dir/Unity/unity_ob_logservice_ob_logservice_palf_1_c___cxx.cxx.o
+[ 50%] Built target ob_logservice
+[ 50%] Building CXX object src/storage/CMakeFiles/ob_storage_tablet_autoincrement_state.dir/Unity/unity_ob_storage_tablet_autoincrement_state_runtime/0_cxx.cxx.o
+[ 51%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_vector_uniform_0_c___cxx.cxx.o
+[ 51%] Built target ob_storage_tablet_autoincrement_state
+[ 52%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_multi_data_source_0_c___cxx.cxx.o
+[ 52%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_vector_discrete_0_c___cxx.cxx.o
+[ 52%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_runtime_common_0_c___cxx.cxx.o
+[ 52%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_semistruct_0_c___cxx.cxx.o
+[ 52%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_schema_2_c___cxx.cxx.o
+[ 52%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_vector_continuous_0_c___cxx.cxx.o
+[ 52%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_vector_0_c___cxx.cxx.o
+[ 53%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_tablet_0_c___cxx.cxx.o
+[ 53%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_runtime_ddl_0_c___cxx.cxx.o
+[ 53%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_ls_0_c___cxx.cxx.o
+[ 53%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_rebase_0_c___cxx.cxx.o
+[ 53%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_table_0_c___cxx.cxx.o
+[ 53%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_text_analysis_0_c___cxx.cxx.o
+[ 53%] Building CXX object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_log_protocol_0_c___cxx.cxx.o
+[ 54%] Building C object src/share/CMakeFiles/ob_share.dir/Unity/unity_ob_share_ob_share_geo_1_c_c.c.o
+[ 54%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_covered_by1.cpp.o
+[ 54%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_access_1_c___cxx.cxx.o
+[ 55%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_10_c___cxx.cxx.o
+[ 56%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_runtime_fork_freeze_0_c___cxx.cxx.o
+[ 56%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_vector_cmp_0_c___cxx.cxx.o
+[ 56%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_covered_by2.cpp.o
+[ 56%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_lob_0_c___cxx.cxx.o
+[ 56%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/Unity/unity_ob_rootserver_ob_rootserver_runtime_services_0_c___cxx.cxx.o
+[ 56%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_set_0_c___cxx.cxx.o
+[ 57%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_blocksstable_encoding2_0_c___cxx.cxx.o
+[ 57%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_px_1_c___cxx.cxx.o
+[ 57%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/ddl_task/ob_ddl_redefinition_task.cpp.o
+[ 57%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_fts_0_c___cxx.cxx.o
+[ 57%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_crosses1.cpp.o
+[ 57%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/ob_ddl_service.cpp.o
+[ 57%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_ckpt_0_c___cxx.cxx.o
+[ 58%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_px_0_c___cxx.cxx.o
+[ 59%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_crosses2.cpp.o
+[ 59%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_memtable_mvcc_0_c___cxx.cxx.o
+[ 59%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_difference1.cpp.o
+[ 60%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/ob_ddl_service_launcher.cpp.o
+[ 61%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_deadlock_0_c___cxx.cxx.o
+[ 61%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_code_generator_0_c___cxx.cxx.o
+[ 61%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_retrieval_0_c___cxx.cxx.o
+[ 61%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/ob_debug_sync_broadcaster_adapter.cpp.o
+[ 61%] Building CXX object src/rootserver/CMakeFiles/ob_rootserver.dir/ob_lonely_table_cleaner.cpp.o
+[ 61%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_difference2.cpp.o
+[ 61%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_compaction_1_c___cxx.cxx.o
+[ 61%] Built target ob_rootserver
+[ 61%] Building CXX object src/storage/CMakeFiles/ob_storage_simd.dir/Unity/unity_ob_storage_simd_ob_storage_simd_common_0_c___cxx.cxx.o
+[ 61%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_pdml_0_c___cxx.cxx.o
+[ 61%] Built target ob_storage_simd
+[ 61%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_vector_index_0_c___cxx.cxx.o
+[ 61%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_blocksstable_0_c___cxx.cxx.o
+[ 61%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_difference3.cpp.o
+[ 62%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_join_0_c___cxx.cxx.o
+[ 63%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_truncate_info_0_c___cxx.cxx.o
+[ 64%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_virtual_table_0_c___cxx.cxx.o
+[ 64%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_optimizer_stat_0_c___cxx.cxx.o
+[ 65%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_distance.cpp.o
+[ 65%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_tx_table_0_c___cxx.cxx.o
+[ 65%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_mysql_0_c___cxx.cxx.o
+[ 65%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_vector_index_0_c___cxx.cxx.o
+[ 65%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_das_0_c___cxx.cxx.o
+[ 65%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_equals1.cpp.o
+[ 65%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_omt_0_c___cxx.cxx.o
+[ 65%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_ddl_1_c___cxx.cxx.o
+[ 65%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_equals2.cpp.o
+[ 65%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_optimizer_1_c___cxx.cxx.o
+[ 65%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_equals3.cpp.o
+[ 67%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_ddl_0_c___cxx.cxx.o
+[ 67%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_ai_service_0_c___cxx.cxx.o
+[ 68%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_virtual_table_2_c___cxx.cxx.o
+[ 69%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_intersects.cpp.o
+[ 69%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_compaction_filter_0_c___cxx.cxx.o
+[ 70%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_13_c___cxx.cxx.o
+[ 70%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_overlaps1.cpp.o
+[ 70%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_net_0_c___cxx.cxx.o
+[ 70%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_common_0_c___cxx.cxx.o
+[ 70%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_mysql_1_c___cxx.cxx.o
+[ 70%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_overlaps2.cpp.o
+[ 71%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_dbms_job_0_c___cxx.cxx.o
+[ 71%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_vector_base_0_c___cxx.cxx.o
+[ 72%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_overlaps3.cpp.o
+[ 72%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_basic_1_c___cxx.cxx.o
+[ 73%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_tmp_file_0_c___cxx.cxx.o
+[ 73%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_virtual_table_1_c___cxx.cxx.o
+[ 73%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_symdifference1.cpp.o
+[ 73%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_resolver_ddl_0_c___cxx.cxx.o
+[ 73%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_scheduler_0_c___cxx.cxx.o
+[ 73%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_tx_storage_0_c___cxx.cxx.o
+[ 73%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_virtual_table_3_c___cxx.cxx.o
+[ 74%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_monitor_0_c___cxx.cxx.o
+[ 74%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_ik_0_c___cxx.cxx.o
+[ 74%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_0_c___cxx.cxx.o
+[ 74%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_common_mixed_0_c___cxx.cxx.o
+[ 74%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_symdifference2.cpp.o
+[ 75%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_access_0_c___cxx.cxx.o
+[ 76%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_common_0_c___cxx.cxx.o
+[ 76%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_meta_store_0_c___cxx.cxx.o
+[ 76%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_rewrite_1_c___cxx.cxx.o
+[ 76%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_tablet_0_c___cxx.cxx.o
+[ 76%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_schema_0_c___cxx.cxx.o
+[ 76%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_allocator_0_c___cxx.cxx.o
+[ 76%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_virtual_table_4_c___cxx.cxx.o
+[ 76%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_symdifference3.cpp.o
+[ 76%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_basic_0_c___cxx.cxx.o
+[ 77%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_tablelock_0_c___cxx.cxx.o
+[ 77%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_change_stream_0_c___cxx.cxx.o
+[ 77%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_blocksstable_2_c___cxx.cxx.o
+[ 78%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_resolver_cmd_0_c___cxx.cxx.o
+[ 78%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_common_mixed_0_c___cxx.cxx.o
+[ 79%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_scheduler_0_c___cxx.cxx.o
+[ 79%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_4_c___cxx.cxx.o
+[ 80%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_touches1.cpp.o
+[ 80%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_compaction_0_c___cxx.cxx.o
+[ 80%] Building CXX object src/observer/CMakeFiles/ob_server.dir/Unity/unity_ob_server_ob_server_virtual_table_5_c___cxx.cxx.o
+[ 80%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_7_c___cxx.cxx.o
+[ 80%] Building CXX object src/observer/CMakeFiles/ob_server.dir/ob_server.cpp.o
+[ 81%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_blocksstable_1_c___cxx.cxx.o
+[ 81%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_aggregate_groupby_0_c___cxx.cxx.o
+[ 81%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_touches2.cpp.o
+[ 82%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_executor_1_c___cxx.cxx.o
+[ 82%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_memtable_0_c___cxx.cxx.o
+[ 82%] Building CXX object src/observer/CMakeFiles/ob_server.dir/ob_service.cpp.o
+[ 82%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_1_c___cxx.cxx.o
+[ 82%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_touches3.cpp.o
+[ 82%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_blocksstable_encoding1_0_c___cxx.cxx.o
+[ 83%] Building CXX object src/observer/CMakeFiles/ob_server.dir/composition/retrieval/ob_das_legacy_tr_merge_iter.cpp.o
+[ 83%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_union1.cpp.o
+[ 83%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_2_c___cxx.cxx.o
+[ 83%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_blocksstable_index_block_0_c___cxx.cxx.o
+[ 83%] Built target ob_server
+[ 83%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_dtl_0_c___cxx.cxx.o
+[ 84%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_common_0_c___cxx.cxx.o
+[ 85%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_union2.cpp.o
+[ 86%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_common_1_c___cxx.cxx.o
+[ 86%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_dml_0_c___cxx.cxx.o
+[ 86%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_rebase_0_c___cxx.cxx.o
+[ 86%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_15_c___cxx.cxx.o
+[ 86%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_9_c___cxx.cxx.o
+[ 86%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_within1.cpp.o
+[ 86%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_slog_0_c___cxx.cxx.o
+[ 87%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_common_mixed_0_c___cxx.cxx.o
+[ 87%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_cmd_0_c___cxx.cxx.o
+[ 87%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_tablet_1_c___cxx.cxx.o
+[ 87%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_1_c___cxx.cxx.o
+[ 87%] Building CXX object src/share/CMakeFiles/ob_share.dir/geo/ob_geo_func_within2.cpp.o
+[ 87%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_aggregate_core_0_c___cxx.cxx.o
+[ 88%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_11_c___cxx.cxx.o
+[ 88%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_printer_0_c___cxx.cxx.o
+[ 89%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_throttle_0_c___cxx.cxx.o
+[ 89%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_tx_0_c___cxx.cxx.o
+[ 89%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_optimizer_2_c___cxx.cxx.o
+[ 89%] Building CXX object src/share/CMakeFiles/ob_share.dir/ob_ddl_args.cpp.o
+[ 89%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_6_c___cxx.cxx.o
+[ 90%] Building CXX object src/share/CMakeFiles/ob_share.dir/ob_local_device.cpp.o
+[ 90%] Building CXX object src/share/CMakeFiles/ob_share.dir/ob_lonely_table_clean_rpc_struct.cpp.o
+[ 90%] Building CXX object src/share/CMakeFiles/ob_share.dir/ob_rpc_struct.cpp.o
+[ 90%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_tx_1_c___cxx.cxx.o
+[ 91%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_hybrid_search_0_c___cxx.cxx.o
+[ 91%] Building CXX object src/share/CMakeFiles/ob_share.dir/ob_sql_client_decorator.cpp.o
+[ 92%] Building CXX object src/share/CMakeFiles/ob_share.dir/ob_timezone_mgr.cpp.o
+[ 92%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_session_0_c___cxx.cxx.o
+[ 92%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_tx_2_c___cxx.cxx.o
+[ 92%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_cmd_1_c___cxx.cxx.o
+[ 92%] Built target ob_share
+[ 93%] Linking CXX static library liboblib.a
+[ 93%] Built target oblib
+[ 94%] Linking CXX static library libob_share_static.a
+[ 94%] Built target ob_share_static
+[ 94%] Linking CXX static library libob_sql_server_parser_static.a
+[ 94%] Built target ob_sql_server_parser_static
+[ 95%] Building CXX object src/storage/CMakeFiles/ob_storage.dir/Unity/unity_ob_storage_ob_storage_vector_type_0_c___cxx.cxx.o
+[ 95%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_das_1_c___cxx.cxx.o
+[ 95%] Built target ob_storage
+[ 96%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_0_c___cxx.cxx.o
+[ 96%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_14_c___cxx.cxx.o
+[ 96%] Linking CXX static library libob_storage_static.a
+[ 96%] Built target ob_storage_static
+[ 96%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_5_c___cxx.cxx.o
+[ 96%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_engine_expr_12_c___cxx.cxx.o
+[ 97%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_resolver_dml_0_c___cxx.cxx.o
+[ 97%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_resolver_expr_0_c___cxx.cxx.o
+[ 97%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_resolver_prepare_0_c___cxx.cxx.o
+[ 97%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_rewrite_0_c___cxx.cxx.o
+[ 98%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/Unity/unity_ob_sql_ob_sql_tablelock_0_c___cxx.cxx.o
+[ 98%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/engine/aggregate/ob_aggregate_processor.cpp.o
+[ 98%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/engine/expr/ob_expr_add.cpp.o
+[ 98%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/engine/expr/ob_expr_array_sort.cpp.o
+[100%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/engine/expr/ob_expr_in.cpp.o
+[100%] Building CXX object src/sql/CMakeFiles/ob_sql.dir/engine/expr/ob_expr_mul.cpp.o
+[100%] Built target ob_sql
+[100%] Linking CXX static library libob_sql_static.a
+[100%] Built target ob_sql_static
+[100%] Building CXX object src/observer/CMakeFiles/oceanbase_static.dir/ob_version.cpp.o
+[100%] Linking CXX static library liboceanbase_static.a
+[100%] Built target oceanbase_static
+[100%] Linking CXX executable seekdb
+[100%] Built target seekdb
+[compile.sh] make elapsed=995s
+cache directory                     /root/.ccache
+primary config                      /root/.ccache/ccache.conf
+secondary config      (readonly)    /home/jenkins/agent/workspace/rpm-obdevtools-ccache-3.7.12-1.1.8/ob_source_code_dir/rpm/.rpm_build/BUILDROOT/obdevtools-ccache-3.7.12-12022100417.el8.x86_64/ccache.conf
+stats updated                       Mon Nov  2 09:41:56 2026
+stats zeroed                        Mon Nov  2 09:29:24 2026
+cache hit (direct)                     2
+cache hit (preprocessed)               0
+cache miss                           617
+cache hit rate                      0.32 %
+called for preprocessing              11
+compile failed                         5
+preprocessor error                     8
+bad compiler arguments                 1
+autoconf compile/link                 82
+unsupported compiler option          201
+no input file                          3
+cleanups performed                     3
+files in cache                      1371
+cache size                           1.9 GB
+max cache size                       3.0 GB
+[compile.sh] GPU configuration and worker/bridge artifacts verified
+[compile.sh] total elapsed=1176s
+[compile.sh] final phase=complete exit=0
