@@ -1,0 +1,16 @@
+{
+  "frozen_v5": "634888d9b037153fa143d2c913ba4b25503e1d62",
+  "parent_commit": "df1c8f48785294c120755c28da163249c43fd21d",
+  "gpu": "gfx1100",
+  "rocm": "7.2.4",
+  "source_changes": "bridge NN-descent 100->80, search_width 4->16; main executable unchanged",
+  "sha256": {
+    "selected-source/seekdb_cuvs_bridge.c": "0d40c62430766d3f3d447f9027e2a7b89cb92a7dd2e233bd2796c9c476e0d5ce",
+    "selected/libseekdb_cuvs_bridge.so": "6da366a8a1cee20732d2dd7ba04d1a1a944b49ccad83591347a86be9b999da46",
+    "baseline/libseekdb_cuvs_bridge.so": "030b36246e3fc4e92743e432d00979f7a729fdf36fb8b6ff482b75fb008e9da6",
+    "unchanged_v5_seekdb": "835370b020476cefb859bea9161583f0a9099736b89c4c5adf61da3031c240f2"
+  },
+  "cgroup_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+  "scope": "public/generated data, not official Hidden or a formal score",
+  "passed": true
+}

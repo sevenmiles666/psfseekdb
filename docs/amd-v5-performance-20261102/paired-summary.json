@@ -1,0 +1,754 @@
+{
+  "scope": "paired public/generated development checks; not official Hidden results or score",
+  "baseline_label": "final-baseline",
+  "candidate_label": "final-selected",
+  "datasets": [
+    {
+      "dataset": "sift10k",
+      "recall": {
+        "10": {
+          "baseline_best": 1.0,
+          "candidate_worst": 1.0,
+          "threshold": 0.995,
+          "passed": true
+        },
+        "100": {
+          "baseline_best": 1.0,
+          "candidate_worst": 1.0,
+          "threshold": 0.995,
+          "passed": true
+        }
+      },
+      "qps": {
+        "10": {
+          "baseline": 22363.573850237997,
+          "candidate": 31838.75114642616,
+          "ratio": 1.4236879740081134
+        },
+        "100": {
+          "baseline": 22806.484291283767,
+          "candidate": 32164.50329840319,
+          "ratio": 1.4103227348678153
+        }
+      },
+      "query_geometric_ratio": 1.4169895966807737,
+      "query_gate_passed": true,
+      "bridge_build_plus_first_query": {
+        "baseline_seconds": 0.6057337750680745,
+        "candidate_seconds": 0.5342437922954559,
+        "speedup": 1.1338152802215098
+      },
+      "vram_ratio": 1.1767914977660228,
+      "candidate_peak_vram_bytes": 697999360,
+      "candidate_peak_rss_bytes": 572878848,
+      "resource_gate_passed": true,
+      "quality_gate_passed": true,
+      "passed": true
+    },
+    {
+      "dataset": "sift250k",
+      "recall": {
+        "10": {
+          "baseline_best": 0.999951171875,
+          "candidate_worst": 0.9999267578125,
+          "threshold": 0.994951171875,
+          "passed": true
+        },
+        "100": {
+          "baseline_best": 0.99998046875,
+          "candidate_worst": 0.999970703125,
+          "threshold": 0.99498046875,
+          "passed": true
+        }
+      },
+      "qps": {
+        "10": {
+          "baseline": 26898.184425108626,
+          "candidate": 40844.6334875479,
+          "ratio": 1.5184903502044804
+        },
+        "100": {
+          "baseline": 26933.969366173485,
+          "candidate": 41037.01580021302,
+          "ratio": 1.5236155964353189
+        }
+      },
+      "query_geometric_ratio": 1.521050814604192,
+      "query_gate_passed": true,
+      "bridge_build_plus_first_query": {
+        "baseline_seconds": 14.800926549825817,
+        "candidate_seconds": 12.647062844596803,
+        "speedup": 1.1703054481261796
+      },
+      "vram_ratio": 0.9999960492370418,
+      "candidate_peak_vram_bytes": 9330819072,
+      "candidate_peak_rss_bytes": 2152763392,
+      "resource_gate_passed": true,
+      "quality_gate_passed": true,
+      "passed": true
+    },
+    {
+      "dataset": "gaussian256",
+      "recall": {
+        "10": {
+          "baseline_best": 0.9510253906250001,
+          "candidate_worst": 0.9503417968750001,
+          "threshold": 0.9460253906250001,
+          "passed": true
+        },
+        "100": {
+          "baseline_best": 0.89919677734375,
+          "candidate_worst": 0.89953369140625,
+          "threshold": 0.89419677734375,
+          "passed": true
+        }
+      },
+      "qps": {
+        "10": {
+          "baseline": 12905.843433855664,
+          "candidate": 13842.020936168874,
+          "ratio": 1.0725390407152586
+        },
+        "100": {
+          "baseline": 12986.404500637442,
+          "candidate": 13968.930274011995,
+          "ratio": 1.075658029389607
+        }
+      },
+      "query_geometric_ratio": 1.0740974029291732,
+      "query_gate_passed": true,
+      "bridge_build_plus_first_query": {
+        "baseline_seconds": 15.128937111236155,
+        "candidate_seconds": 13.893009814899415,
+        "speedup": 1.0889603702007957
+      },
+      "vram_ratio": 0.9999978357283164,
+      "candidate_peak_vram_bytes": 9462747136,
+      "candidate_peak_rss_bytes": 2286333952,
+      "resource_gate_passed": true,
+      "quality_gate_passed": true,
+      "passed": true
+    },
+    {
+      "dataset": "clustered256",
+      "recall": {
+        "10": {
+          "baseline_best": 1.0,
+          "candidate_worst": 1.0,
+          "threshold": 0.995,
+          "passed": true
+        },
+        "100": {
+          "baseline_best": 1.0,
+          "candidate_worst": 1.0,
+          "threshold": 0.995,
+          "passed": true
+        }
+      },
+      "qps": {
+        "10": {
+          "baseline": 23504.603924177183,
+          "candidate": 28982.391617901245,
+          "ratio": 1.2330516911237772
+        },
+        "100": {
+          "baseline": 23546.479865412144,
+          "candidate": 29223.11273473605,
+          "ratio": 1.2410820174298076
+        }
+      },
+      "query_geometric_ratio": 1.237060338227337,
+      "query_gate_passed": true,
+      "bridge_build_plus_first_query": {
+        "baseline_seconds": 15.618606896139681,
+        "candidate_seconds": 13.627419664990157,
+        "speedup": 1.1461162333075448
+      },
+      "vram_ratio": 0.9999987014364278,
+      "candidate_peak_vram_bytes": 9462751232,
+      "candidate_peak_rss_bytes": 2284814336,
+      "resource_gate_passed": true,
+      "quality_gate_passed": true,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "sql_final-baseline": {
+    "completed": true,
+    "label": "final-baseline",
+    "bridge_sha256": "030b36246e3fc4e92743e432d00979f7a729fdf36fb8b6ff482b75fb008e9da6",
+    "seekdb_sha256": "835370b020476cefb859bea9161583f0a9099736b89c4c5adf61da3031c240f2",
+    "benchmark_sha256": "6260e32578e1229062b5e71ddf73e40c69bb3b9662201d54c8d6f8b04262a3ee",
+    "scope": "real cold SQL DDL through first legal query; unchanged V5 main executable, candidate bridge rebuilt from source",
+    "datasets": [
+      {
+        "name": "sift250k",
+        "rows": 250000,
+        "dim": 128,
+        "nq": 256,
+        "ddl_seconds": 19.90860838117078,
+        "ddl_plus_first_query_seconds": 19.94340601703152,
+        "topk": {
+          "10": {
+            "recall": 1.0,
+            "qps": 151.78892083209115,
+            "seconds": 1.6865526060573757
+          },
+          "100": {
+            "recall": 0.9999609375,
+            "qps": 134.69536968513293,
+            "seconds": 1.9005850059911609
+          }
+        }
+      },
+      {
+        "name": "gaussian256",
+        "rows": 250000,
+        "dim": 256,
+        "nq": 256,
+        "ddl_seconds": 20.732102072332054,
+        "ddl_plus_first_query_seconds": 20.746436667162925,
+        "topk": {
+          "10": {
+            "recall": 0.9496093750000001,
+            "qps": 129.44272514058193,
+            "seconds": 1.97770867170766
+          },
+          "100": {
+            "recall": 0.9001171875,
+            "qps": 119.67521301953387,
+            "seconds": 2.1391229941509664
+          }
+        }
+      }
+    ],
+    "peak_vram_device_bytes": 1383731200,
+    "peak_seekdb_rss_bytes": 4255404032,
+    "loaded_bridge_verified": true,
+    "cpu_vsag_passed": true,
+    "reload_queries": [
+      {
+        "table": "items_sift250k",
+        "before_recall100": 1.0,
+        "after_recall100": 1.0,
+        "identical_set": true
+      },
+      {
+        "table": "items_gaussian256",
+        "before_recall100": 0.88,
+        "after_recall100": 0.88,
+        "identical_set": true
+      }
+    ],
+    "reload_validated": true
+  },
+  "sql_final-selected": {
+    "completed": true,
+    "label": "final-selected",
+    "bridge_sha256": "6da366a8a1cee20732d2dd7ba04d1a1a944b49ccad83591347a86be9b999da46",
+    "seekdb_sha256": "835370b020476cefb859bea9161583f0a9099736b89c4c5adf61da3031c240f2",
+    "benchmark_sha256": "6260e32578e1229062b5e71ddf73e40c69bb3b9662201d54c8d6f8b04262a3ee",
+    "scope": "real cold SQL DDL through first legal query; unchanged V5 main executable, candidate bridge rebuilt from source",
+    "datasets": [
+      {
+        "name": "sift250k",
+        "rows": 250000,
+        "dim": 128,
+        "nq": 256,
+        "ddl_seconds": 17.60498907091096,
+        "ddl_plus_first_query_seconds": 17.637652572244406,
+        "topk": {
+          "10": {
+            "recall": 1.0,
+            "qps": 192.7248686543867,
+            "seconds": 1.3283184561878443
+          },
+          "100": {
+            "recall": 1.0,
+            "qps": 168.3792520406871,
+            "seconds": 1.5203773439861834
+          }
+        }
+      },
+      {
+        "name": "gaussian256",
+        "rows": 250000,
+        "dim": 256,
+        "nq": 256,
+        "ddl_seconds": 18.90644623618573,
+        "ddl_plus_first_query_seconds": 18.918224700260907,
+        "topk": {
+          "10": {
+            "recall": 0.9500000000000001,
+            "qps": 160.7949050627929,
+            "seconds": 1.5920902462676167
+          },
+          "100": {
+            "recall": 0.898828125,
+            "qps": 151.55979248570515,
+            "seconds": 1.689102339092642
+          }
+        }
+      }
+    ],
+    "peak_vram_device_bytes": 1253720064,
+    "peak_seekdb_rss_bytes": 4274151424,
+    "loaded_bridge_verified": true,
+    "cpu_vsag_passed": true,
+    "reload_queries": [
+      {
+        "table": "items_sift250k",
+        "before_recall100": 1.0,
+        "after_recall100": 1.0,
+        "identical_set": true
+      },
+      {
+        "table": "items_gaussian256",
+        "before_recall100": 0.93,
+        "after_recall100": 0.93,
+        "identical_set": true
+      }
+    ],
+    "reload_validated": true
+  },
+  "sql_round2-baseline": {
+    "completed": true,
+    "label": "round2-baseline",
+    "bridge_sha256": "030b36246e3fc4e92743e432d00979f7a729fdf36fb8b6ff482b75fb008e9da6",
+    "seekdb_sha256": "835370b020476cefb859bea9161583f0a9099736b89c4c5adf61da3031c240f2",
+    "benchmark_sha256": "6260e32578e1229062b5e71ddf73e40c69bb3b9662201d54c8d6f8b04262a3ee",
+    "scope": "real cold SQL DDL through first legal query; unchanged V5 main executable, candidate bridge rebuilt from source",
+    "datasets": [
+      {
+        "name": "sift250k",
+        "rows": 250000,
+        "dim": 128,
+        "nq": 256,
+        "ddl_seconds": 20.12956142704934,
+        "ddl_plus_first_query_seconds": 20.16157519305125,
+        "topk": {
+          "10": {
+            "recall": 1.0,
+            "qps": 156.71573165014644,
+            "seconds": 1.6335309627465904
+          },
+          "100": {
+            "recall": 0.9999609375,
+            "qps": 137.030279812441,
+            "seconds": 1.8682002280838788
+          }
+        }
+      },
+      {
+        "name": "gaussian256",
+        "rows": 250000,
+        "dim": 256,
+        "nq": 256,
+        "ddl_seconds": 20.31761682778597,
+        "ddl_plus_first_query_seconds": 20.331900663673878,
+        "topk": {
+          "10": {
+            "recall": 0.9550781250000001,
+            "qps": 128.28577497336983,
+            "seconds": 1.9955447129905224
+          },
+          "100": {
+            "recall": 0.900546875,
+            "qps": 120.14883953132636,
+            "seconds": 2.1306905751116574
+          }
+        }
+      }
+    ],
+    "peak_vram_device_bytes": 1253724160,
+    "peak_seekdb_rss_bytes": 4315615232,
+    "loaded_bridge_verified": true,
+    "cpu_vsag_passed": true,
+    "reload_queries": [
+      {
+        "table": "items_sift250k",
+        "before_recall100": 1.0,
+        "after_recall100": 1.0,
+        "identical_set": true
+      },
+      {
+        "table": "items_gaussian256",
+        "before_recall100": 0.94,
+        "after_recall100": 0.94,
+        "identical_set": true
+      }
+    ],
+    "reload_validated": true
+  },
+  "sql_round2-selected": {
+    "completed": true,
+    "label": "round2-selected",
+    "bridge_sha256": "6da366a8a1cee20732d2dd7ba04d1a1a944b49ccad83591347a86be9b999da46",
+    "seekdb_sha256": "835370b020476cefb859bea9161583f0a9099736b89c4c5adf61da3031c240f2",
+    "benchmark_sha256": "6260e32578e1229062b5e71ddf73e40c69bb3b9662201d54c8d6f8b04262a3ee",
+    "scope": "real cold SQL DDL through first legal query; unchanged V5 main executable, candidate bridge rebuilt from source",
+    "datasets": [
+      {
+        "name": "sift250k",
+        "rows": 250000,
+        "dim": 128,
+        "nq": 256,
+        "ddl_seconds": 17.918294514063746,
+        "ddl_plus_first_query_seconds": 18.006298260763288,
+        "topk": {
+          "10": {
+            "recall": 1.0,
+            "qps": 202.26731439082837,
+            "seconds": 1.2656518467701972
+          },
+          "100": {
+            "recall": 0.9999609375,
+            "qps": 173.96539346744157,
+            "seconds": 1.4715570430271327
+          }
+        }
+      },
+      {
+        "name": "gaussian256",
+        "rows": 250000,
+        "dim": 256,
+        "nq": 256,
+        "ddl_seconds": 19.595505052711815,
+        "ddl_plus_first_query_seconds": 19.607156176585704,
+        "topk": {
+          "10": {
+            "recall": 0.9527343750000001,
+            "qps": 161.2518421135701,
+            "seconds": 1.5875787627883255
+          },
+          "100": {
+            "recall": 0.902578125,
+            "qps": 149.97838878277184,
+            "seconds": 1.706912589725107
+          }
+        }
+      }
+    ],
+    "peak_vram_device_bytes": 1253715968,
+    "peak_seekdb_rss_bytes": 4297965568,
+    "loaded_bridge_verified": true,
+    "cpu_vsag_passed": true,
+    "reload_queries": [
+      {
+        "table": "items_sift250k",
+        "before_recall100": 1.0,
+        "after_recall100": 1.0,
+        "identical_set": true
+      },
+      {
+        "table": "items_gaussian256",
+        "before_recall100": 0.93,
+        "after_recall100": 0.93,
+        "identical_set": true
+      }
+    ],
+    "reload_validated": true
+  },
+  "sql_round3-baseline": {
+    "completed": true,
+    "label": "round3-baseline",
+    "bridge_sha256": "030b36246e3fc4e92743e432d00979f7a729fdf36fb8b6ff482b75fb008e9da6",
+    "seekdb_sha256": "835370b020476cefb859bea9161583f0a9099736b89c4c5adf61da3031c240f2",
+    "benchmark_sha256": "6260e32578e1229062b5e71ddf73e40c69bb3b9662201d54c8d6f8b04262a3ee",
+    "scope": "real cold SQL DDL through first legal query; unchanged V5 main executable, candidate bridge rebuilt from source",
+    "datasets": [
+      {
+        "name": "sift250k",
+        "rows": 250000,
+        "dim": 128,
+        "nq": 256,
+        "ddl_seconds": 19.515516300685704,
+        "ddl_plus_first_query_seconds": 19.551893224939704,
+        "topk": {
+          "10": {
+            "recall": 1.0,
+            "qps": 152.7128935824762,
+            "seconds": 1.6763483029790223
+          },
+          "100": {
+            "recall": 0.9999609375,
+            "qps": 135.0735982105863,
+            "seconds": 1.8952630520798266
+          }
+        }
+      },
+      {
+        "name": "gaussian256",
+        "rows": 250000,
+        "dim": 256,
+        "nq": 256,
+        "ddl_seconds": 21.407570547889918,
+        "ddl_plus_first_query_seconds": 21.42152008600533,
+        "topk": {
+          "10": {
+            "recall": 0.9476562500000001,
+            "qps": 131.78127572752,
+            "seconds": 1.9426128529012203
+          },
+          "100": {
+            "recall": 0.899296875,
+            "qps": 121.0660093943204,
+            "seconds": 2.114548924844712
+          }
+        }
+      }
+    ],
+    "peak_vram_device_bytes": 1253720064,
+    "peak_seekdb_rss_bytes": 4144553984,
+    "loaded_bridge_verified": true,
+    "cpu_vsag_passed": true,
+    "reload_queries": [
+      {
+        "table": "items_sift250k",
+        "before_recall100": 1.0,
+        "after_recall100": 1.0,
+        "identical_set": true
+      },
+      {
+        "table": "items_gaussian256",
+        "before_recall100": 0.87,
+        "after_recall100": 0.87,
+        "identical_set": true
+      }
+    ],
+    "reload_validated": true
+  },
+  "sql_round3-selected": {
+    "completed": true,
+    "label": "round3-selected",
+    "bridge_sha256": "6da366a8a1cee20732d2dd7ba04d1a1a944b49ccad83591347a86be9b999da46",
+    "seekdb_sha256": "835370b020476cefb859bea9161583f0a9099736b89c4c5adf61da3031c240f2",
+    "benchmark_sha256": "6260e32578e1229062b5e71ddf73e40c69bb3b9662201d54c8d6f8b04262a3ee",
+    "scope": "real cold SQL DDL through first legal query; unchanged V5 main executable, candidate bridge rebuilt from source",
+    "datasets": [
+      {
+        "name": "sift250k",
+        "rows": 250000,
+        "dim": 128,
+        "nq": 256,
+        "ddl_seconds": 16.907203521113843,
+        "ddl_plus_first_query_seconds": 16.94066099682823,
+        "topk": {
+          "10": {
+            "recall": 1.0,
+            "qps": 174.3127564636305,
+            "seconds": 1.4686245871707797
+          },
+          "100": {
+            "recall": 1.0,
+            "qps": 167.5375168768607,
+            "seconds": 1.528015961870551
+          }
+        }
+      },
+      {
+        "name": "gaussian256",
+        "rows": 250000,
+        "dim": 256,
+        "nq": 256,
+        "ddl_seconds": 18.711061596870422,
+        "ddl_plus_first_query_seconds": 18.723520526196808,
+        "topk": {
+          "10": {
+            "recall": 0.9527343750000001,
+            "qps": 167.23456522910763,
+            "seconds": 1.5307840197347105
+          },
+          "100": {
+            "recall": 0.9017578125,
+            "qps": 155.32475016720318,
+            "seconds": 1.6481597409583628
+          }
+        }
+      }
+    ],
+    "peak_vram_device_bytes": 1253720064,
+    "peak_seekdb_rss_bytes": 4396740608,
+    "loaded_bridge_verified": true,
+    "cpu_vsag_passed": true,
+    "reload_queries": [
+      {
+        "table": "items_sift250k",
+        "before_recall100": 1.0,
+        "after_recall100": 1.0,
+        "identical_set": true
+      },
+      {
+        "table": "items_gaussian256",
+        "before_recall100": 0.9,
+        "after_recall100": 0.9,
+        "identical_set": true
+      }
+    ],
+    "reload_validated": true
+  },
+  "sql_resources": [
+    {
+      "baseline": "final-baseline",
+      "candidate": "final-selected",
+      "vram_ratio": 0.9060430696366462,
+      "candidate_peak_vram_bytes": 1253720064,
+      "candidate_peak_rss_bytes": 4274151424,
+      "passed": true
+    },
+    {
+      "baseline": "round2-baseline",
+      "candidate": "round2-selected",
+      "vram_ratio": 0.9999934658673244,
+      "candidate_peak_vram_bytes": 1253715968,
+      "candidate_peak_rss_bytes": 4297965568,
+      "passed": true
+    },
+    {
+      "baseline": "round3-baseline",
+      "candidate": "round3-selected",
+      "vram_ratio": 1.0,
+      "candidate_peak_vram_bytes": 1253720064,
+      "candidate_peak_rss_bytes": 4396740608,
+      "passed": true
+    }
+  ],
+  "sql_datasets": [
+    {
+      "dataset": "gaussian256",
+      "baseline_cold_seconds": [
+        20.746436667162925,
+        20.331900663673878,
+        21.42152008600533
+      ],
+      "candidate_cold_seconds": [
+        18.918224700260907,
+        19.607156176585704,
+        18.723520526196808
+      ],
+      "baseline_median_seconds": 20.746436667162925,
+      "candidate_median_seconds": 18.918224700260907,
+      "speedup": 1.096637607168119,
+      "recall": {
+        "10": {
+          "candidate_worst": 0.9500000000000001,
+          "pairs": [
+            {
+              "baseline": 0.9496093750000001,
+              "candidate": 0.9500000000000001,
+              "threshold": 0.9446093750000001,
+              "passed": true
+            },
+            {
+              "baseline": 0.9550781250000001,
+              "candidate": 0.9527343750000001,
+              "threshold": 0.9500781250000001,
+              "passed": true
+            },
+            {
+              "baseline": 0.9476562500000001,
+              "candidate": 0.9527343750000001,
+              "threshold": 0.9426562500000001,
+              "passed": true
+            }
+          ],
+          "passed": true,
+          "scope": "256 sequential single-query diagnostics, not formal nq=4096 batch quality"
+        },
+        "100": {
+          "candidate_worst": 0.898828125,
+          "pairs": [
+            {
+              "baseline": 0.9001171875,
+              "candidate": 0.898828125,
+              "threshold": 0.8951171875,
+              "passed": true
+            },
+            {
+              "baseline": 0.900546875,
+              "candidate": 0.902578125,
+              "threshold": 0.895546875,
+              "passed": true
+            },
+            {
+              "baseline": 0.899296875,
+              "candidate": 0.9017578125,
+              "threshold": 0.894296875,
+              "passed": true
+            }
+          ],
+          "passed": true,
+          "scope": "256 sequential single-query diagnostics, not formal nq=4096 batch quality"
+        }
+      }
+    },
+    {
+      "dataset": "sift250k",
+      "baseline_cold_seconds": [
+        19.94340601703152,
+        20.16157519305125,
+        19.551893224939704
+      ],
+      "candidate_cold_seconds": [
+        17.637652572244406,
+        18.006298260763288,
+        16.94066099682823
+      ],
+      "baseline_median_seconds": 19.94340601703152,
+      "candidate_median_seconds": 17.637652572244406,
+      "speedup": 1.1307290431843282,
+      "recall": {
+        "10": {
+          "candidate_worst": 1.0,
+          "pairs": [
+            {
+              "baseline": 1.0,
+              "candidate": 1.0,
+              "threshold": 0.995,
+              "passed": true
+            },
+            {
+              "baseline": 1.0,
+              "candidate": 1.0,
+              "threshold": 0.995,
+              "passed": true
+            },
+            {
+              "baseline": 1.0,
+              "candidate": 1.0,
+              "threshold": 0.995,
+              "passed": true
+            }
+          ],
+          "passed": true,
+          "scope": "256 sequential single-query diagnostics, not formal nq=4096 batch quality"
+        },
+        "100": {
+          "candidate_worst": 0.9999609375,
+          "pairs": [
+            {
+              "baseline": 0.9999609375,
+              "candidate": 1.0,
+              "threshold": 0.9949609375,
+              "passed": true
+            },
+            {
+              "baseline": 0.9999609375,
+              "candidate": 0.9999609375,
+              "threshold": 0.9949609375,
+              "passed": true
+            },
+            {
+              "baseline": 0.9999609375,
+              "candidate": 1.0,
+              "threshold": 0.9949609375,
+              "passed": true
+            }
+          ],
+          "passed": true,
+          "scope": "256 sequential single-query diagnostics, not formal nq=4096 batch quality"
+        }
+      }
+    }
+  ]
+}

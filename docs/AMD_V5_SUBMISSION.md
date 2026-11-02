@@ -1,7 +1,10 @@
-# AMD V5 基线修复分支
+# AMD V5 基线修复记录
 
-本分支为 `competition/amd-v5-fix`，直接从官方冻结 V5 提交
+基础修复分支为 `competition/amd-v5-fix`，直接从官方冻结 V5 提交
 `634888d9b037153fa143d2c913ba4b25503e1d62` 建立，不合并旧实现来伪造祖先关系。
+
+后续性能改动位于其后代分支 `competition/amd-v5-perf`，见
+[性能优化与配对验证](AMD_V5_PERFORMANCE.md)。下面记录基础恢复版本的范围。
 
 官方来源：
 https://github.com/AMD-DEV-CONTEST/Oceanbase-2026-competition-AMD-Doc
