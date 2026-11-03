@@ -1,0 +1,71 @@
+{
+  "kernel": {
+    "command": [
+      "uname",
+      "-a"
+    ],
+    "exit_code": 0,
+    "output": "Linux j-ew73okvg5ci4fkcvid2rem36d3 6.8.0-79-generic #79-Ubuntu SMP PREEMPT_DYNAMIC Tue Aug 12 14:42:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux\n"
+  },
+  "gpu": {
+    "command": [
+      "rocm-smi",
+      "--showbus",
+      "--json"
+    ],
+    "exit_code": 0,
+    "output": "{\"card0\": {\"PCI Bus\": \"0000:03:00.0\"}}\n"
+  },
+  "hip": {
+    "command": [
+      "/opt/rocm/bin/hipcc",
+      "--version"
+    ],
+    "exit_code": 0,
+    "output": "HIP version: 7.2.53211-97f5574fe2\nAMD clang version 22.0.0git (https://github.com/RadeonOpenCompute/llvm-project roc-7.2.4 26084 f58b06dce1f9c15707c5f808fd002e18c2accf7e)\nTarget: x86_64-unknown-linux-gnu\nThread model: posix\nInstalledDir: /opt/rocm-7.2.4/lib/llvm/bin\nConfiguration file: /opt/rocm-7.2.4/lib/llvm/bin/clang++.cfg\n"
+  },
+  "cpu_quota": {
+    "command": [
+      "cat",
+      "/sys/fs/cgroup/cpu.max"
+    ],
+    "exit_code": 0,
+    "output": "1600000 100000\n"
+  },
+  "memory_quota": {
+    "command": [
+      "cat",
+      "/sys/fs/cgroup/memory.max"
+    ],
+    "exit_code": 0,
+    "output": "59055800320\n"
+  },
+  "memory_events": {
+    "command": [
+      "cat",
+      "/sys/fs/cgroup/memory.events"
+    ],
+    "exit_code": 0,
+    "output": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n"
+  },
+  "python": {
+    "command": [
+      "/opt/venv/bin/python",
+      "-c",
+      "import sys,numpy,pymysql;print(sys.version);print(numpy.__version__);print(pymysql.__version__)"
+    ],
+    "exit_code": 0,
+    "output": "3.12.3 (main, Mar 23 2026, 19:04:32) [GCC 13.3.0]\n2.4.6\n1.4.6\n"
+  },
+  "restored_source_head": {
+    "command": [
+      "git",
+      "-C",
+      "/workspace/amd-v5-round2/source",
+      "rev-parse",
+      "HEAD"
+    ],
+    "exit_code": 0,
+    "output": "d4840ee3ea658250810883a63b299b428290d3c0\n"
+  }
+}

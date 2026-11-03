@@ -11,6 +11,7 @@ import resource
 import threading
 import time
 import numpy as np
+from gpu_monitor import gpu_memory_source
 
 ROOT = None  # Set from the explicit --work-dir argument.
 
@@ -35,8 +36,13 @@ def prepare(kind):
         base = fvec(ROOT/'data/sift_base.fvecs', 250000)
         queries = fvec(ROOT/'data/sift_query.fvecs', 4096)
     elif kind == 'sift10k':
-        base = np.fromfile(ROOT/'data/base.f32', dtype=np.float32).reshape(-1,128)
-        queries = np.fromfile(ROOT/'data/query.f32', dtype=np.float32).reshape(-1,128)
+        # Use the public SIFT prefix; course .f32 files do not establish provenance.
+        def fvec_prefix(path, rows):
+            data=np.memmap(path,dtype=np.int32,mode='r').reshape(-1,129)
+            assert len(data)>=rows and np.all(data[:rows,0]==128)
+            return np.ascontiguousarray(data[:rows,1:].view(np.float32))
+        base=fvec_prefix(ROOT/'data/sift_base.fvecs',10000)
+        queries=fvec_prefix(ROOT/'data/sift_query.fvecs',100)
     elif kind == 'gaussian256':
         base = rng.normal(size=(250000,256)).astype(np.float32)
         queries = rng.normal(size=(4096,256)).astype(np.float32)
@@ -98,9 +104,10 @@ def run(lib_path, kind, label, rounds):
     ev=ROOT/'evidence';ev.mkdir(exist_ok=True)
     result={'label':label,'library_sha256':digest(lib_path),'benchmark_sha256':digest(Path(__file__)),'dataset':json.loads((dest/'dataset.json').read_text()),
             'scope':'C ABI only, not official SQL DDL scoring','rounds':[],'completed':False}
+    result.update(gpu_memory_source()[1])
     target=ev/(kind+'-'+label+'.json')
     peak=[0];done=threading.Event()
-    vram=list(Path('/sys/class/drm').glob('card*/device/mem_info_vram_used'))
+    vram=[gpu_memory_source()[0]]
     def monitor():
         while not done.wait(.05):
             for p in vram:

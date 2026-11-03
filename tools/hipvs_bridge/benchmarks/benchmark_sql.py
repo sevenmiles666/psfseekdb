@@ -11,6 +11,7 @@ import socket
 import threading
 import time
 import numpy as np
+from gpu_monitor import gpu_memory_source
 import pymysql
 
 ROOT=None
@@ -42,14 +43,16 @@ def run(label,bridge,datasets,nq):
           '--parameter','log_disk_size=2G','--parameter','local_ip=127.0.0.1',
           '--parameter','__min_full_resource_pool_memory=2147483648','--parameter','syslog_level=INFO']
     proc=None;conn=None
+    evaluation_begin=time.monotonic()
     report={'completed':False,'label':label,'bridge_sha256':sha(bridge),'seekdb_sha256':sha(BINARY),
             'benchmark_sha256':sha(Path(__file__)),
-            'scope':'real cold SQL DDL through first legal query; unchanged V5 main executable, candidate bridge rebuilt from source',
+            'scope':'complete SQL query-set development run; nq counts individual SQL queries, not one CAGRA batch; binary and bridge identified by SHA-256',
             'datasets':[]}
+    report.update(gpu_memory_source()[1])
     target=ev/('sql-'+label+'.json')
     done=threading.Event()
     def monitor():
-        vram=list(Path('/sys/class/drm').glob('card*/device/mem_info_vram_used'))
+        vram=[gpu_memory_source()[0]]
         while not done.wait(.05):
             for path in vram:
                 try:report['peak_vram_device_bytes']=max(report.get('peak_vram_device_bytes',0),int(path.read_text()))
@@ -88,9 +91,12 @@ def run(label,bridge,datasets,nq):
             dest=ROOT/'data'/kind;base=np.load(dest/'base.npy',mmap_mode='r');q=np.load(dest/'queries.npy',mmap_mode='r')[:nq];truth=np.load(dest/'truth.npy')[:nq]
             ids=1000003+np.arange(len(base),dtype=np.int64)*7
             data_file=dest/'vectors.tsv'
-            if not data_file.exists():
+            provenance=dest/'vectors.tsv.provenance.json'
+            expected={'base_sha256':sha(dest/'base.npy'),'rows':len(base),'dim':base.shape[1],'id_mapping':'1000003+row*7','float_format':'.9g'}
+            if not data_file.exists() or not provenance.exists() or json.loads(provenance.read_text())!=expected:
                 with data_file.open('w') as out:
                     for pk,row in zip(ids,base):out.write(str(int(pk))+'\t['+','.join(format(float(x),'.9g') for x in row)+']\n')
+                provenance.write_text(json.dumps(expected,indent=2))
             table='items_'+kind
             sql(f'create table {table}(id bigint primary key,v vector({base.shape[1]}))')
             sql(f"load data local infile '{data_file}' into table {table} fields terminated by '\\t' lines terminated by '\\n' (id,v)")
@@ -100,7 +106,10 @@ def run(label,bridge,datasets,nq):
             ddl=time.perf_counter()-begin
             first=query(table,q[0],10)
             build=time.perf_counter()-begin
-            row={'name':kind,'rows':len(base),'dim':base.shape[1],'nq':len(q),'ddl_seconds':ddl,'ddl_plus_first_query_seconds':build,'topk':{}}
+            valid=set(map(int,ids))
+            assert len(first)==10 and len(set(first))==10 and all(i in valid for i in first), 'First timed query must return 10 legal unique IDs'
+            row={'name':kind,'rows':len(base),'dim':base.shape[1],'nq':len(q),'ddl_seconds':ddl,'ddl_plus_first_query_seconds':build,'topk':{},
+                 'dataset_sha256':json.loads((dest/'dataset.json').read_text())['sha256']}
             for k in (10,100):
                 begin=time.perf_counter();got=[query(table,vector,k) for vector in q];elapsed=time.perf_counter()-begin
                 assert all(len(x)==k and len(set(x))==k for x in got)
@@ -108,7 +117,8 @@ def run(label,bridge,datasets,nq):
                 recall=np.mean([len(set(x)&set(map(int,ids[t[:k]])))/k for x,t in zip(got,truth)])
                 row['topk'][str(k)]={'recall':float(recall),'qps':len(q)/elapsed,'seconds':elapsed}
                 (ev/(kind+'-'+label+'-sql-k'+str(k)+'-ids.json')).write_text(json.dumps(got))
-            saved.append((table,q[0].copy(),set(map(int,ids[truth[0]])),set(query(table,q[0],100))))
+            saved.append((table,q.copy(),truth.copy(),ids.copy(),
+                          {k:row['topk'][k]['recall'] for k in ('10','100')}))
             report['datasets'].append(row);save();print(json.dumps(row),flush=True)
         sql('create table cpu_items(id int primary key,v vector(2))')
         sql('insert into cpu_items values(1,"[1,0]"),(2,"[0,1]"),(3,"[2,0]")')
@@ -127,12 +137,19 @@ def run(label,bridge,datasets,nq):
                 time.sleep(1)
         sql('set ob_query_timeout=600000000');sql('use perf')
         report['reload_queries']=[]
-        for table,q,truth,previous in saved:
-            current=set(query(table,q,100))
-            assert len(current)==100
-            before=len(previous&truth)/100;after=len(current&truth)/100
-            assert after >= before-.01
-            report['reload_queries'].append({'table':table,'before_recall100':before,'after_recall100':after,'identical_set':current==previous})
+        for table,queries,truth,ids,previous in saved:
+            valid=set(map(int,ids))
+            for k in (10,100):
+                got=[query(table,vector,k) for vector in queries]
+                assert all(len(row)==k and len(set(row))==k and all(i in valid for i in row) for row in got)
+                after=float(np.mean([len(set(row)&set(map(int,ids[t[:k]])))/k for row,t in zip(got,truth)]))
+                before=previous[str(k)]
+                floor=.95 if queries.shape[1]==128 else (.9 if k==10 else .85)
+                threshold=max(floor,before-.005)
+                assert after >= threshold, 'Reload quality regression: '+table+' Top-'+str(k)
+                report['reload_queries'].append({'table':table,'k':k,'checked_queries':len(queries),
+                                                 'before_recall':before,'after_recall':after,'threshold':threshold})
+        report['gpu_evaluation_seconds']=time.monotonic()-evaluation_begin
         report['reload_validated']=True;report['completed']=True;save()
     finally:
         done.set();monitor_thread.join()

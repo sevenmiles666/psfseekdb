@@ -1,0 +1,135 @@
+{
+  "scope": "Paired complete SQL query-set development comparison using public SIFT and a 256D development proxy. The proxy is not official Hidden; this result and proxy_score are not an official score or full-score proof. nq counts SQL queries and is not assumed to be CAGRA API batch size.",
+  "input_validated": true,
+  "baseline_label": "final3-sql-baseline-1",
+  "candidate_label": "final3-sql-selected-1",
+  "baseline_bridge_sha256": "030b36246e3fc4e92743e432d00979f7a729fdf36fb8b6ff482b75fb008e9da6",
+  "candidate_bridge_sha256": "d155e0ebc0a6551a190ae94b639d77eaa95d0e2f70dc54b7ab9832f50b8cca6d",
+  "datasets": [
+    {
+      "name": "sift250k",
+      "role": "public_sift",
+      "rows": 250000,
+      "dim": 128,
+      "sql_query_count": 4096,
+      "weight": 0.4,
+      "baseline_cold_seconds": 20.74522568192333,
+      "candidate_cold_seconds": 5.070027078036219,
+      "build_ratio": 4.091738636228075,
+      "topk": {
+        "10": {
+          "baseline_recall": 0.9999267578125,
+          "candidate_recall": 0.9999755859375,
+          "absolute_floor": 0.95,
+          "relative_floor": 0.9949267578125,
+          "threshold": 0.9949267578125,
+          "margin": 0.005048828125000071,
+          "quality_passed": true,
+          "baseline_sql_qps": 140.25533945972143,
+          "candidate_sql_qps": 813.8477860520853,
+          "qps_ratio": 5.802615352735333
+        },
+        "100": {
+          "baseline_recall": 0.9999609375,
+          "candidate_recall": 0.999970703125,
+          "absolute_floor": 0.95,
+          "relative_floor": 0.9949609375,
+          "threshold": 0.9949609375,
+          "margin": 0.0050097656249999956,
+          "quality_passed": true,
+          "baseline_sql_qps": 131.04719676676038,
+          "candidate_sql_qps": 567.1766141333711,
+          "qps_ratio": 4.328033167644478
+        }
+      },
+      "query_geometric_ratio": 5.011378224173623,
+      "query_gate_passed": true
+    },
+    {
+      "name": "gaussian256",
+      "role": "development_proxy_not_hidden",
+      "rows": 250000,
+      "dim": 256,
+      "sql_query_count": 4096,
+      "weight": 0.6,
+      "baseline_cold_seconds": 21.343239390291274,
+      "candidate_cold_seconds": 6.853800552897155,
+      "build_ratio": 3.114073604209174,
+      "topk": {
+        "10": {
+          "baseline_recall": 0.9515869140625001,
+          "candidate_recall": 0.9825683593750001,
+          "absolute_floor": 0.9,
+          "relative_floor": 0.9465869140625001,
+          "threshold": 0.9465869140625001,
+          "margin": 0.03598144531250003,
+          "quality_passed": true,
+          "baseline_sql_qps": 122.46216850441897,
+          "candidate_sql_qps": 614.2614423011589,
+          "qps_ratio": 5.015928182579861
+        },
+        "100": {
+          "baseline_recall": 0.89919921875,
+          "candidate_recall": 0.96371337890625,
+          "absolute_floor": 0.85,
+          "relative_floor": 0.89419921875,
+          "threshold": 0.89419921875,
+          "margin": 0.06951416015625,
+          "quality_passed": true,
+          "baseline_sql_qps": 122.2517880019236,
+          "candidate_sql_qps": 453.70955274457083,
+          "qps_ratio": 3.711271304575372
+        }
+      },
+      "query_geometric_ratio": 4.314564906200802,
+      "query_gate_passed": true
+    }
+  ],
+  "resources": {
+    "baseline_peak_vram_bytes": 1256828928.0,
+    "candidate_peak_vram_bytes": 1063911424.0,
+    "vram_ratio": 0.8465045642233976,
+    "candidate_peak_rss_bytes": 3655933952.0,
+    "vram_absolute_passed": true,
+    "vram_relative_passed": true,
+    "rss_passed": true,
+    "sampling_caveat": "Input sampled peaks do not establish the official resource peak."
+  },
+  "execution_checks": {
+    "baseline_completed": true,
+    "baseline_loaded_bridge_verified": true,
+    "baseline_cpu_vsag_passed": true,
+    "baseline_reload_validated": true,
+    "candidate_completed": true,
+    "candidate_loaded_bridge_verified": true,
+    "candidate_cpu_vsag_passed": true,
+    "candidate_reload_validated": true
+  },
+  "gates": {
+    "recall_passed": true,
+    "per_dataset_query_regression_passed": true,
+    "sampled_resources_passed": true,
+    "recorded_execution_checks_passed": true,
+    "duration_checked": true,
+    "duration_passed_if_checked": true
+  },
+  "passed": true,
+  "paired_evaluation_seconds": 411.97306450037286,
+  "combined_build_ratio": 3.473445412018691,
+  "combined_query_ratio": 4.580839511202208,
+  "proxy_points": {
+    "hard_gates": 4.0,
+    "build": 14.0,
+    "query": 2.0
+  },
+  "proxy_score": 20.0,
+  "measured_proxy_full_score_thresholds_met": true,
+  "official_score": null,
+  "all_official_gates_verified": false,
+  "unverified": [
+    "Official Hidden data and its paired frozen V5 baseline",
+    "Exact private harness SQL, warmup, timer and repetition policy",
+    "GPU-served queries, which need the separate API-call trace",
+    "All returned IDs and distances, which must be checked by the benchmark"
+  ]
+}

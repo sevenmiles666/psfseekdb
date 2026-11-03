@@ -9,6 +9,11 @@
 第二轮优化位于 `competition/amd-v5-perf2`，见
 [第二轮性能优化](AMD_V5_PERFORMANCE_2.md)。原分支和提交均保留。
 
+第三轮优化位于 `competition/amd-v5-perf3`，见
+[第三轮性能优化与完整 SQL 对照](AMD_V5_PERFORMANCE_3.md)。它继承用户反馈
+8.9 分的第二轮版本，增加线程及查询工作区复用并调整统一 CAGRA 参数。
+公开 SIFT 和生成数据的开发测量不能代替正式 Hidden 成绩。
+
 官方来源：
 https://github.com/AMD-DEV-CONTEST/Oceanbase-2026-competition-AMD-Doc
 

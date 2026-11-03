@@ -1,7 +1,8 @@
 # V5 GPU paired benchmarks
 
 Paired tuning reports: [first round](../../../docs/AMD_V5_PERFORMANCE.md),
-[second round](../../../docs/AMD_V5_PERFORMANCE_2.md). Each report keeps its own
+[second round](../../../docs/AMD_V5_PERFORMANCE_2.md),
+[third round](../../../docs/AMD_V5_PERFORMANCE_3.md). Each report keeps its own
 source hashes and results; do not combine measurements from different builds.
 
 These are development benchmarks, not the private official scoring harness.
@@ -19,9 +20,22 @@ and their median rather than selecting a best run.
 `benchmark_sql.py` starts an isolated observer, loads data before timing,
 measures cold SQL DDL through the first legal query, checks noncontiguous ID
 mapping, Top-10/100, CPU VSAG and service restart/reload. Its query loop uses
-individual SQL requests and is not the official batched-QPS measurement.
+individual SQL requests; the private official query harness is not supplied.
 It refuses an occupied port or an existing database directory. It creates
 and rebuilds only the dedicated `perf` database in its own observer process.
+The first timed query is checked for complete unique legal IDs. Reload checks
+repeat the entire requested query set for Top-10 and Top-100, with a 0.005
+maximum Recall loss and the development data's absolute floors. TSV inputs
+are reused only when their source hash and conversion convention match.
+`nq` is the number of individual SQL queries, not a CAGRA API batch size.
+
+GPU memory is sampled only for the PCI device visible through `rocm-smi`;
+the benchmark requires one visible GPU and records the device and counter path.
+Older reports used the maximum over all host DRM devices, which can include
+other GPUs. Those older VRAM comparisons must not be treated as the current
+instance's resource evidence. The third-round call trace checks that the
+counter's PCI address matches the GPU used by HIP.
+
 The default database location is `/var/tmp/amd-v5-perf-<label>`; use a new label
 for another run. The selected bridge must be named `libseekdb_cuvs_bridge.so`;
 the test verifies its actual mapping in `/proc/<pid>/maps`.
@@ -68,16 +82,33 @@ seeded Gaussian/clustered 256-dimensional samples do not reproduce Hidden.
 The Gaussian samples use seed 20261102. Clustered samples use 1,024 normally
 distributed centers plus Gaussian noise of standard deviation 0.5.
 
-For the optional 10K course smoke, place its `base.f32` and `query.f32` under
-`$WORK/data` and select `--prepare sift10k`.
+`--prepare sift10k` now uses the first 10,000 public SIFT base vectors and first
+100 public queries from the same `.fvecs` inputs. It does not use the course
+image's embedded `.f32` files as proof of SIFT provenance.
 
 The initial experiment demanded byte-identical IDs after persistence. Frozen
 V5 itself does not satisfy that condition on SIFT: equal-distance ties and
 approximate search can alter returned ordering/sets. The retained benchmark
 therefore checks valid unique results and reports before/after Recall and
 set agreement across the entire query batch, requiring Recall loss <=0.005.
-The SQL restart check is a first-query diagnostic; the full batched reload
-quality check is in the bridge benchmark.
+Both SQL and bridge restart checks cover the full supplied query set.
+
+For a complete SQL query-set development comparison, run each version with
+`--nq 4096`, then compare the resulting JSON records:
+
+```bash
+python tools/hipvs_bridge/benchmarks/compare_sql4096.py \
+  --baseline "$WORK/evidence/sql-baseline.json" \
+  --candidate "$WORK/evidence/sql-candidate.json" --output "$WORK/sql-comparison.json"
+```
+
+This verifies paired data hashes, per-group Recall, per-dataset SQL QPS,
+sampled resources and recorded execution checks. It labels the weighted score
+as a development proxy, since generated 256D data is not official Hidden and
+the private harness is not supplied. C ABI batch QPS is reported separately;
+it must not be substituted for the measured end-to-end SQL query rate.
+
+The historical first/second-round developer summary remains available below.
 
 After both pairs finish, summarize their records with:
 

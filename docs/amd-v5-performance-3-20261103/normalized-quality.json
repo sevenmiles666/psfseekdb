@@ -1,0 +1,20 @@
+{
+  "scope": "additional generated unit-norm distribution, not official Hidden",
+  "checks": {
+    "10": {
+      "baseline_best": 0.8996826171875001,
+      "candidate_worst": 0.9953125,
+      "threshold": 0.9,
+      "passed": true,
+      "baseline_above_absolute_floor": false
+    },
+    "100": {
+      "baseline_best": 0.8325927734375,
+      "candidate_worst": 0.9890722656250002,
+      "threshold": 0.85,
+      "passed": true,
+      "baseline_above_absolute_floor": false
+    }
+  },
+  "passed": true
+}

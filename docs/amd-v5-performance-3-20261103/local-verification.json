@@ -1,0 +1,13 @@
+{
+  "archive_sha256": "942cc158aac8426fbe19f24e9fd6406a549ae64d846ea444d8fc9f17c4b22148",
+  "archive_entries": 170,
+  "text_files_scanned": 121,
+  "manifest_verified": true,
+  "tested_product_source_hashes_match": true,
+  "frozen_bridge_source_matches": true,
+  "both_comparisons_recomputed": true,
+  "raw_sql_id_files": 20,
+  "raw_sql_queries_checked": 81920,
+  "raw_sql_ids_checked": 4505600,
+  "raw_sql_ids_valid_unique_complete": true
+}
