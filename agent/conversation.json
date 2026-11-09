@@ -1,0 +1,39 @@
+{
+  "scope": "2026-11-09 MiniVectorDB 首轮开发。保留本题相关用户原话、Agent 回复和实际测试输出。",
+  "synthetic": false,
+  "user_prompts": [
+    {
+      "id": "round2-user-1",
+      "role": "user",
+      "content": "现在增加了新的题目，这是新的比赛规则和比赛题目",
+      "context": "用户同时提供了 MiniVectorDB 赛题说明及原有赛题 620 分、加赛双榜各 40 分的计分表。"
+    },
+    {
+      "id": "round2-user-2",
+      "role": "user",
+      "content": "直接帮我先做你能做的"
+    }
+  ],
+  "conversations": [
+    {
+      "id": "round2-agent-1",
+      "role": "assistant",
+      "content": "我会从官方加赛分支建一个独立开发目录，先实现能验证的数据库核心，包括 SQL、精确 TopK、事务和崩溃恢复。评测协议单独做适配，等官方驱动公布后再接入。"
+    },
+    {
+      "id": "round2-agent-2",
+      "role": "assistant",
+      "content": "分段排序也通过了 32 MiB 容器测试。约 50 MiB 的数据重启后完成了精确 TopK 和全表排序，强杀与不完整提交帧的恢复检查也通过了。我会把运行说明和真实测试输出整理进首个本地提交。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "round2-tool-1",
+      "role": "tool",
+      "command": "python tests/check_core.py --image minivectordb-round2:dev --large",
+      "environment": "Docker Linux amd64，运行容器禁用网络。大数据场景使用 33554432 字节的内存与内存交换总上限。",
+      "output": "SQL, Unicode, L2, scalar order and persisted schema passed\nTransaction visibility, statement rollback, commit and EOF rollback passed\nSIGKILL after commit, uncommitted tail over 64 KiB, and repeatable torn-frame recovery passed\n24 independent exact TopK queries passed, including 12 filtered queries in 128 dimensions\n52482580 bytes of persisted rows reopened, searched and sorted under a 33554432-byte container limit\nLocal integration checks passed"
+    }
+  ],
+  "limitations": "实现、测试设计和命令运行由 Agent 完成。当前材料只记录首轮开发事实，后续需要补充用户实际参与的独立验证、结果解释和复测。测试结果来自本地环境。"
+}
