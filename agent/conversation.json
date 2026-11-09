@@ -1,5 +1,5 @@
 {
-  "scope": "2026-11-09 MiniVectorDB 首轮开发。保留本题相关用户原话、Agent 回复和实际测试输出。",
+  "scope": "2026-11-09 MiniVectorDB 首版及本地索引和性能迭代。保留本题相关用户原话、Agent 回复和实际测试输出。",
   "synthetic": false,
   "user_prompts": [
     {
@@ -12,6 +12,12 @@
       "id": "round2-user-2",
       "role": "user",
       "content": "直接帮我先做你能做的"
+    },
+    {
+      "id": "round2-user-3",
+      "role": "user",
+      "content": "那你现在除了这个其他的都先完成，自测",
+      "context": "本轮先完成可在本地开发和验证的部分，官方题包与驱动适配留待后续。"
     }
   ],
   "conversations": [
@@ -24,6 +30,16 @@
       "id": "round2-agent-2",
       "role": "assistant",
       "content": "分段排序也通过了 32 MiB 容器测试。约 50 MiB 的数据重启后完成了精确 TopK 和全表排序，强杀与不完整提交帧的恢复检查也通过了。我会把运行说明和真实测试输出整理进首个本地提交。"
+    },
+    {
+      "id": "round2-agent-3",
+      "role": "assistant",
+      "content": "我会继续用本地测试协议，补齐向量索引、ANN、索引的事务维护和重启重建，再用同一批数据对比首版的耗时、I/O、内存和召回。通过自测后会整理学习记录并推送加赛分支。"
+    },
+    {
+      "id": "round2-agent-4",
+      "role": "assistant",
+      "content": "前两轮中，精确模式的 1,000 条查询都与暴力计算结果一致，首轮耗时从 7.64 秒降到 2.28 秒。ANN 的召回也达标，但这批 128 维数据很少能靠首坐标提前停止。我会保留精确模式作为默认选项，等第三轮结束后汇总耗时、I/O 和内存。"
     }
   ],
   "experiments": [
@@ -31,9 +47,29 @@
       "id": "round2-tool-1",
       "role": "tool",
       "command": "python tests/check_core.py --image minivectordb-round2:dev --large",
-      "environment": "Docker Linux amd64，运行容器禁用网络。大数据场景使用 33554432 字节的内存与内存交换总上限。",
+      "environment": "首版 590ff199321bc592cd4f3b0260645a70d995fbb3。Docker Linux amd64，运行容器禁用网络。大数据场景使用 33554432 字节的内存与内存交换总上限。",
       "output": "SQL, Unicode, L2, scalar order and persisted schema passed\nTransaction visibility, statement rollback, commit and EOF rollback passed\nSIGKILL after commit, uncommitted tail over 64 KiB, and repeatable torn-frame recovery passed\n24 independent exact TopK queries passed, including 12 filtered queries in 128 dimensions\n52482580 bytes of persisted rows reopened, searched and sorted under a 33554432-byte container limit\nLocal integration checks passed"
+    },
+    {
+      "id": "round2-tool-2",
+      "role": "tool",
+      "command": "python tests/check_core.py --image minivectordb-round2:dev --large",
+      "environment": "索引与缓存版镜像 sha256:555a1e0b688a98f4f123597093c8f2d0722a79ac31a902d422f8ab31ed5ae7e8，Docker Linux amd64，运行容器禁用网络。",
+      "output": "SQL, Unicode, L2, scalar order and persisted schema passed\nTransaction visibility, statement rollback, commit and EOF rollback passed\nSIGKILL after commit, uncommitted tail over 64 KiB, and repeatable torn-frame recovery passed\n24 independent exact TopK queries passed, including 12 filtered queries in 128 dimensions\nExact/ANN distinction, index DDL rollback, index changes, cache invalidation and restart passed\n52482621 bytes of rows reopened, indexed, searched and sorted under a 33554432-byte container limit\nLocal integration checks passed"
+    },
+    {
+      "id": "round2-tool-3",
+      "role": "tool",
+      "command": "python -u tests/benchmark_local.py --probe build/benchmark_support --rounds 3 --output build/round2-benchmark.json",
+      "environment": "首版作为本地对照。两版分别用 2 CPU、64 MiB 内存、禁用 swap 的断网容器和独立数据卷。100 个批次各提交 100 条，写入后重启核对所有数据。查询装载预热后计时。独立暴力计算核对 1,000 条 Top-10，其中 500 条带等值过滤。数据 SHA-256 为 ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6。",
+      "output": "三轮全部通过。每轮各模式的有过滤和无过滤 Recall@10 均为 1.0。首版写入中位数 1.241904 s，I/O 5828608 字节，峰值内存 14290944 字节。新版写入中位数 1.227099 s，I/O 5828608 字节，峰值内存 15032320 字节。首版查询中位数 7.638390 s，I/O 5828608 字节，峰值内存 14585856 字节。新版 exact 查询中位数 2.277706 s，I/O 5828608 字节，峰值内存 21106688 字节。新版 ann 查询中位数 30.519206 s，I/O 5832704 字节，峰值内存 15376384 字节。本地 E 中位数分别为 0.497615、0.595402、0.377570。"
+    },
+    {
+      "id": "round2-tool-4",
+      "role": "tool",
+      "procedure": "首版容器写入三行。新版用原数据卷读取旧 WAL 并建立索引，再用 ann 模式启动并核对过滤查询、拒绝重复建索引。",
+      "output": "Baseline 590ff19 WAL reopened by the candidate; committed vector index rebuilt on restart and ANN query matched."
     }
   ],
-  "limitations": "实现、测试设计和命令运行由 Agent 完成。当前材料只记录首轮开发事实，后续需要补充用户实际参与的独立验证、结果解释和复测。测试结果来自本地环境。"
+  "limitations": "实现、测试设计和命令运行由 Agent 完成。用户本轮提供了需求和工作范围，尚无可记录的独立自测或结果解释。此处只保存 MiniVectorDB 相关交互与实际本地结果。Docker Desktop 设备计数与镜像存储共用底层设备，峰值内存含页缓存与最终探针，宿主缓存未重置。官方题包、驱动和正式得分不在本轮自测范围内。"
 }

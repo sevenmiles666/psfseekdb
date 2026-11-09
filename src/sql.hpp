@@ -57,6 +57,12 @@ struct CreateTable {
   std::size_t primary_key;
 };
 
+struct CreateVectorIndex {
+  std::string name;
+  std::string table;
+  std::string column;
+};
+
 struct Insert {
   std::string table;
   std::vector<std::string> columns;
@@ -90,7 +96,8 @@ struct Select {
 
 enum class Transaction { Begin, Commit, Rollback };
 
-using Statement = std::variant<CreateTable, Insert, Update, Delete, Select, Transaction>;
+using Statement = std::variant<CreateTable, CreateVectorIndex, Insert, Update, Delete, Select,
+                               Transaction>;
 
 Statement parse_sql(std::string_view sql);
 Vector parse_vector(std::string_view text);

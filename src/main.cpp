@@ -50,7 +50,7 @@ void write_row(const Row &row) {
   std::cout << "]\n";
 }
 
-int run(const std::filesystem::path &directory) {
+int run(const std::filesystem::path &directory, SearchMode mode) {
   Database database(directory);
   // This framing is only for local tests. The official driver can call execute().
   std::cout << "READY\tminivectordb-local-v1\n" << std::flush;
@@ -66,7 +66,7 @@ int run(const std::filesystem::path &directory) {
       break;
     }
     try {
-      const Execution result = database.execute(statement, write_row);
+      const Execution result = database.execute(statement, write_row, mode);
       std::cout << "OK\t" << result.count << '\n' << std::flush;
     } catch (const SqlError &error) {
       std::cout << "ERR\t" << error.code() << '\t';
@@ -87,19 +87,29 @@ int main(int argc, char **argv) {
   try {
     std::cout.exceptions(std::ios::badbit | std::ios::failbit);
     std::filesystem::path directory = "/data";
+    SearchMode mode = SearchMode::Exact;
     for (int i = 1; i < argc; ++i) {
       const std::string_view argument = argv[i];
       if (argument == "--data-dir" && i + 1 < argc) {
         directory = std::filesystem::u8path(argv[++i]);
+      } else if (argument == "--search-mode" && i + 1 < argc) {
+        const std::string_view search_mode = argv[++i];
+        if (search_mode == "exact") {
+          mode = SearchMode::Exact;
+        } else if (search_mode == "ann") {
+          mode = SearchMode::Ann;
+        } else {
+          throw std::invalid_argument("search mode must be exact or ann");
+        }
       } else if (argument == "--help") {
-        std::cout << "Usage: minivectordb [--data-dir PATH]\n"
+        std::cout << "Usage: minivectordb [--data-dir PATH] [--search-mode exact|ann]\n"
                      "Local test protocol: one SQL statement per input line. EOF or \\q closes the database.\n";
         return 0;
       } else {
-        throw std::invalid_argument("expected --data-dir PATH or --help");
+        throw std::invalid_argument("expected --data-dir, --search-mode or --help");
       }
     }
-    return run(directory);
+    return run(directory, mode);
   } catch (const std::exception &error) {
     std::cerr << "minivectordb: " << error.what() << '\n';
     return 1;

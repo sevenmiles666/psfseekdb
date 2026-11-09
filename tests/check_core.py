@@ -14,18 +14,26 @@ import uuid
 
 
 class Server:
-    def __init__(self, args, data, memory=None):
-        data.mkdir(exist_ok=True)
+    def __init__(self, args, data, memory=None, *, mode="exact", volume=None, probe=None):
+        if data is not None:
+            data.mkdir(exist_ok=True)
         self.container = None
         if args.image:
             self.container = "mvdb-check-" + uuid.uuid4().hex[:12]
+            mount = f"type=volume,source={volume},target=/data" if volume else f"type=bind,source={data},target=/data"
             command = ["docker", "run", "--rm", "-i", "--network=none", "--cpus=2",
-                       "--name", self.container, "--mount", f"type=bind,source={data},target=/data"]
+                       "--name", self.container, "--mount", mount]
             if memory:
                 command += ["--memory", str(memory), "--memory-swap", str(memory)]
+            if probe:
+                command += ["--mount", f"type=bind,source={probe},target=/bench-probe,readonly"]
             command.append(args.image)
+            if mode != "exact":
+                command += ["--search-mode", mode]
         else:
             command = [str(args.binary), "--data-dir", str(data)]
+            if mode != "exact":
+                command += ["--search-mode", mode]
         self.log = tempfile.TemporaryFile(mode="w+t", encoding="utf-8")
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=self.log, text=True, encoding="utf-8", bufsize=1)
@@ -255,6 +263,62 @@ def check_exact_oracle(args, directory):
     print("24 independent exact TopK queries passed, including 12 filtered queries in 128 dimensions", flush=True)
 
 
+def check_index(args, directory):
+    query = "SELECT id FROM items WHERE label='g' ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 1;"
+    with Server(args, directory, mode="ann") as db:
+        db.ok("CREATE TABLE items (label VARCHAR(4), id BIGINT PRIMARY KEY, stamp BIGINT, v VECTOR(2));")
+        db.ok("INSERT INTO items VALUES ('g',1,5,[1,0.04]),('g',2,7,[1.0004,0]),('x',3,9,[0,0]);", 3)
+        db.error("CREATE VECTOR INDEX wrong ON items(stamp);", "TYPE_MISMATCH")
+        db.ok("BEGIN;")
+        db.ok("CREATE VECTOR INDEX rolled_back ON items(v);")
+        db.query(query, [[1]])
+        db.ok("ROLLBACK;")
+        db.query(query, [[2]])
+        db.ok("CREATE VECTOR INDEX idx ON items(v);")
+        db.error("CREATE VECTOR INDEX second ON items(v);", "INDEX_EXISTS")
+        db.query(query, [[1]])
+        db.query("SELECT id FROM items WHERE label='g' ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10;",
+                 [[2], [1]])
+        db.query("SELECT id FROM items WHERE label='none' ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 10;", [])
+        db.ok("BEGIN;")
+        db.ok("UPDATE items SET v=[0,0] WHERE id=2;", 1)
+        db.query(query, [[2]])
+        db.ok("DELETE FROM items WHERE id=2;", 1)
+        db.query(query, [[1]])
+        db.ok("INSERT INTO items VALUES ('g',8,10,[0,0]);", 1)
+        db.error("INSERT INTO items VALUES ('g',9,0,[0,0]),('g',8,0,[0,0]);", "DUPLICATE_KEY")
+        db.query("SELECT id FROM items WHERE label='g' ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 5;",
+                 [[8], [1]])
+        db.ok("ROLLBACK;")
+        db.query(query, [[1]])
+        db.ok("BEGIN;")
+        db.ok("UPDATE items SET v=[-2,0] WHERE id=2;", 1)
+        db.ok("COMMIT;")
+        db.stop(crash=True)
+    with Server(args, directory, mode="ann") as db:
+        db.error("CREATE VECTOR INDEX again ON items(v);", "INDEX_EXISTS")
+        db.query(query, [[1]])
+        db.ok("BEGIN;")
+        db.ok("UPDATE items SET v=[0,0] WHERE id=2;", 1)
+        db.query(query, [[2]])
+        db.stop(crash=True)
+    with Server(args, directory, mode="ann") as db:
+        db.query(query, [[1]])
+    with Server(args, directory) as db:
+        db.query(query, [[1]])
+        db.ok("BEGIN;")
+        db.ok("UPDATE items SET label='g' WHERE id=3;", 1)
+        db.query(query, [[3]])
+        db.ok("ROLLBACK;")
+        db.query(query, [[1]])
+        db.ok("UPDATE items SET v=[1.0004,0] WHERE id=2;", 1)
+        db.query(query, [[2]])
+    with Server(args, directory, mode="ann") as db:
+        db.query(query, [[1]])
+    print("Exact/ANN distinction, index DDL rollback, index changes, cache invalidation and restart passed",
+          flush=True)
+
+
 def check_disk_budget(args, directory):
     payload = "z" * 32760
     rows, batch = 1600, 16
@@ -265,15 +329,19 @@ def check_disk_budget(args, directory):
             db.ok("INSERT INTO wide VALUES " + ",".join(
                 f"({key},'{key * 37 % 11:08d}{payload}',[{key},0])"
                 for key in range(start, start + batch)), batch)
+        db.ok("CREATE VECTOR INDEX wide_vector ON wide(v);")
     size = (directory / "store.wal").stat().st_size
     assert size > memory
-    with Server(args, directory, memory) as db:
+    with Server(args, directory, memory, mode="ann") as db:
         db.query("SELECT id FROM wide WHERE id>=100 ORDER BY L2_DISTANCE(v,[1599,0]) LIMIT 5;",
                  [[1599], [1598], [1597], [1596], [1595]])
         db.query("SELECT id FROM wide ORDER BY note LIMIT 3;", [[0], [11], [22]])
         expected = sorted(range(rows), key=lambda key: (-(key * 37 % 11), key))
         db.query("SELECT id FROM wide ORDER BY note DESC;", [[key] for key in expected])
-    print(f"{size} bytes of persisted rows reopened, searched and sorted under a {memory}-byte container limit",
+    with Server(args, directory, memory) as db:
+        db.query("SELECT id FROM wide ORDER BY L2_DISTANCE(v,[1599,0]) LIMIT 5;",
+                 [[1599], [1598], [1597], [1596], [1595]])
+    print(f"{size} bytes of rows reopened, indexed, searched and sorted under a {memory}-byte container limit",
           flush=True)
 
 
@@ -294,6 +362,7 @@ def main():
         check_transactions(args, root / "transactions")
         check_crash(args, root / "crash")
         check_exact_oracle(args, root / "oracle")
+        check_index(args, root / "index")
         if args.large:
             check_disk_budget(args, root / "large")
     print("Local integration checks passed", flush=True)

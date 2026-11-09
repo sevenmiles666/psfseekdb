@@ -17,7 +17,7 @@
 namespace minivector {
 namespace {
 
-enum class RecordKind : std::uint8_t { Create = 1, Put = 2, Delete = 3, Commit = 4 };
+enum class RecordKind : std::uint8_t { Create = 1, Put = 2, Delete = 3, Commit = 4, Index = 5 };
 
 std::size_t column_index(const std::vector<Column> &columns, const std::string &name) {
   const auto found = std::find_if(columns.begin(), columns.end(), [&](const Column &column) {
@@ -102,7 +102,7 @@ std::vector<BoundPredicate> bind_predicates(const std::vector<Column> &columns,
   return result;
 }
 
-bool matches(const Row &row, const std::vector<BoundPredicate> &predicates) {
+bool matches(const Value *row, const std::vector<BoundPredicate> &predicates) {
   for (const BoundPredicate &predicate : predicates) {
     const int order = compare_values(row[predicate.column], predicate.value);
     switch (predicate.comparison) {
@@ -114,6 +114,10 @@ bool matches(const Row &row, const std::vector<BoundPredicate> &predicates) {
     }
   }
   return true;
+}
+
+bool matches(const Row &row, const std::vector<BoundPredicate> &predicates) {
+  return matches(row.data(), predicates);
 }
 
 std::optional<std::int64_t> primary_lookup(std::size_t primary,
@@ -144,9 +148,9 @@ BoundExpression bind_expression(const std::vector<Column> &columns, const Expres
   return {index, expression.query, expression.alias.empty() ? default_name : expression.alias};
 }
 
-double squared_distance(const Vector &left, const Vector &right) {
+double squared_distance(const float *left, const Vector &right) {
   double sum = 0;
-  for (std::size_t i = 0; i < left.size(); ++i) {
+  for (std::size_t i = 0; i < right.size(); ++i) {
     const double difference = static_cast<double>(left[i]) - static_cast<double>(right[i]);
     sum += difference * difference;
   }
@@ -158,7 +162,7 @@ Value evaluate(const BoundExpression &expression, const Row &row, bool order_key
   if (!expression.query) {
     return value;
   }
-  const double squared = squared_distance(std::get<Vector>(value), *expression.query);
+  const double squared = squared_distance(std::get<Vector>(value).data(), *expression.query);
   return order_key ? squared : std::sqrt(squared);
 }
 
@@ -239,18 +243,19 @@ Database::Database(const std::filesystem::path &directory)
 
 Database::Savepoint Database::savepoint() const { return {journal_.size(), undo_.size()}; }
 
-void Database::rollback(Savepoint point) {
+void Database::rollback(Savepoint point, bool replay) {
   while (undo_.size() > point.undo_count) {
     const Undo undo = undo_.back();
     undo_.pop_back();
     Table &target = *tables_[undo.table];
-    if (undo.created_table) {
+    if (undo.kind == UndoKind::Table) {
+      invalidate_cache(target.id);
       names_.erase(target.name);
       tables_.pop_back();
-    } else if (undo.previous) {
-      target.rows.insert_or_assign(undo.key, *undo.previous);
+    } else if (undo.kind == UndoKind::Index) {
+      target.index.reset();
     } else {
-      target.rows.erase(undo.key);
+      set_row(target, undo.key, undo.previous, replay);
     }
   }
   if (journal_.size() != point.offset) {
@@ -273,17 +278,22 @@ void Database::recover() {
   Bytes payload;
   while (journal_.read_frame(next, record, payload)) {
     next = record.offset + record.size;
-    if (apply_record(payload, record)) {
+    if (apply_record(payload, record, true)) {
       committed = next;
     }
   }
   if (committed != journal_.size()) {
-    rollback({committed, 0});
+    rollback({committed, 0}, true);
     journal_.sync();
+  }
+  for (const auto &target : tables_) {
+    if (target->index) {
+      rebuild_index(*target);
+    }
   }
 }
 
-bool Database::apply_record(const Bytes &payload, RecordRef record) {
+bool Database::apply_record(const Bytes &payload, RecordRef record, bool replay) {
   Reader input(payload);
   const auto kind = static_cast<RecordKind>(input.byte());
   if (kind == RecordKind::Commit) {
@@ -318,26 +328,42 @@ bool Database::apply_record(const Bytes &payload, RecordRef record) {
       throw std::runtime_error("invalid primary key in journal");
     }
     names_.emplace(name, id);
-    tables_.push_back(std::make_unique<Table>(Table{id, std::move(name), std::move(columns), primary, {}}));
-    undo_.push_back({id, true, 0, std::nullopt});
+    tables_.push_back(std::make_unique<Table>(
+        Table{id, std::move(name), std::move(columns), primary, {}, std::nullopt}));
+    undo_.push_back({id, UndoKind::Table, 0, std::nullopt});
     return false;
   }
-  if (id >= tables_.size() || (kind != RecordKind::Put && kind != RecordKind::Delete)) {
+  if (id >= tables_.size()) {
+    throw std::runtime_error("mutation references an unknown table in journal");
+  }
+  Table &target = *tables_[id];
+  if (kind == RecordKind::Index) {
+    std::string name = input.string();
+    const std::uint32_t column = input.u32();
+    input.finish();
+    if (target.index || column >= target.columns.size() || target.columns[column].type != Type::Vector) {
+      throw std::runtime_error("invalid vector index definition in journal");
+    }
+    target.index.emplace(VectorIndex{std::move(name), column, {}});
+    undo_.push_back({id, UndoKind::Index, 0, std::nullopt});
+    return false;
+  }
+  if (kind != RecordKind::Put && kind != RecordKind::Delete) {
     throw std::runtime_error("invalid mutation in journal");
   }
   const std::int64_t key = input.i64();
-  Table &target = *tables_[id];
   const auto existing = target.rows.find(key);
-  std::optional<RecordRef> previous;
+  std::optional<StoredRow> previous;
   if (existing != target.rows.end()) {
     previous = existing->second;
   }
-  undo_.push_back({id, false, key, previous});
+  undo_.push_back({id, UndoKind::Row, key, previous});
   if (kind == RecordKind::Put) {
-    target.rows.insert_or_assign(key, record);
+    const float projection = target.index && !replay ? read_projection(target, input) : 0;
+    set_row(target, key, StoredRow{record, projection}, replay);
   } else {
     input.finish();
-    target.rows.erase(key);
+    set_row(target, key, std::nullopt, replay);
   }
   return false;
 }
@@ -379,6 +405,116 @@ Database::Table &Database::table(const std::string &name) {
     throw SqlError("UNKNOWN_TABLE", "unknown table " + name);
   }
   return *tables_[found->second];
+}
+
+float Database::read_projection(const Table &table, Reader &row) const {
+  // Row metadata and the primary key have already been consumed.
+  for (std::size_t i = 0; i < table.index->column; ++i) {
+    if (i == table.primary_key) continue;
+    if (table.columns[i].type == Type::Bigint) {
+      row.skip(sizeof(std::int64_t));
+    } else {
+      const std::uint32_t bytes = row.u32();
+      row.skip(bytes);
+    }
+  }
+  const float projection = row.f32();
+  if (!std::isfinite(projection)) {
+    throw std::runtime_error("invalid vector projection in journal");
+  }
+  return projection;
+}
+
+void Database::rebuild_index(Table &table) {
+  Bytes buffer;
+  auto &entries = table.index->ordered;
+  entries.clear();
+  for (auto &row : table.rows) {
+    journal_.read(row.second.reference, buffer);
+    Reader input(buffer);
+    if (input.byte() != static_cast<std::uint8_t>(RecordKind::Put) || input.u32() != table.id ||
+        input.i64() != row.first) {
+      throw std::runtime_error("row reference does not match vector index");
+    }
+    row.second.projection = read_projection(table, input);
+    entries.emplace(row.second.projection, row.first);
+  }
+}
+
+void Database::set_row(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay) {
+  invalidate_cache(table.id);
+  const auto current = table.rows.find(key);
+  const bool maintain = table.index && !replay;
+  if (maintain && current != table.rows.end()) {
+    table.index->ordered.erase({current->second.projection, key});
+  }
+  if (row) {
+    table.rows.insert_or_assign(key, *row);
+    if (maintain) {
+      table.index->ordered.emplace(row->projection, key);
+    }
+  } else if (current != table.rows.end()) {
+    table.rows.erase(current);
+  }
+}
+
+void Database::invalidate_cache(std::uint32_t table) {
+  if (search_cache_ && search_cache_->table == table) {
+    search_cache_.reset();
+  }
+  if (oversized_cache_ && *oversized_cache_ == table) {
+    oversized_cache_.reset();
+  }
+}
+
+const Database::SearchCache *Database::search_cache(const Table &table, std::size_t vector_column) {
+  if (search_cache_ && search_cache_->table == table.id) {
+    return &*search_cache_;
+  }
+  if (oversized_cache_ && *oversized_cache_ == table.id) {
+    return nullptr;
+  }
+  constexpr std::uint64_t budget = 8 * 1024 * 1024;
+  const std::uint64_t dimension = table.columns[vector_column].width;
+  const std::uint64_t fixed_per_row = sizeof(CachedRow) + dimension * sizeof(float) +
+                                     table.columns.size() * sizeof(Value);
+  const auto count = table.rows.size();
+  if (count > budget / fixed_per_row) {
+    oversized_cache_ = table.id;
+    return nullptr;
+  }
+
+  search_cache_.reset();
+  SearchCache cache{table.id, {}, {}, {}};
+  cache.rows.reserve(count);
+  cache.vectors.reserve(count * dimension);
+  cache.scalars.reserve(count * table.columns.size());
+  std::uint64_t used = count * fixed_per_row;
+  Bytes buffer;
+  Row row;
+  for (const auto &entry : table.rows) {
+    load_row(table, entry.second.reference, buffer, row);
+    const auto &vector = std::get<Vector>(row[vector_column]);
+    cache.vectors.insert(cache.vectors.end(), vector.begin(), vector.end());
+    for (std::size_t column = 0; column < row.size(); ++column) {
+      if (column == vector_column) {
+        cache.scalars.emplace_back(std::int64_t{0});
+        continue;
+      }
+      if (const auto *text = std::get_if<std::string>(&row[column])) {
+        const std::uint64_t bytes = text->size() + 1;
+        if (bytes > budget - used) {
+          oversized_cache_ = table.id;
+          return nullptr;
+        }
+        used += bytes;
+      }
+      cache.scalars.push_back(row[column]);
+    }
+    cache.rows.push_back({entry.first, entry.second.reference});
+  }
+  search_cache_ = std::move(cache);
+  return &*search_cache_;
 }
 
 void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row) {
@@ -457,6 +593,24 @@ std::uint64_t Database::create_table(const CreateTable &statement) {
   return 0;
 }
 
+std::uint64_t Database::create_index(const CreateVectorIndex &statement) {
+  Table &target = table(statement.table);
+  const std::size_t column = column_index(target.columns, statement.column);
+  if (target.columns[column].type != Type::Vector) {
+    throw SqlError("TYPE_MISMATCH", "CREATE VECTOR INDEX requires a vector column");
+  }
+  if (target.index) {
+    throw SqlError("INDEX_EXISTS", "table already has vector index " + target.index->name);
+  }
+  Bytes payload{static_cast<std::uint8_t>(RecordKind::Index)};
+  put_u32(payload, target.id);
+  put_string(payload, statement.name);
+  put_u32(payload, static_cast<std::uint32_t>(column));
+  write_change(payload);
+  rebuild_index(target);
+  return 0;
+}
+
 std::uint64_t Database::insert(const Insert &statement) {
   Table &target = table(statement.table);
   std::vector<std::size_t> positions(target.columns.size());
@@ -511,7 +665,7 @@ std::uint64_t Database::update(const Update &statement) {
   std::uint64_t count = 0;
   while (next != target.rows.end()) {
     const auto current = next++;
-    load_row(target, current->second, buffer, row);
+    load_row(target, current->second.reference, buffer, row);
     if (matches(row, predicates)) {
       for (const auto &change : changes) {
         row[change.first] = change.second;
@@ -535,7 +689,7 @@ std::uint64_t Database::remove(const Delete &statement) {
   while (next != target.rows.end()) {
     const auto current = next++;
     if (!predicates.empty()) {
-      load_row(target, current->second, buffer, row);
+      load_row(target, current->second.reference, buffer, row);
     }
     if (matches(row, predicates)) {
       Bytes payload{static_cast<std::uint8_t>(RecordKind::Delete)};
@@ -549,7 +703,7 @@ std::uint64_t Database::remove(const Delete &statement) {
   return count;
 }
 
-Execution Database::select(const Select &statement, const RowSink &sink) {
+Execution Database::select(const Select &statement, const RowSink &sink, SearchMode mode) {
   Table &target = table(statement.table);
   const auto predicates = bind_predicates(target.columns, statement.predicates);
   std::vector<BoundExpression> projection;
@@ -609,7 +763,7 @@ Execution Database::select(const Select &statement, const RowSink &sink) {
 
   if (key) {
     const auto found = target.rows.find(*key);
-    if (found != target.rows.end() && read_match(found->second)) {
+    if (found != target.rows.end() && read_match(found->second.reference)) {
       emit();
     }
     return result;
@@ -617,7 +771,7 @@ Execution Database::select(const Select &statement, const RowSink &sink) {
   if (in_key_order) {
     const auto scan = [&](auto current, auto end) {
       for (; current != end && result.count < limit; ++current) {
-        if (read_match(current->second)) {
+        if (read_match(current->second.reference)) {
           emit();
         }
       }
@@ -626,6 +780,82 @@ Execution Database::select(const Select &statement, const RowSink &sink) {
       scan(target.rows.rbegin(), target.rows.rend());
     } else {
       scan(target.rows.begin(), target.rows.end());
+    }
+    return result;
+  }
+
+  struct Neighbor {
+    double squared;
+    std::int64_t key;
+    RecordRef reference;
+  };
+  constexpr std::size_t sort_budget = 2 * 1024 * 1024;
+  if (order.size() == 1 && order.front().query && !statement.order.front().descending &&
+      limit <= sort_budget / sizeof(Neighbor)) {
+    const auto vector_column = order.front().column;
+    const Vector &query = *order.front().query;
+    const auto closer = [](const Neighbor &left, const Neighbor &right) {
+      if (left.squared != right.squared) {
+        return left.squared < right.squared;
+      }
+      return left.key < right.key;
+    };
+    std::vector<Neighbor> nearest;
+    nearest.reserve(std::min<std::uint64_t>(limit, target.rows.size()));
+    const auto consider = [&](std::int64_t key, RecordRef reference, const float *vector) {
+      Neighbor candidate{squared_distance(vector, query), key, reference};
+      if (nearest.size() < limit) {
+        nearest.push_back(candidate);
+        std::push_heap(nearest.begin(), nearest.end(), closer);
+      } else if (closer(candidate, nearest.front())) {
+        std::pop_heap(nearest.begin(), nearest.end(), closer);
+        nearest.back() = candidate;
+        std::push_heap(nearest.begin(), nearest.end(), closer);
+      }
+    };
+    const auto read_candidate = [&](std::int64_t key, RecordRef reference) {
+      if (read_match(reference)) {
+        consider(key, reference, std::get<Vector>(row[vector_column]).data());
+      }
+    };
+
+    if (mode == SearchMode::Ann && target.index) {
+      const auto &entries = target.index->ordered;
+      auto right = entries.lower_bound({query.front(), std::numeric_limits<std::int64_t>::min()});
+      auto left = std::make_reverse_iterator(right);
+      const auto lower_bound = [&](float projection) {
+        const double difference = static_cast<double>(projection) - query.front();
+        return difference * difference;
+      };
+      // Both sides are in increasing order of the one-coordinate lower bound.
+      // A full heap permits a 0.1% relative distance relaxation in ANN mode.
+      constexpr double approximation = 1.001 * 1.001;
+      while (left != entries.rend() || right != entries.end()) {
+        const bool from_left = right == entries.end() ||
+            (left != entries.rend() && lower_bound(left->first) <= lower_bound(right->first));
+        const auto entry = from_left ? *left++ : *right++;
+        if (nearest.size() == limit &&
+            lower_bound(entry.first) * approximation > nearest.front().squared) {
+          break;
+        }
+        read_candidate(entry.second, target.rows.at(entry.second).reference);
+      }
+    } else if (const auto *cache = search_cache(target, vector_column)) {
+      for (std::size_t i = 0; i < cache->rows.size(); ++i) {
+        if (matches(cache->scalars.data() + i * target.columns.size(), predicates)) {
+          const auto &entry = cache->rows[i];
+          consider(entry.key, entry.reference, cache->vectors.data() + i * query.size());
+        }
+      }
+    } else {
+      for (const auto &entry : target.rows) {
+        read_candidate(entry.first, entry.second.reference);
+      }
+    }
+    std::sort_heap(nearest.begin(), nearest.end(), closer);
+    for (const Neighbor &entry : nearest) {
+      load_row(target, entry.reference, buffer, row);
+      emit();
     }
     return result;
   }
@@ -653,7 +883,6 @@ Execution Database::select(const Select &statement, const RowSink &sink) {
     return candidate;
   };
 
-  constexpr std::size_t sort_budget = 2 * 1024 * 1024;
   std::uint64_t maximum_candidate_size = sizeof(Candidate) + order.size() * sizeof(Value);
   for (const BoundExpression &expression : order) {
     const Column &column = target.columns[expression.column];
@@ -664,10 +893,10 @@ Execution Database::select(const Select &statement, const RowSink &sink) {
   std::vector<Candidate> candidates;
   if (limit <= sort_budget / maximum_candidate_size) {
     for (const auto &entry : target.rows) {
-      if (!read_match(entry.second)) {
+      if (!read_match(entry.second.reference)) {
         continue;
       }
-      auto candidate = rank(entry.first, entry.second);
+      auto candidate = rank(entry.first, entry.second.reference);
       if (candidates.size() < limit) {
         candidates.push_back(std::move(candidate));
         std::push_heap(candidates.begin(), candidates.end(), before);
@@ -705,8 +934,8 @@ Execution Database::select(const Select &statement, const RowSink &sink) {
     used = 0;
   };
   for (const auto &entry : target.rows) {
-    if (!read_match(entry.second)) continue;
-    auto candidate = rank(entry.first, entry.second);
+    if (!read_match(entry.second.reference)) continue;
+    auto candidate = rank(entry.first, entry.second.reference);
     std::size_t bytes = sizeof(Candidate) + candidate.values.size() * sizeof(Value);
     for (const Value &value : candidate.values) {
       if (const auto *text = std::get_if<std::string>(&value)) bytes += text->capacity();
@@ -780,10 +1009,10 @@ Execution Database::select(const Select &statement, const RowSink &sink) {
   return result;
 }
 
-Execution Database::execute(std::string_view sql, const RowSink &sink) {
+Execution Database::execute(std::string_view sql, const RowSink &sink, SearchMode mode) {
   const Statement statement = parse_sql(sql);
   if (const auto *query = std::get_if<Select>(&statement)) {
-    return select(*query, sink);
+    return select(*query, sink, mode);
   }
   if (const auto *command = std::get_if<Transaction>(&statement)) {
     transaction(*command);
@@ -795,6 +1024,8 @@ Execution Database::execute(std::string_view sql, const RowSink &sink) {
   try {
     if (const auto *create = std::get_if<CreateTable>(&statement)) {
       result.count = create_table(*create);
+    } else if (const auto *index = std::get_if<CreateVectorIndex>(&statement)) {
+      result.count = create_index(*index);
     } else if (const auto *new_rows = std::get_if<Insert>(&statement)) {
       result.count = insert(*new_rows);
     } else if (const auto *changed_rows = std::get_if<Update>(&statement)) {

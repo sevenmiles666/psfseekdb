@@ -6,10 +6,14 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
+#include <utility>
 
 namespace minivector {
 
 using RowSink = std::function<void(const Row &)>;
+
+enum class SearchMode { Exact, Ann };
 
 struct Execution {
   std::uint64_t count = 0;
@@ -20,16 +24,29 @@ class Database {
 public:
   explicit Database(const std::filesystem::path &directory);
 
-  Execution execute(std::string_view sql, const RowSink &sink = {});
+  Execution execute(std::string_view sql, const RowSink &sink = {},
+                    SearchMode mode = SearchMode::Exact);
   void close();
 
 private:
+  struct StoredRow {
+    RecordRef reference;
+    float projection = 0;
+  };
+
+  struct VectorIndex {
+    std::string name;
+    std::size_t column;
+    std::set<std::pair<float, std::int64_t>> ordered;
+  };
+
   struct Table {
     std::uint32_t id;
     std::string name;
     std::vector<Column> columns;
     std::size_t primary_key;
-    std::map<std::int64_t, RecordRef> rows;
+    std::map<std::int64_t, StoredRow> rows;
+    std::optional<VectorIndex> index;
   };
 
   struct Savepoint {
@@ -37,29 +54,49 @@ private:
     std::size_t undo_count;
   };
 
+  enum class UndoKind { Table, Index, Row };
+
   struct Undo {
     std::uint32_t table;
-    bool created_table;
+    UndoKind kind;
     std::int64_t key;
-    std::optional<RecordRef> previous;
+    std::optional<StoredRow> previous;
+  };
+
+  struct CachedRow {
+    std::int64_t key;
+    RecordRef reference;
+  };
+
+  struct SearchCache {
+    std::uint32_t table;
+    std::vector<CachedRow> rows;
+    Vector vectors;
+    std::vector<Value> scalars;
   };
 
   void recover();
-  bool apply_record(const Bytes &payload, RecordRef record);
+  bool apply_record(const Bytes &payload, RecordRef record, bool replay = false);
   void write_change(const Bytes &payload);
   Savepoint savepoint() const;
-  void rollback(Savepoint point);
+  void rollback(Savepoint point, bool replay = false);
   void commit(Savepoint point);
   void transaction(Transaction command);
 
   Table &table(const std::string &name);
+  float read_projection(const Table &table, Reader &row) const;
+  void rebuild_index(Table &table);
+  void set_row(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay);
+  void invalidate_cache(std::uint32_t table);
+  const SearchCache *search_cache(const Table &table, std::size_t vector_column);
   void load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row);
   void put_row(const Table &table, std::int64_t key, const Row &row);
   std::uint64_t create_table(const CreateTable &statement);
+  std::uint64_t create_index(const CreateVectorIndex &statement);
   std::uint64_t insert(const Insert &statement);
   std::uint64_t update(const Update &statement);
   std::uint64_t remove(const Delete &statement);
-  Execution select(const Select &statement, const RowSink &sink);
+  Execution select(const Select &statement, const RowSink &sink, SearchMode mode);
 
   std::filesystem::path directory_;
   Journal journal_;
@@ -67,6 +104,8 @@ private:
   std::vector<std::unique_ptr<Table>> tables_;
   std::vector<Undo> undo_;
   std::optional<Savepoint> transaction_;
+  std::optional<SearchCache> search_cache_;
+  std::optional<std::uint32_t> oversized_cache_;
 };
 
 }  // namespace minivector

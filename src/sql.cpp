@@ -210,10 +210,20 @@ public:
   Statement statement() {
     Statement result;
     if (take("create")) {
-      if (!take("table")) {
-        throw SqlError("UNSUPPORTED", "only CREATE TABLE is supported by this build");
+      if (take("table")) {
+        result = create_table();
+      } else if (take("vector")) {
+        expect("index");
+        CreateVectorIndex index{identifier(), {}, {}};
+        expect("on");
+        index.table = identifier();
+        expect("(");
+        index.column = identifier();
+        expect(")");
+        result = std::move(index);
+      } else {
+        throw SqlError("UNSUPPORTED", "expected CREATE TABLE or CREATE VECTOR INDEX");
       }
-      result = create_table();
     } else if (take("insert")) {
       result = insert();
     } else if (take("select")) {

@@ -48,6 +48,11 @@ public:
 
   std::size_t remaining() const { return input_.size() - position_; }
 
+  void skip(std::size_t length) {
+    require(length);
+    position_ += length;
+  }
+
   std::uint8_t byte() {
     require(1);
     return input_[position_++];
