@@ -12,6 +12,7 @@
 namespace minivector {
 
 using RowSink = std::function<void(const Row &)>;
+using ColumnsSink = std::function<void(const std::vector<std::string> &)>;
 
 enum class SearchMode { Exact, Ann };
 
@@ -25,7 +26,7 @@ public:
   explicit Database(const std::filesystem::path &directory);
 
   Execution execute(std::string_view sql, const RowSink &sink = {},
-                    SearchMode mode = SearchMode::Exact);
+                    SearchMode mode = SearchMode::Exact, const ColumnsSink &columns_sink = {});
   void close();
 
 private:
@@ -96,7 +97,8 @@ private:
   std::uint64_t insert(const Insert &statement);
   std::uint64_t update(const Update &statement);
   std::uint64_t remove(const Delete &statement);
-  Execution select(const Select &statement, const RowSink &sink, SearchMode mode);
+  Execution select(const Select &statement, const RowSink &sink, SearchMode mode,
+                   const ColumnsSink &columns_sink);
 
   std::filesystem::path directory_;
   Journal journal_;

@@ -1,4 +1,5 @@
 #include "database.hpp"
+#include "request.hpp"
 
 #include <iomanip>
 #include <iostream>
@@ -9,7 +10,7 @@ namespace {
 
 using namespace minivector;
 
-void json_string(std::ostream &out, const std::string &value) {
+void json_string(std::ostream &out, std::string_view value) {
   constexpr char hex[] = "0123456789abcdef";
   out << '"';
   for (const unsigned char ch : value) {
@@ -42,36 +43,81 @@ void json_value(std::ostream &out, const Value &value) {
 }
 
 void write_row(const Row &row) {
-  std::cout << "ROW\t[";
+  std::cout << '[';
   for (std::size_t i = 0; i < row.size(); ++i) {
     if (i != 0) std::cout << ',';
     json_value(std::cout, row[i]);
   }
-  std::cout << "]\n";
+  std::cout << ']';
 }
 
-int run(const std::filesystem::path &directory, SearchMode mode) {
+void write_response_prefix(std::string_view id, bool ok) {
+  std::cout << "{\"id\":" << id << ",\"ok\":" << (ok ? "true" : "false");
+}
+
+void write_query_prefix(std::string_view id, const std::vector<std::string> &columns) {
+  write_response_prefix(id, true);
+  std::cout << ",\"columns\":[";
+  for (std::size_t i = 0; i < columns.size(); ++i) {
+    if (i != 0) std::cout << ',';
+    json_string(std::cout, columns[i]);
+  }
+  std::cout << "],\"rows\":[";
+}
+
+void execute_request(Database &database, const Request &request) {
+  if (!request.operation || *request.operation != "execute") {
+    throw SqlError("UNSUPPORTED_OP", "expected execute or shutdown");
+  }
+  if (!request.sql) {
+    throw SqlError("INVALID_REQUEST", "execute requires a SQL string");
+  }
+  if (!request.search_mode || (*request.search_mode != "exact" && *request.search_mode != "ann")) {
+    throw SqlError("INVALID_REQUEST", "search_mode must be exact or ann");
+  }
+  const auto mode = *request.search_mode == "ann" ? SearchMode::Ann : SearchMode::Exact;
+  bool first_row = true;
+  const auto emit_row = [&](const Row &row) {
+    if (!first_row) std::cout << ',';
+    write_row(row);
+    first_row = false;
+  };
+  const auto emit_columns = [&](const std::vector<std::string> &columns) {
+    write_query_prefix(request.id, columns);
+  };
+  const Execution result = database.execute(*request.sql, emit_row, mode, emit_columns);
+  if (result.columns.empty()) {
+    write_response_prefix(request.id, true);
+    std::cout << ",\"affected_rows\":" << result.count;
+  } else {
+    std::cout << ']';
+  }
+  std::cout << "}\n" << std::flush;
+}
+
+int run(const std::filesystem::path &directory, SearchMode default_mode) {
   Database database(directory);
-  // This framing is only for local tests. The official driver can call execute().
-  std::cout << "READY\tminivectordb-local-v1\n" << std::flush;
+  std::cout << "{\"type\":\"ready\"}\n" << std::flush;
   std::string line;
   while (std::getline(std::cin, line)) {
-    const auto first = line.find_first_not_of(" \t\r\n");
-    if (first == std::string::npos) {
-      continue;
-    }
-    const auto last = line.find_last_not_of(" \t\r\n");
-    const auto statement = std::string_view(line).substr(first, last - first + 1);
-    if (statement == "\\q") {
-      break;
-    }
+    std::string_view id = "null";
     try {
-      const Execution result = database.execute(statement, write_row, mode);
-      std::cout << "OK\t" << result.count << '\n' << std::flush;
+      const auto request = parse_request(line, default_mode == SearchMode::Ann ? "ann" : "exact");
+      id = request.id;
+      if (request.operation && *request.operation == "shutdown") {
+        database.close();
+        write_response_prefix(id, true);
+        std::cout << "}\n" << std::flush;
+        return 0;
+      }
+      execute_request(database, request);
     } catch (const SqlError &error) {
-      std::cout << "ERR\t" << error.code() << '\t';
+      write_response_prefix(id, false);
+      std::cout << ",\"error\":{\"code\":";
+      json_string(std::cout, error.code());
+      std::cout << ",\"message\":";
       json_string(std::cout, error.what());
-      std::cout << '\n' << std::flush;
+      std::cout << "}}\n" << std::flush;
     }
   }
   database.close();
@@ -103,7 +149,7 @@ int main(int argc, char **argv) {
         }
       } else if (argument == "--help") {
         std::cout << "Usage: minivectordb [--data-dir PATH] [--search-mode exact|ann]\n"
-                     "Local test protocol: one SQL statement per input line. EOF or \\q closes the database.\n";
+                     "MiniVectorDB JSONL protocol. Send a shutdown request or EOF to close.\n";
         return 0;
       } else {
         throw std::invalid_argument("expected --data-dir, --search-mode or --help");

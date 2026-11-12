@@ -18,6 +18,8 @@ class Server:
         if data is not None:
             data.mkdir(exist_ok=True)
         self.container = None
+        self.mode = mode
+        self.sequence = 0
         if args.image:
             self.container = "mvdb-check-" + uuid.uuid4().hex[:12]
             mount = f"type=volume,source={volume},target=/data" if volume else f"type=bind,source={data},target=/data"
@@ -41,7 +43,10 @@ class Server:
         self.reader = threading.Thread(target=self.read_output, daemon=True)
         self.reader.start()
         try:
-            assert self.line() == "READY\tminivectordb-local-v1"
+            greeting = self.line()
+            self.legacy = greeting == "READY\tminivectordb-local-v1"
+            if not self.legacy:
+                assert json.loads(greeting) == {"type": "ready"}, greeting
         except BaseException:
             self.stop(crash=True)
             raise
@@ -63,7 +68,27 @@ class Server:
             raise AssertionError(f"no response, process status={self.process.poll()}\n{self.log.read()}")
         return output
 
+    def request(self, message, *, ensure_ascii=False):
+        self.process.stdin.write(json.dumps(message, ensure_ascii=ensure_ascii) + "\n")
+        self.process.stdin.flush()
+        response = json.loads(self.line())
+        assert type(response["id"]) is type(message["id"]) and response["id"] == message["id"]
+        assert type(response["ok"]) is bool
+        return response
+
     def sql(self, statement):
+        if not self.legacy:
+            self.sequence += 1
+            response = self.request({"id": self.sequence, "op": "execute",
+                                     "sql": statement, "search_mode": self.mode})
+            if not response["ok"]:
+                return [], None, response["error"]["code"]
+            if "columns" in response:
+                rows = response["rows"]
+                assert all(len(row) == len(response["columns"]) for row in rows)
+                return rows, len(rows), None
+            return [], response.get("affected_rows", 0), None
+
         self.process.stdin.write(statement + "\n")
         self.process.stdin.flush()
         rows = []
@@ -120,6 +145,32 @@ class Server:
 
     def __exit__(self, exc_type, exc, traceback):
         self.stop(crash=exc_type is not None)
+
+
+def check_protocol(args, directory):
+    with Server(args, directory) as db:
+        if db.legacy:
+            return
+        db.ok("CREATE TABLE unicode_rows (id BIGINT PRIMARY KEY, text VARCHAR(32));")
+        identifier = 18446744073709551617
+        created = db.request({"id": identifier, "op": "execute",
+                              "sql": "INSERT INTO unicode_rows VALUES (9007199254740993,'你好😀;');"},
+                             ensure_ascii=True)
+        assert created["ok"] and created["affected_rows"] == 1
+        selected = db.request({"id": "编号😀\n", "op": "execute",
+                               "sql": 'SELECT id,text FROM unicode_rows\nORDER BY id;'},
+                              ensure_ascii=True)
+        assert selected["columns"] == ["id", "text"]
+        assert selected["rows"] == [[9007199254740993, "你好😀;"]]
+        invalid = db.request({"id": True, "op": "execute", "sql": "SELECT * FROM unicode_rows;",
+                              "search_mode": 1})
+        assert invalid["ok"] is False and invalid["error"]["code"] == "INVALID_REQUEST"
+        db.error("SELECT text FROM unicode_rows ORDER BY missing;", "UNKNOWN_COLUMN")
+        empty = db.request({"id": None, "op": "execute",
+                            "sql": "SELECT text FROM unicode_rows LIMIT 0;"})
+        assert empty["columns"] == ["text"] and empty["rows"] == []
+        assert db.request({"id": "done", "op": "shutdown"}) == {"id": "done", "ok": True}
+    print("JSONL ID types, Unicode escapes, empty columns, error recovery and shutdown passed", flush=True)
 
 
 def check_sql(args, directory):
@@ -358,6 +409,7 @@ def main():
         args.binary = args.binary.resolve(strict=True)
     with tempfile.TemporaryDirectory(prefix="mvdb-check-") as work:
         root = Path(work).resolve()
+        check_protocol(args, root / "protocol")
         check_sql(args, root / "sql")
         check_transactions(args, root / "transactions")
         check_crash(args, root / "crash")

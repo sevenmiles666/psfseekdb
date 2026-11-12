@@ -703,7 +703,8 @@ std::uint64_t Database::remove(const Delete &statement) {
   return count;
 }
 
-Execution Database::select(const Select &statement, const RowSink &sink, SearchMode mode) {
+Execution Database::select(const Select &statement, const RowSink &sink, SearchMode mode,
+                           const ColumnsSink &columns_sink) {
   Table &target = table(statement.table);
   const auto predicates = bind_predicates(target.columns, statement.predicates);
   std::vector<BoundExpression> projection;
@@ -734,6 +735,9 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       throw SqlError("TYPE_MISMATCH", "ORDER BY a vector requires L2_DISTANCE");
     }
     order.push_back(std::move(expression));
+  }
+  if (columns_sink) {
+    columns_sink(result.columns);
   }
   const auto limit = statement.limit.value_or(std::numeric_limits<std::uint64_t>::max());
   if (limit == 0) {
@@ -1009,10 +1013,11 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
   return result;
 }
 
-Execution Database::execute(std::string_view sql, const RowSink &sink, SearchMode mode) {
+Execution Database::execute(std::string_view sql, const RowSink &sink, SearchMode mode,
+                            const ColumnsSink &columns_sink) {
   const Statement statement = parse_sql(sql);
   if (const auto *query = std::get_if<Select>(&statement)) {
-    return select(*query, sink, mode);
+    return select(*query, sink, mode, columns_sink);
   }
   if (const auto *command = std::get_if<Transaction>(&statement)) {
     transaction(*command);
