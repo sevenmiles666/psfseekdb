@@ -252,10 +252,17 @@ public:
     if (!take("]")) {
       do {
         const std::string number = consume(TokenKind::Number, "vector component");
-        char *end = nullptr;
-        const float value = std::strtof(number.c_str(), &end);
-        if (end != number.c_str() + number.size() || !std::isfinite(value)) {
-          throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
+        const char *last = number.data() + number.size();
+        const char *first = number.data() + (number.front() == '+' ? 1 : 0);
+        float value = 0;
+        const auto parsed = std::from_chars(first, last, value);
+        if (parsed.ec != std::errc{} || parsed.ptr != last) {
+          // Keep strtof rounding for components below the smallest float32 subnormal.
+          char *end = nullptr;
+          value = std::strtof(number.c_str(), &end);
+          if (end != last || !std::isfinite(value)) {
+            throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
+          }
         }
         result.push_back(value);
       } while (take(","));

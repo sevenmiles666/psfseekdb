@@ -14,6 +14,10 @@
 #include <unistd.h>
 #include <utility>
 
+#if defined(__x86_64__) && defined(__GNUC__)
+#include <immintrin.h>
+#endif
+
 namespace minivector {
 namespace {
 
@@ -155,6 +159,43 @@ double squared_distance(const float *left, const Vector &right) {
     sum += difference * difference;
   }
   return sum;
+}
+
+using DistanceKernel = double (*)(const float *, const float *, std::size_t);
+
+#if defined(__x86_64__) && defined(__GNUC__)
+__attribute__((target("avx2,no-fma")))
+double estimate_squared_distance(const float *left, const float *right, std::size_t size) {
+  auto sum_low = _mm256_setzero_pd();
+  auto sum_high = _mm256_setzero_pd();
+  std::size_t i = 0;
+  for (; i + 8 <= size; i += 8) {
+    const auto low = _mm256_sub_pd(_mm256_cvtps_pd(_mm_loadu_ps(left + i)),
+                                  _mm256_cvtps_pd(_mm_loadu_ps(right + i)));
+    const auto high = _mm256_sub_pd(_mm256_cvtps_pd(_mm_loadu_ps(left + i + 4)),
+                                   _mm256_cvtps_pd(_mm_loadu_ps(right + i + 4)));
+    sum_low = _mm256_add_pd(sum_low, _mm256_mul_pd(low, low));
+    sum_high = _mm256_add_pd(sum_high, _mm256_mul_pd(high, high));
+  }
+  double lanes[4];
+  _mm256_storeu_pd(lanes, _mm256_add_pd(sum_low, sum_high));
+  double sum = (lanes[0] + lanes[1]) + (lanes[2] + lanes[3]);
+  for (; i < size; ++i) {
+    const double difference = static_cast<double>(left[i]) - static_cast<double>(right[i]);
+    sum += difference * difference;
+  }
+  return sum;
+}
+#endif
+
+DistanceKernel distance_kernel() {
+#if defined(__x86_64__) && defined(__GNUC__)
+  static const DistanceKernel kernel =
+      __builtin_cpu_supports("avx2") ? estimate_squared_distance : nullptr;
+  return kernel;
+#else
+  return nullptr;
+#endif
 }
 
 Value evaluate(const BoundExpression &expression, const Row &row, bool order_key) {
@@ -823,6 +864,22 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       }
     };
 
+    const auto *cache = search_cache(target, vector_column);
+    const auto estimate = query.size() >= 32 ? distance_kernel() : nullptr;
+    // Both kernels sum the same nonnegative double terms in different orders.
+    // Cover the rounding error of both sums and compute the scalar result near the cutoff.
+    const double margin = 1.0 + (4.0 * query.size() + 16.0) * std::numeric_limits<double>::epsilon();
+    const auto consider_cached = [&](std::size_t index) {
+      if (!matches(cache->scalars.data() + index * target.columns.size(), predicates)) return;
+      const auto &entry = cache->rows[index];
+      const auto *vector = cache->vectors.data() + index * query.size();
+      if (estimate && nearest.size() == limit &&
+          estimate(vector, query.data(), query.size()) > nearest.front().squared * margin) {
+        return;
+      }
+      consider(entry.key, entry.reference, vector);
+    };
+
     if (mode == SearchMode::Ann && target.index) {
       const auto &entries = target.index->ordered;
       auto right = entries.lower_bound({query.front(), std::numeric_limits<std::int64_t>::min()});
@@ -842,14 +899,20 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
             lower_bound(entry.first) * approximation > nearest.front().squared) {
           break;
         }
-        read_candidate(entry.second, target.rows.at(entry.second).reference);
-      }
-    } else if (const auto *cache = search_cache(target, vector_column)) {
-      for (std::size_t i = 0; i < cache->rows.size(); ++i) {
-        if (matches(cache->scalars.data() + i * target.columns.size(), predicates)) {
-          const auto &entry = cache->rows[i];
-          consider(entry.key, entry.reference, cache->vectors.data() + i * query.size());
+        if (cache) {
+          const auto found = std::lower_bound(cache->rows.begin(), cache->rows.end(), entry.second,
+              [](const CachedRow &row, std::int64_t key) { return row.key < key; });
+          if (found == cache->rows.end() || found->key != entry.second) {
+            throw std::runtime_error("vector index references missing row");
+          }
+          consider_cached(static_cast<std::size_t>(found - cache->rows.begin()));
+        } else {
+          read_candidate(entry.second, target.rows.at(entry.second).reference);
         }
+      }
+    } else if (cache) {
+      for (std::size_t i = 0; i < cache->rows.size(); ++i) {
+        consider_cached(i);
       }
     } else {
       for (const auto &entry : target.rows) {

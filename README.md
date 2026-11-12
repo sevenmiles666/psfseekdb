@@ -39,6 +39,8 @@ docker run --rm -i --network=none -v minivectordb-demo:/data minivectordb-round2
 
 精确 TopK 使用有界候选堆。常见的 `ORDER BY L2_DISTANCE(...) LIMIT K` 可缓存一张表的向量和普通列，缓存预算为 8 MiB。表修改会使该缓存失效，超过预算时逐行从 WAL 读取。较大的排序按约 2 MiB 的键预算生成有序段，最多八路合并，临时文件位于数据目录。主键表、索引条目、未提交事务的撤销记录、超长单行和单条 SQL 请求仍需内存。WAL 按历史追加，启动会扫描日志，暂未实现历史压缩。
 
+缓存中的向量支持 AVX2 双精度距离计算。只有估计距离超过带舍入余量的候选堆阈值才会提前排除，其余候选使用标量计算距离并按主键处理并列。无 AVX2 的 CPU 使用标量扫描。ANN 也复用同一缓存，超出缓存预算时按索引从 WAL 读取。
+
 默认使用 `exact`，有索引时仍返回精确结果。在单条请求中设置 `"search_mode":"ann"` 可切换到近似检索。
 
 ANN 索引按向量首个坐标和主键排序。从查询坐标两侧按距离下界扫描，满足过滤条件的候选才进入 TopK 堆。收满 K 条后可按 0.1% 的相对距离容差提前停止，返回项仍以完整欧氏距离排序。高维数据中单坐标下界可能较弱，此时扫描和随机读成本较高。没有索引或查询形状超出该路径时走精确检索。
@@ -68,6 +70,30 @@ python3 tests/check_core.py --binary build/minivectordb
 ```
 
 2026-11-09 的 Linux 构建和断网容器测试通过。独立核对了 24 组 128 维精确 TopK，其中 12 组带过滤条件。测试覆盖提交后强杀、未提交尾部、语句级撤销、EOF 回滚及断帧重放。用低维近距样例分别触发精确与近似路径，并检查索引在增删改、回滚和重启后的结果。32 MiB 内存限制的容器从 52,482,621 字节的持久化数据重建索引并完成查询和排序。新版也能直接打开首版写入的数据卷并在创建索引后重启查询。
+
+## 2026-11-12 性能对照
+
+两版均采用官方 JSONL。对照版本为 `001819de55ae299e0cc74be306bea5f8438cae6b`。使用相同的 10,000 条 128 维向量和 1,000 条 Top-10 查询，其中 500 条带等值过滤。每轮使用独立 Docker 数据卷、2 CPU、64 MiB 内存并关闭 swap。写入以每批 100 条自动提交，重启后核对全部记录。查询结果用独立的暴力计算核对。
+
+| 版本和模式 | 写入中位数（秒） | 查询中位数（秒） | 查询 I/O / 峰值内存（MiB） | 带过滤 / 无过滤 Recall@10 |
+| --- | ---: | ---: | ---: | ---: |
+| JSONL 对照 exact | 1.297 | 2.359 | 5.559 / 20.125 | 100% / 100% |
+| 优化版 exact | 1.225 | 2.107 | 5.559 / 20.598 | 100% / 100% |
+| 优化版 ann | 1.225 | 4.164 | 5.562 / 21.121 | 100% / 100% |
+
+在这批数据上，默认 `exact` 的查询耗时降低 10.7%，写入耗时降低 5.6%。两组查询都核对了结果 ID、距离及排序。本地数据卷与镜像存储共用底层设备，内存峰值包含页缓存与最终探针。正式性能指标和名次以平台评测结果为准。[三轮原始记录](tests/round2-jsonl-benchmark.json)
+
+在 Linux x86_64 或 Ubuntu WSL 编译测试工具，使用实际构建的镜像和同样的测试参数复跑。
+
+```bash
+git worktree add --detach ../minivectordb-jsonl-reference 001819de55ae299e0cc74be306bea5f8438cae6b
+docker build --platform linux/amd64 -t minivectordb-round2:jsonl-base ../minivectordb-jsonl-reference
+mkdir -p build
+g++ -std=c++17 -O3 -static tests/benchmark_support.cpp -o build/benchmark_support
+python3 tests/benchmark_local.py --baseline-image minivectordb-round2:jsonl-base \
+  --candidate-image minivectordb-round2:dev --probe build/benchmark_support --rounds 3 \
+  --output build/round2-jsonl-benchmark.json
+```
 
 ## 2026-11-09 本地性能记录
 

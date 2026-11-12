@@ -215,7 +215,7 @@ def main():
     inserts, statements = input_statements(buckets, vectors, queries)
     truth, input_hash = exact_truth(args.candidate_image, helper, buckets, vectors, queries)
     print(f"Independent oracle ready: {ROWS} rows × {DIMENSION}, {QUERIES} queries", flush=True)
-    report = {"scope": "Local paired development run; first implementation is reference, not official baseline.",
+    report = {"scope": "Local paired development run using the specified reference image.",
               "measurement": "Two CPUs, 64 MiB, no swap, disconnected containers with fresh Docker volumes. "
               "io.stat is for the volume backing device shared with image storage. "
               "memory.peak includes one final probe process. No host cache reset.",

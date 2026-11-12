@@ -1,5 +1,5 @@
 {
-  "scope": "2026-11-09 MiniVectorDB 首版及本地索引和性能迭代。保留本题相关用户原话、Agent 回复和实际测试输出。",
+  "scope": "2026-11-09 至 2026-11-12 的 MiniVectorDB 开发、自测、官方 JSONL 适配和性能迭代。",
   "synthetic": false,
   "user_prompts": [
     {
@@ -18,6 +18,24 @@
       "role": "user",
       "content": "那你现在除了这个其他的都先完成，自测",
       "context": "本轮先完成可在本地开发和验证的部分，官方题包与驱动适配留待后续。"
+    },
+    {
+      "id": "round2-user-4",
+      "role": "user",
+      "content": "你直接自己检测",
+      "context": "用户要求检查已上传版本。Agent 从 GitHub 重新拉取并执行了本地 Docker 检查。"
+    },
+    {
+      "id": "round2-user-5",
+      "role": "user",
+      "content": "第一次失败了",
+      "context": "用户报告首次平台尝试失败，当时尚未收到平台任务日志。"
+    },
+    {
+      "id": "round2-user-6",
+      "role": "user",
+      "content": "继续做",
+      "context": "用户同时提供加赛性能榜和 Agent Prompt 榜的截图，继续处理提交及优化。截图中的榜首指标分别为 E 5536.788323 和 Prompt 原始分 39.5。"
     }
   ],
   "conversations": [
@@ -40,6 +58,17 @@
       "id": "round2-agent-4",
       "role": "assistant",
       "content": "前两轮中，精确模式的 1,000 条查询都与暴力计算结果一致，首轮耗时从 7.64 秒降到 2.28 秒。ANN 的召回也达标，但这批 128 维数据很少能靠首坐标提前停止。我会保留精确模式作为默认选项，等第三轮结束后汇总耗时、I/O 和内存。"
+    },
+    {
+      "id": "round2-agent-5",
+      "role": "assistant",
+      "content": "官方已经发布了完整的 JSONL 协议和交互式检查器。旧版启动时输出 READY，而检查器要求 {\"type\":\"ready\"}，这个差异会让旧版在执行 SQL 前就失败。我会先用官方工具复现，再把 Docker 默认入口接到现有数据库引擎上。",
+      "context": "引用 Agent 进度消息，省略 Markdown 格式及链接。官方题包提交 f4d4e26653af823a7601668802f80e374ad6643c。"
+    },
+    {
+      "id": "round2-agent-6",
+      "role": "assistant",
+      "content": "新版已通过官方检查器的 20 组公开用例，旧版也已复现握手失败。接下来我会测向量解析和 Top-K 扫描的优化，用同样采用 JSONL 的版本作对照，并核对优化后的每条查询结果。"
     }
   ],
   "experiments": [
@@ -69,7 +98,45 @@
       "role": "tool",
       "procedure": "首版容器写入三行。新版用原数据卷读取旧 WAL 并建立索引，再用 ann 模式启动并核对过滤查询、拒绝重复建索引。",
       "output": "Baseline 590ff19 WAL reopened by the candidate; committed vector index rebuilt on restart and ANN query matched."
+    },
+    {
+      "id": "round2-tool-5",
+      "role": "tool",
+      "command": "python3 protocol_check/run.py --command '[\"./build/minivectordb\",\"--data-dir\",\"{data_dir}\"]' --handshake-only",
+      "environment": "旧版二进制，官方 f4d4e26 检查器，Ubuntu WSL。",
+      "output": "invalid JSON response: Expecting value: line 1 column 1 (char 0); stdout line (first 240 bytes)=b'READY\\tminivectordb-local-v1'"
+    },
+    {
+      "id": "round2-tool-6",
+      "role": "tool",
+      "command": "python3 build/official-f4d4e26/protocol_check/run.py --image minivectordb-round2:jsonl-perf --output build/official-jsonl-perf",
+      "environment": "官方 f4d4e26 公开检查器。断网容器、只读根文件系统、可写 /data、2 CPU、2 GiB 内存和 128 PID。",
+      "output": "全部 20 组公开用例、95 条 SQL 通过。用例状态为 sql_crud PASS, sql_comparisons PASS, sql_ordering PASS, sql_empty PASS, sql_primary_key PASS, sql_unicode PASS, sql_bigint PASS, sql_unsupported PASS, storage_restart PASS, vector_euclidean PASS, transaction_commit PASS, transaction_rollback PASS, storage_mutations PASS, storage_multiple_tables PASS, vector_ties_and_filter PASS, vector_float32 PASS, vector_index_maintenance PASS, transaction_failed_insert PASS, transaction_autocommit_atomic PASS, transaction_shutdown_rollback PASS"
+    },
+    {
+      "id": "round2-tool-7",
+      "role": "tool",
+      "command": "python tests/check_core.py --image minivectordb-round2:jsonl-perf --large",
+      "output": "请求 ID 类型、Unicode 转义、空结果列名、SQL 错误后的继续执行、正常关闭均通过。提交后强杀、断帧恢复、索引维护和 exact/ann 路径均通过。32 MiB 容器从 52482621 字节持久化数据重建索引并完成检索和排序。"
+    },
+    {
+      "id": "round2-tool-8",
+      "role": "tool",
+      "procedure": "两份 Linux 可执行程序分别加载相同的十进制向量数据，在 31、32、33、128 和 129 维执行每组 40 条 exact 查询。输入包含重复向量、不同数量级和等值过滤。",
+      "output": "200 exact comparisons matched the JSONL reference across dimensions 31, 32, 33, 128 and 129"
+    },
+    {
+      "id": "round2-tool-9",
+      "role": "tool",
+      "command": "python tests/benchmark_local.py --baseline-image minivectordb-round2:jsonl-base --candidate-image minivectordb-round2:jsonl-perf --probe build/benchmark_support --rounds 3 --output build/round2-jsonl-benchmark.json",
+      "environment": "对照提交 001819de55ae299e0cc74be306bea5f8438cae6b。两版采用 JSONL，2 CPU、64 MiB 内存、关闭 swap，独立 Docker 数据卷。",
+      "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
+      "images": {
+        "baseline": "sha256:511da2a8745c1b91aec191b51da330c9844eda75d72568397d9f312fce97ab44",
+        "candidate": "sha256:55e21129d623797e9f84d5b20c3bb7ebe3d657459bc57163b62d323291cfdd2c"
+      },
+      "output": "三轮均通过重启后的 10,000 条写入核对，以及每模式 1,000 条查询的独立暴力对照。有过滤和无过滤的 Recall@10 均为 1.0。写入中位数由 1.296921 秒降至 1.224591 秒，exact 查询由 2.359217 秒降至 2.107305 秒，优化版 ann 查询中位数为 4.163761 秒。exact 查询设备 I/O 均为 5828608 字节，峰值内存从 21102592 字节增至 21598208 字节。"
     }
   ],
-  "limitations": "实现、测试设计和命令运行由 Agent 完成。用户本轮提供了需求和工作范围，尚无可记录的独立自测或结果解释。此处只保存 MiniVectorDB 相关交互与实际本地结果。Docker Desktop 设备计数与镜像存储共用底层设备，峰值内存含页缓存与最终探针，宿主缓存未重置。官方题包、驱动和正式得分不在本轮自测范围内。"
+  "limitations": "用户贡献记录包括赛题材料、失败反馈和榜单截图。实现、测试设计和实验执行由 Agent 完成，独立自测或结果解读需按用户实际参与补充。性能数据来自本地 Docker 对照，数据卷与镜像共用底层设备，峰值内存含页缓存与最终探针，宿主缓存未重置。正式隐藏用例、性能榜指标和 Agent Prompt 分数待平台评测。"
 }
