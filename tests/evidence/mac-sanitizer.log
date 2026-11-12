@@ -1,0 +1,17 @@
+test_boundaries_and_protocol (__main__.EngineTests.test_boundaries_and_protocol) ... ok
+test_commit_crash_points_and_interrupted_recovery (__main__.EngineTests.test_commit_crash_points_and_interrupted_recovery) ... ok
+test_compaction_and_its_crash_boundaries (__main__.EngineTests.test_compaction_and_its_crash_boundaries) ... ok
+test_large_tree_splits_deletes_and_reopen (__main__.EngineTests.test_large_tree_splits_deletes_and_reopen) ... ok
+test_quoted_text_roundtrips_at_scan_boundaries (__main__.EngineTests.test_quoted_text_roundtrips_at_scan_boundaries) ... ok
+test_quotes_unicode_and_errors (__main__.EngineTests.test_quotes_unicode_and_errors) ... ok
+test_random_transactions_against_reference (__main__.EngineTests.test_random_transactions_against_reference) ... ok
+test_sort_keys_can_exceed_cache_budget (__main__.EngineTests.test_sort_keys_can_exceed_cache_budget) ... ok
+test_statement_and_transaction_atomicity (__main__.EngineTests.test_statement_and_transaction_atomicity) ... ok
+test_topk_projects_only_final_rows (__main__.EngineTests.test_topk_projects_only_final_rows) ... ok
+test_vector_filter_topk_and_transaction (__main__.EngineTests.test_vector_filter_topk_and_transaction) ... ok
+test_vector_index_preserves_rounded_l2_ties (__main__.EngineTests.test_vector_index_preserves_rounded_l2_ties) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 25.544s
+
+OK

@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "rows": 70000,
+  "text_bytes": 32768,
+  "input_payload_bytes": 2293760000,
+  "storage_bytes": 2308353493,
+  "memory_limit": "2g",
+  "elapsed_seconds": 1925.318631059,
+  "container_measurements": [
+    {
+      "memory_peak_bytes": 2147483648,
+      "memory_events": {
+        "low": "0",
+        "high": "0",
+        "max": "4400",
+        "oom": "0",
+        "oom_kill": "0",
+        "oom_group_kill": "0"
+      },
+      "io_stat": "253:16 rbytes=2084761600 wbytes=2315468800 rios=16618 wios=4725 dbytes=0 dios=0\n"
+    },
+    {
+      "memory_peak_bytes": 231411712,
+      "memory_events": {
+        "low": "0",
+        "high": "0",
+        "max": "0",
+        "oom": "0",
+        "oom_kill": "0",
+        "oom_group_kill": "0"
+      },
+      "io_stat": "253:16 rbytes=222105600 wbytes=0 rios=1767 wios=0 dbytes=0 dios=0\n"
+    }
+  ],
+  "note": "Local resource/restart check, not official performance scoring."
+}

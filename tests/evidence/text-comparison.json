@@ -1,0 +1,34 @@
+{
+  "rows": 2000,
+  "text_bytes": 32768,
+  "rounds": [
+    {
+      "order": 1,
+      "variant": "baseline",
+      "write_seconds": 6.140099374984857,
+      "storage_bytes": 65861017
+    },
+    {
+      "order": 2,
+      "variant": "candidate",
+      "write_seconds": 5.759254625008907,
+      "storage_bytes": 65861017
+    },
+    {
+      "order": 3,
+      "variant": "candidate",
+      "write_seconds": 5.803819291992113,
+      "storage_bytes": 65861017
+    },
+    {
+      "order": 4,
+      "variant": "baseline",
+      "write_seconds": 6.091772707994096,
+      "storage_bytes": 65861017
+    }
+  ],
+  "baseline_seconds": 6.115936041489476,
+  "candidate_seconds": 5.78153695850051,
+  "reduction_percent": 5.467668084173206,
+  "scope": "Local same-host wall clock, includes commit acknowledgements; restart/content checks outside timing; not official scoring."
+}

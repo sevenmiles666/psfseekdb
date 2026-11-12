@@ -1,4 +1,6 @@
-**
-!src/
-!src/**
-!Dockerfile
+.git
+build
+protocol-results
+tests
+agent
+conversation.json

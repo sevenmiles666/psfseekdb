@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-11-12T04:52:12.660493+00:00",
+  "baseline_commit": "cd3bc6449a62fbd66271be9a0e26a862ce6be84c",
+  "upstream_base": "f4d4e26653af823a7601668802f80e374ad6643c",
+  "core_sha256": {
+    "Dockerfile": "268f708106eb881abd45c90eecc4b9234daec234498196d289273c4768ba040b",
+    "Makefile": "fc742dff0654021138f97c5e3cf75608807e614969f56129c542d09c9a9e362a",
+    "minivectordb/engine.hpp": "29b1616e087f41b54b1aab4efe701aa5d396974f4156e6e11c62f22b0d129513",
+    "minivectordb/main.cpp": "1651141381f066fbf712cbcc9164e7f0407cf4c8ebd6a3260004654d063fc48a",
+    "minivectordb/sql.hpp": "5bf59b71844b4454a16d570e1e8caddc380bd255cc61ef967f30c816d27bb5cf",
+    "minivectordb/storage.hpp": "a68326e42b4cd5756b8ebdb49bd1d9350554f110a2d4ab0c75212b9e8f79c997",
+    "third_party/json.hpp": "9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6"
+  },
+  "mac_binary_sha256": "755e9eec52f61d93f4b25359f6718d61308aebf6664260c221d8043bfae57fe2",
+  "linux_image_id": "sha256:94720e82086efce23fc3cade7ba971a89167e7d3238689764d37dcaf15720e97",
+  "linux_image_binary_sha256": "c75e358f24a9878362537ce6edbdb6e1531d870f25dd9c0d92da47ae91d7c4cd",
+  "linux_environment": "Local UTM x86_64 emulation on ARM Mac; Docker 28.5.1, cgroup v2. Guest clock drifts during emulation; use source hashes for provenance, not guest wall-clock timestamps.",
+  "official_inputs": "STDIO_PROTOCOL.md, protocol_check/ and mysqltest/ unchanged from upstream_base.",
+  "not_run": [
+    "Official hidden 29-case suite",
+    "Official performance/Agent scoring",
+    "Real power-loss or disk-full device fault"
+  ]
+}

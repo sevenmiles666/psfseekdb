@@ -1,0 +1,71 @@
+{
+  "order": "B-C-C-B",
+  "rounds": [
+    {
+      "order": 1,
+      "variant": "baseline",
+      "round": 1,
+      "write_seconds": 3.1901707499928307,
+      "prepare_seconds": 0.11153158399974927,
+      "query_seconds": 1.1721764645481016,
+      "query_p50_ms": 1.2208539992570877,
+      "query_p95_ms": 1.3166250137146562,
+      "exact_truth_checks": 39,
+      "storage_bytes": 6831919
+    },
+    {
+      "order": 2,
+      "variant": "candidate",
+      "round": 1,
+      "write_seconds": 3.1658037500164937,
+      "prepare_seconds": 0.1081024999730289,
+      "query_seconds": 0.990111247432651,
+      "query_p50_ms": 1.031374980811961,
+      "query_p95_ms": 1.3101249933242798,
+      "exact_truth_checks": 39,
+      "storage_bytes": 6831919
+    },
+    {
+      "order": 3,
+      "variant": "candidate",
+      "round": 1,
+      "write_seconds": 3.4572409160027746,
+      "prepare_seconds": 0.11092129201279022,
+      "query_seconds": 0.9926865519955754,
+      "query_p50_ms": 1.0289999918313697,
+      "query_p95_ms": 1.2949999945703894,
+      "exact_truth_checks": 39,
+      "storage_bytes": 6831919
+    },
+    {
+      "order": 4,
+      "variant": "baseline",
+      "round": 1,
+      "write_seconds": 3.5024701670045033,
+      "prepare_seconds": 0.10875862499233335,
+      "query_seconds": 0.9781200045836158,
+      "query_p50_ms": 1.2215000024298206,
+      "query_p95_ms": 1.2752079928759485,
+      "exact_truth_checks": 39,
+      "storage_bytes": 6831919
+    }
+  ],
+  "comparison": {
+    "write_seconds": {
+      "baseline": 3.346320458498667,
+      "candidate": 3.311522333009634,
+      "reduction_percent": 1.0398922016167296
+    },
+    "query_seconds": {
+      "baseline": 1.0751482345658587,
+      "candidate": 0.9913988997141132,
+      "reduction_percent": 7.789561677098714
+    },
+    "prepare_seconds": {
+      "baseline": 0.11014510449604131,
+      "candidate": 0.10951189599290956,
+      "reduction_percent": 0.5748857437004952
+    }
+  },
+  "scope": "Same ARM Mac and fresh seeded data; local wall clock only; no official scores or cgroup T/B/M."
+}

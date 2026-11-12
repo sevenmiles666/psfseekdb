@@ -1,0 +1,105 @@
+[
+  {
+    "scenario": "one_multirow_statement",
+    "records": [
+      {
+        "sql": "CREATE TABLE t (id BIGINT PRIMARY KEY);",
+        "response": {
+          "id": 1,
+          "ok": true
+        }
+      },
+      {
+        "sql": "INSERT INTO t VALUES (1);",
+        "response": {
+          "affected_rows": 1,
+          "id": 2,
+          "ok": true
+        }
+      },
+      {
+        "sql": "INSERT INTO t VALUES (2),(1);",
+        "response": {
+          "error": {
+            "code": "duplicate_key",
+            "message": "Duplicate primary key"
+          },
+          "id": 3,
+          "ok": false
+        }
+      },
+      {
+        "sql": "SELECT id FROM t ORDER BY id;",
+        "response": {
+          "columns": [
+            "id"
+          ],
+          "id": 4,
+          "ok": true,
+          "rows": [
+            [
+              1
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "scenario": "two_autocommit_statements",
+    "records": [
+      {
+        "sql": "CREATE TABLE t (id BIGINT PRIMARY KEY);",
+        "response": {
+          "id": 1,
+          "ok": true
+        }
+      },
+      {
+        "sql": "INSERT INTO t VALUES (1);",
+        "response": {
+          "affected_rows": 1,
+          "id": 2,
+          "ok": true
+        }
+      },
+      {
+        "sql": "INSERT INTO t VALUES (2);",
+        "response": {
+          "affected_rows": 1,
+          "id": 3,
+          "ok": true
+        }
+      },
+      {
+        "sql": "INSERT INTO t VALUES (1);",
+        "response": {
+          "error": {
+            "code": "duplicate_key",
+            "message": "Duplicate primary key"
+          },
+          "id": 4,
+          "ok": false
+        }
+      },
+      {
+        "sql": "SELECT id FROM t ORDER BY id;",
+        "response": {
+          "columns": [
+            "id"
+          ],
+          "id": 5,
+          "ok": true,
+          "rows": [
+            [
+              1
+            ],
+            [
+              2
+            ]
+          ]
+        }
+      }
+    ]
+  }
+]

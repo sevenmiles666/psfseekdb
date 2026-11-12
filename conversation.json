@@ -1,0 +1,235 @@
+{
+  "format": "minivectordb-actual-development-evidence-v1",
+  "recorded_at": "2026-11-12T04:52:12.660493+00:00",
+  "context": "用户要求完成 MiniVectorDB，最新约束为本地执行。本材料是实际交互选摘和工具输出，非完整聊天导出；没有为历史消息补造时间。代码以 core_sha256 与实验产物关联，材料随源码同次提交。",
+  "conversations": [
+    {
+      "role": "user",
+      "source": "current chat, exact text",
+      "content": "哦，所以你现在能做吗，先制定方案"
+    },
+    {
+      "role": "user",
+      "source": "current chat, exact text",
+      "content": "来做，需要什么你打开网页给我，我注册或开通"
+    },
+    {
+      "role": "user",
+      "source": "current chat, exact text",
+      "content": "本地搞"
+    },
+    {
+      "role": "assistant",
+      "source": "actual input question shown to the user",
+      "content": "先留一条真实学习记录：表里已有主键 1，执行 INSERT 一次插入主键 2 和主键 1，后者冲突报错。你认为这次执行后应该留下哪些行？可以顺便说一句理由；我会用实际测试核对你的判断。"
+    },
+    {
+      "role": "user",
+      "source": "actual answer to the preceding question, exact text",
+      "content": "都试一下吧，我拿不准，或者你选"
+    },
+    {
+      "role": "assistant",
+      "source": "current chat commentary, exact text",
+      "content": "按你说的，继续在本地完成。刚才两种插入方式都已实测：一条批量语句遇到冲突会整条回滚；拆成两条执行，先成功的那条会保留。我接着完成容器验收、资源测试和交付文档。"
+    },
+    {
+      "role": "assistant",
+      "source": "current chat commentary, exact text",
+      "content": "实际 Docker 镜像已通过全部 20 个公开用例、95 条 SQL，驱动使用原版 2 CPU、2 GiB 配置。Mac 上的 AddressSanitizer 和 UndefinedBehaviorSanitizer 检查也已通过。现在正在做大于容器内存的数据写入与重启测试。"
+    },
+    {
+      "role": "user",
+      "source": "current chat, exact text",
+      "content": "看看怎么样"
+    },
+    {
+      "role": "user",
+      "source": "current chat, exact text",
+      "content": "继续优化"
+    },
+    {
+      "role": "assistant",
+      "source": "current chat commentary, exact text",
+      "content": "修复会统一索引路径和普通路径的距离排序规则；TopK 则先选出记录，再读取最终结果的投影字段。这样既能消除两处错误，也能避免把随后会被淘汰的大文本留在候选堆里。"
+    },
+    {
+      "role": "assistant",
+      "source": "current chat commentary, exact text",
+      "content": "大文本写入的四轮对照测到了收益：64 MiB 数据的平均写入耗时从 6.116 秒降到 5.782 秒，约减少 5.5%，重启后的内容核对也通过了。新版 12 项回归和 ASan／UBSan 检查均已通过；Linux 大数据测试正在继续。"
+    }
+  ],
+  "experiments": [
+    {
+      "actor": "assistant/tool",
+      "description": "真实比较：一条多行 INSERT 与两条自动提交 INSERT",
+      "artifact": "tests/evidence/learning-atomicity.json",
+      "output": "[\n  {\n    \"scenario\": \"one_multirow_statement\",\n    \"records\": [\n      {\n        \"sql\": \"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\n        \"response\": {\n          \"id\": 1,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (1);\",\n        \"response\": {\n          \"affected_rows\": 1,\n          \"id\": 2,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (2),(1);\",\n        \"response\": {\n          \"error\": {\n            \"code\": \"duplicate_key\",\n            \"message\": \"Duplicate primary key\"\n          },\n          \"id\": 3,\n          \"ok\": false\n        }\n      },\n      {\n        \"sql\": \"SELECT id FROM t ORDER BY id;\",\n        \"response\": {\n          \"columns\": [\n            \"id\"\n          ],\n          \"id\": 4,\n          \"ok\": true,\n          \"rows\": [\n            [\n              1\n            ]\n          ]\n        }\n      }\n    ]\n  },\n  {\n    \"scenario\": \"two_autocommit_statements\",\n    \"records\": [\n      {\n        \"sql\": \"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\n        \"response\": {\n          \"id\": 1,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (1);\",\n        \"response\": {\n          \"affected_rows\": 1,\n          \"id\": 2,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (2);\",\n        \"response\": {\n          \"affected_rows\": 1,\n          \"id\": 3,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (1);\",\n        \"response\": {\n          \"error\": {\n            \"code\": \"duplicate_key\",\n            \"message\": \"Duplicate primary key\"\n          },\n          \"id\": 4,\n          \"ok\": false\n        }\n      },\n      {\n        \"sql\": \"SELECT id FROM t ORDER BY id;\",\n        \"response\": {\n          \"columns\": [\n            \"id\"\n          ],\n          \"id\": 5,\n          \"ok\": true,\n          \"rows\": [\n            [\n              1\n            ],\n            [\n              2\n            ]\n          ]\n        }\n      }\n    ]\n  }\n]\n"
+    },
+    {
+      "actor": "assistant/tool",
+      "description": "原版官方驱动，实际 Linux amd64 Docker 镜像，20 个公开用例",
+      "artifact": "tests/evidence/docker-public.json",
+      "output": "{\n  \"scope\": \"public-protocol-check\",\n  \"passed\": true,\n  \"cases\": [\n    {\n      \"id\": \"sql_crud\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 3008\n    },\n    {\n      \"id\": \"sql_comparisons\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2928\n    },\n    {\n      \"id\": \"sql_ordering\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 3123\n    },\n    {\n      \"id\": \"sql_empty\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2951\n    },\n    {\n      \"id\": \"sql_primary_key\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 3224\n    },\n    {\n      \"id\": \"sql_unicode\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2918\n    },\n    {\n      \"id\": \"sql_bigint\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2843\n    },\n    {\n      \"id\": \"sql_unsupported\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2846\n    },\n    {\n      \"id\": \"storage_restart\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5237\n    },\n    {\n      \"id\": \"vector_euclidean\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2822\n    },\n    {\n      \"id\": \"transaction_commit\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2865\n    },\n    {\n      \"id\": \"transaction_rollback\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2778\n    },\n    {\n      \"id\": \"storage_mutations\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5777\n    },\n    {\n      \"id\": \"storage_multiple_tables\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5195\n    },\n    {\n      \"id\": \"vector_ties_and_filter\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2852\n    },\n    {\n      \"id\": \"vector_float32\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2749\n    },\n    {\n      \"id\": \"vector_index_maintenance\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5249\n    },\n    {\n      \"id\": \"transaction_failed_insert\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5166\n    },\n    {\n      \"id\": \"transaction_autocommit_atomic\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 6350\n    },\n    {\n      \"id\": \"transaction_shutdown_rollback\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 6461\n    }\n  ],\n  \"note\": \"Local diagnostic only; no performance/Agent scores or platform callbacks.\"\n}\n"
+    },
+    {
+      "actor": "assistant/tool",
+      "description": "Mac 最终版本独立回归：8 项",
+      "artifact": "tests/evidence/mac-regression.log",
+      "output": "test_boundaries_and_protocol (__main__.EngineTests.test_boundaries_and_protocol) ... ok\ntest_commit_crash_points_and_interrupted_recovery (__main__.EngineTests.test_commit_crash_points_and_interrupted_recovery) ... ok\ntest_compaction_and_its_crash_boundaries (__main__.EngineTests.test_compaction_and_its_crash_boundaries) ... ok\ntest_large_tree_splits_deletes_and_reopen (__main__.EngineTests.test_large_tree_splits_deletes_and_reopen) ... ok\ntest_quotes_unicode_and_errors (__main__.EngineTests.test_quotes_unicode_and_errors) ... ok\ntest_random_transactions_against_reference (__main__.EngineTests.test_random_transactions_against_reference) ... ok\ntest_statement_and_transaction_atomicity (__main__.EngineTests.test_statement_and_transaction_atomicity) ... ok\ntest_vector_filter_topk_and_transaction (__main__.EngineTests.test_vector_filter_topk_and_transaction) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 1.445s\n\nOK\n"
+    },
+    {
+      "actor": "assistant/tool",
+      "description": "从实际镜像复制出的二进制独立回归：8 项",
+      "artifact": "tests/evidence/linux-image-regression.log",
+      "output": "test_boundaries_and_protocol (__main__.EngineTests.test_boundaries_and_protocol) ... ok\ntest_commit_crash_points_and_interrupted_recovery (__main__.EngineTests.test_commit_crash_points_and_interrupted_recovery) ... ok\ntest_compaction_and_its_crash_boundaries (__main__.EngineTests.test_compaction_and_its_crash_boundaries) ... ok\ntest_large_tree_splits_deletes_and_reopen (__main__.EngineTests.test_large_tree_splits_deletes_and_reopen) ... ok\ntest_quotes_unicode_and_errors (__main__.EngineTests.test_quotes_unicode_and_errors) ... ok\ntest_random_transactions_against_reference (__main__.EngineTests.test_random_transactions_against_reference) ... ok\ntest_statement_and_transaction_atomicity (__main__.EngineTests.test_statement_and_transaction_atomicity) ... ok\ntest_vector_filter_topk_and_transaction (__main__.EngineTests.test_vector_filter_topk_and_transaction) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 18.525s\n\nOK\n"
+    },
+    {
+      "actor": "assistant/tool",
+      "description": "AddressSanitizer 和 UndefinedBehaviorSanitizer：8 项",
+      "artifact": "tests/evidence/mac-sanitizer.log",
+      "output": "test_boundaries_and_protocol (__main__.EngineTests.test_boundaries_and_protocol) ... ok\ntest_commit_crash_points_and_interrupted_recovery (__main__.EngineTests.test_commit_crash_points_and_interrupted_recovery) ... ok\ntest_compaction_and_its_crash_boundaries (__main__.EngineTests.test_compaction_and_its_crash_boundaries) ... ok\ntest_large_tree_splits_deletes_and_reopen (__main__.EngineTests.test_large_tree_splits_deletes_and_reopen) ... ok\ntest_quotes_unicode_and_errors (__main__.EngineTests.test_quotes_unicode_and_errors) ... ok\ntest_random_transactions_against_reference (__main__.EngineTests.test_random_transactions_against_reference) ... ok\ntest_statement_and_transaction_atomicity (__main__.EngineTests.test_statement_and_transaction_atomicity) ... ok\ntest_vector_filter_topk_and_transaction (__main__.EngineTests.test_vector_filter_topk_and_transaction) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 18.273s\n\nOK\n"
+    },
+    {
+      "actor": "assistant/tool",
+      "description": "256 MiB 禁 swap 容器，375 MiB 文本、查询与重启及 cgroup 数据",
+      "artifact": "tests/evidence/resource-256m.json",
+      "output": "{\n  \"passed\": true,\n  \"rows\": 12000,\n  \"text_bytes\": 32768,\n  \"input_payload_bytes\": 393216000,\n  \"storage_bytes\": 395431037,\n  \"memory_limit\": \"256m\",\n  \"elapsed_seconds\": 387.78021867100006,\n  \"container_measurements\": [\n    {\n      \"memory_peak_bytes\": 268435456,\n      \"memory_events\": {\n        \"low\": \"0\",\n        \"high\": \"0\",\n        \"max\": \"3587\",\n        \"oom\": \"0\",\n        \"oom_kill\": \"0\",\n        \"oom_group_kill\": \"0\"\n      },\n      \"io_stat\": \"253:16 rbytes=790216704 wbytes=396427264 rios=6481 wios=763 dbytes=0 dios=0\\n\"\n    },\n    {\n      \"memory_peak_bytes\": 159399936,\n      \"memory_events\": {\n        \"low\": \"0\",\n        \"high\": \"0\",\n        \"max\": \"0\",\n        \"oom\": \"0\",\n        \"oom_kill\": \"0\",\n        \"oom_group_kill\": \"0\"\n      },\n      \"io_stat\": \"253:16 rbytes=150093824 wbytes=0 rios=1348 wios=0 dbytes=0 dios=0\\n\"\n    }\n  ],\n  \"note\": \"Local resource/restart check, not official performance scoring.\"\n}\n"
+    },
+    {
+      "actor": "assistant/tool",
+      "description": "Mac 最终版本：10000×128、1000 次查询、三轮、每轮 39 个独立精确真值检查",
+      "artifact": "tests/evidence/mac-benchmark.json",
+      "output": "{\n  \"rows\": 10000,\n  \"dimensions\": 128,\n  \"queries\": 1000,\n  \"rounds\": [\n    {\n      \"round\": 1,\n      \"write_seconds\": 3.3041521669947542,\n      \"prepare_seconds\": 0.10993791700457223,\n      \"query_seconds\": 1.0118695337732788,\n      \"query_p50_ms\": 1.1246460053371266,\n      \"query_p95_ms\": 1.3384589983616024,\n      \"exact_truth_checks\": 39,\n      \"storage_bytes\": 6831919\n    },\n    {\n      \"round\": 2,\n      \"write_seconds\": 3.267821375018684,\n      \"prepare_seconds\": 0.11272224999265745,\n      \"query_seconds\": 1.004321415675804,\n      \"query_p50_ms\": 1.101062007364817,\n      \"query_p95_ms\": 1.3267910107970238,\n      \"exact_truth_checks\": 39,\n      \"storage_bytes\": 6831919\n    },\n    {\n      \"round\": 3,\n      \"write_seconds\": 3.294448000000557,\n      \"prepare_seconds\": 0.1095172920031473,\n      \"query_seconds\": 1.0088566055928823,\n      \"query_p50_ms\": 1.187437490443699,\n      \"query_p95_ms\": 1.3488749973475933,\n      \"exact_truth_checks\": 39,\n      \"storage_bytes\": 6831919\n    }\n  ],\n  \"scope\": \"Local wall-clock measurement only; not official score or hardware.\"\n}\n"
+    }
+  ],
+  "assistant_retrospective": "失败的批量 INSERT 必须撤销整条语句，不能任意选择保留前半部分。写时复制根与语句开始追加位置用于该边界；事务回滚则恢复事务开始的状态。页和目录先 fsync，发布带代数和校验的新根后再 fsync，成功响应发生在此之后。压实维护不在语句回滚 catch 内，避免撤销已经同步的提交。WHERE 字符串比较常量可以比 VARCHAR 列宽更长，列宽只约束存储值。以上是 Agent 的实现和解释，并非学生发言。",
+  "student_contribution_limit": "用户明确提出本地执行并要求两种情况都试验，原话保留如上。用户表示拿不准，尚未给出技术预测、结果解释或复盘；不得把 Agent 的设计、代码、测试、解释或成功日志计作学生已经理解的证据。没有补写学生发言或自评分数。",
+  "limitations": "公开 20 例不等于正式 29 例；没有正式提交、得分或完整官方 T/B/M 基准。Linux 是本地 x86_64 仿真，不用于预测原生性能。超过 2 GiB 数据对 2 GiB 容器已实测，具体结果见 optimization.experiments。历史 experiments 包含旧版结果，请结合 history_versions 区分。ann 复用精确检索，未实现近似候选算法；无外排，最终输出超过 16 MiB 报错；极端表数量、磁盘写满与真实硬件断电未验证。",
+  "version": {
+    "recorded_at": "2026-11-12T04:52:12.660493+00:00",
+    "baseline_commit": "cd3bc6449a62fbd66271be9a0e26a862ce6be84c",
+    "upstream_base": "f4d4e26653af823a7601668802f80e374ad6643c",
+    "core_sha256": {
+      "Dockerfile": "268f708106eb881abd45c90eecc4b9234daec234498196d289273c4768ba040b",
+      "Makefile": "fc742dff0654021138f97c5e3cf75608807e614969f56129c542d09c9a9e362a",
+      "minivectordb/engine.hpp": "29b1616e087f41b54b1aab4efe701aa5d396974f4156e6e11c62f22b0d129513",
+      "minivectordb/main.cpp": "1651141381f066fbf712cbcc9164e7f0407cf4c8ebd6a3260004654d063fc48a",
+      "minivectordb/sql.hpp": "5bf59b71844b4454a16d570e1e8caddc380bd255cc61ef967f30c816d27bb5cf",
+      "minivectordb/storage.hpp": "a68326e42b4cd5756b8ebdb49bd1d9350554f110a2d4ab0c75212b9e8f79c997",
+      "third_party/json.hpp": "9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6"
+    },
+    "mac_binary_sha256": "755e9eec52f61d93f4b25359f6718d61308aebf6664260c221d8043bfae57fe2",
+    "linux_image_id": "sha256:94720e82086efce23fc3cade7ba971a89167e7d3238689764d37dcaf15720e97",
+    "linux_image_binary_sha256": "c75e358f24a9878362537ce6edbdb6e1531d870f25dd9c0d92da47ae91d7c4cd",
+    "linux_environment": "Local UTM x86_64 emulation on ARM Mac; Docker 28.5.1, cgroup v2. Guest clock drifts during emulation; use source hashes for provenance, not guest wall-clock timestamps.",
+    "official_inputs": "STDIO_PROTOCOL.md, protocol_check/ and mysqltest/ unchanged from upstream_base.",
+    "not_run": [
+      "Official hidden 29-case suite",
+      "Official performance/Agent scoring",
+      "Real power-loss or disk-full device fault"
+    ]
+  },
+  "history_versions": [
+    {
+      "recorded_at": "2026-11-11T13:21:23.972514+00:00",
+      "upstream_base": "f4d4e26653af823a7601668802f80e374ad6643c",
+      "core_sha256": {
+        "Dockerfile": "268f708106eb881abd45c90eecc4b9234daec234498196d289273c4768ba040b",
+        "Makefile": "fc742dff0654021138f97c5e3cf75608807e614969f56129c542d09c9a9e362a",
+        "minivectordb/engine.hpp": "7bf43a4a06e34709578f89dc5c61494c8e052bd245cf84a70e209fd580bb1bab",
+        "minivectordb/main.cpp": "1651141381f066fbf712cbcc9164e7f0407cf4c8ebd6a3260004654d063fc48a",
+        "minivectordb/sql.hpp": "1288b6fc6ad6ff73d069a3fdfe466e5f8b3b4b92121444d21602dd8def0939e3",
+        "minivectordb/storage.hpp": "a68326e42b4cd5756b8ebdb49bd1d9350554f110a2d4ab0c75212b9e8f79c997",
+        "third_party/json.hpp": "9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6"
+      },
+      "mac_binary_sha256": "46300e627d9480c7ceccb8d4f70f3368e543bff4755add7537751e5c4ef7f3a0",
+      "linux_image_id": "sha256:0187b33796b96d4f28023b0a06f5fa7e1a5910146dd4af365afbcc82b670a9b7",
+      "linux_image_binary_sha256": "9dc1a682665ac3107545433cdf22943009e58243ca4651c9243932e4635ded87",
+      "linux_environment": "Local UTM x86_64 emulation on an ARM Mac; Ubuntu 24.04, Docker 28.5.1, cgroup v2; correctness/resource checks only.",
+      "official_inputs": "STDIO_PROTOCOL.md, protocol_check/ and mysqltest/ unchanged from upstream_base.",
+      "not_run": [
+        "Official hidden 29-case suite",
+        "Official performance/Agent scoring",
+        "Dataset over 2 GiB under the published 2 GiB memory limit",
+        "Real power-loss or disk-full device fault"
+      ]
+    }
+  ],
+  "optimization": {
+    "actor": "assistant/tool",
+    "explanation": "缓存路径改为比较开平方后的 L2，与普通路径及输出一致，舍入并列按主键。排序候选保存记录位置，小排序键采用 8 MiB 共享估算预算/4 KiB 单项预算，大键按记录读取；最终结果才投影并检查响应上限。SQL 字符串与 ASCII 校验按 8 字节扫描，保留转义和 Unicode 标量检查。所有代码和实验均由 Agent 执行，用户仅明确要求继续优化，未编造学生理解。",
+    "experiments": [
+      {
+        "actor": "assistant/tool",
+        "description": "旧版复现：两个回归均失败",
+        "output": "test_vector_index_preserves_rounded_l2_ties (__main__.EngineTests.test_vector_index_preserves_rounded_l2_ties) ... FAIL\ntest_topk_projects_only_final_rows (__main__.EngineTests.test_topk_projects_only_final_rows) ... FAIL\n\n======================================================================\nFAIL: test_vector_index_preserves_rounded_l2_ties (__main__.EngineTests.test_vector_index_preserves_rounded_l2_ties)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/ezio/Documents/ChatGPT/OceanBase 数据库/repos/minivectordb/tests/test_engine.py\", line 248, in test_vector_index_preserves_rounded_l2_ties\n    self.assertEqual(p.sql(query, mode=mode)['rows'], expected)\nAssertionError: Lists differ: [[2, 1.0]] != [[1, 1.0]]\n\nFirst differing element 0:\n[2, 1.0]\n[1, 1.0]\n\n- [[2, 1.0]]\n?   ^\n\n+ [[1, 1.0]]\n?   ^\n\n\n======================================================================\nFAIL: test_topk_projects_only_final_rows (__main__.EngineTests.test_topk_projects_only_final_rows)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/ezio/Documents/ChatGPT/OceanBase 数据库/repos/minivectordb/tests/test_engine.py\", line 260, in test_topk_projects_only_final_rows\n    self.assertEqual(p.sql('SELECT id,s FROM t ORDER BY id DESC LIMIT 2;')['rows'], expected)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/ezio/Documents/ChatGPT/OceanBase 数据库/repos/minivectordb/tests/test_engine.py\", line 48, in sql\n    assert reply['ok'] is ok, (text, reply)\n           ^^^^^^^^^^^^^^^^^\nAssertionError: ('SELECT id,s FROM t ORDER BY id DESC LIMIT 2;', {'error': {'code': 'response_too_large', 'message': 'Response exceeds protocol byte limit'}, 'id': 3, 'ok': False})\n\n----------------------------------------------------------------------\nRan 2 tests in 1.696s\n\nFAILED (failures=2)\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "修复后原输入：建索引前后相同；小结果成功返回",
+        "output": "{\n  \"indexed_topk\": {\n    \"sql\": \"SELECT id,L2_DISTANCE(v,'[0,0]') AS d FROM t ORDER BY d LIMIT 1;\",\n    \"rows\": [\n      {\n        \"id\": 1,\n        \"v\": [\n          1,\n          1.4901161193847656e-08\n        ]\n      },\n      {\n        \"id\": 2,\n        \"v\": [\n          1,\n          0\n        ]\n      }\n    ],\n    \"independent_distances\": [\n      1.0,\n      1.0\n    ],\n    \"before_index\": {\n      \"columns\": [\n        \"id\",\n        \"d\"\n      ],\n      \"id\": 3,\n      \"ok\": true,\n      \"rows\": [\n        [\n          1,\n          1.0\n        ]\n      ]\n    },\n    \"after_index\": {\n      \"columns\": [\n        \"id\",\n        \"d\"\n      ],\n      \"id\": 5,\n      \"ok\": true,\n      \"rows\": [\n        [\n          1,\n          1.0\n        ]\n      ]\n    },\n    \"after_index_with_secondary_pk\": {\n      \"columns\": [\n        \"id\",\n        \"d\"\n      ],\n      \"id\": 6,\n      \"ok\": true,\n      \"rows\": [\n        [\n          1,\n          1.0\n        ]\n      ]\n    }\n  },\n  \"transient_heap_output\": {\n    \"sql\": \"SELECT id,s FROM t ORDER BY id DESC LIMIT 2;\",\n    \"input_payload_chars_per_large_row\": 9000000,\n    \"input_rows\": 4,\n    \"actual\": {\n      \"columns\": [\n        \"id\",\n        \"s\"\n      ],\n      \"id\": 3,\n      \"ok\": true,\n      \"rows\": [\n        [\n          4,\n          \"small4\"\n        ],\n        [\n          3,\n          \"small3\"\n        ]\n      ]\n    },\n    \"expected_rows\": [\n      [\n        4,\n        \"small4\"\n      ],\n      [\n        3,\n        \"small3\"\n      ]\n    ],\n    \"control\": {\n      \"columns\": [\n        \"id\",\n        \"s\"\n      ],\n      \"id\": 4,\n      \"ok\": true,\n      \"rows\": [\n        [\n          4,\n          \"small4\"\n        ],\n        [\n          3,\n          \"small3\"\n        ]\n      ]\n    }\n  }\n}\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "当前版本 13 项回归",
+        "output": "test_boundaries_and_protocol (__main__.EngineTests.test_boundaries_and_protocol) ... ok\ntest_commit_crash_points_and_interrupted_recovery (__main__.EngineTests.test_commit_crash_points_and_interrupted_recovery) ... ok\ntest_compaction_and_its_crash_boundaries (__main__.EngineTests.test_compaction_and_its_crash_boundaries) ... ok\ntest_large_tree_splits_deletes_and_reopen (__main__.EngineTests.test_large_tree_splits_deletes_and_reopen) ... ok\ntest_multicolumn_order_matches_reference (__main__.EngineTests.test_multicolumn_order_matches_reference) ... ok\ntest_quoted_text_roundtrips_at_scan_boundaries (__main__.EngineTests.test_quoted_text_roundtrips_at_scan_boundaries) ... ok\ntest_quotes_unicode_and_errors (__main__.EngineTests.test_quotes_unicode_and_errors) ... ok\ntest_random_transactions_against_reference (__main__.EngineTests.test_random_transactions_against_reference) ... ok\ntest_sort_keys_can_exceed_cache_budget (__main__.EngineTests.test_sort_keys_can_exceed_cache_budget) ... ok\ntest_statement_and_transaction_atomicity (__main__.EngineTests.test_statement_and_transaction_atomicity) ... ok\ntest_topk_projects_only_final_rows (__main__.EngineTests.test_topk_projects_only_final_rows) ... ok\ntest_vector_filter_topk_and_transaction (__main__.EngineTests.test_vector_filter_topk_and_transaction) ... ok\ntest_vector_index_preserves_rounded_l2_ties (__main__.EngineTests.test_vector_index_preserves_rounded_l2_ties) ... ok\n\n----------------------------------------------------------------------\nRan 13 tests in 4.197s\n\nOK\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "当前版本 12 项 ASan/UBSan 回归",
+        "output": "test_boundaries_and_protocol (__main__.EngineTests.test_boundaries_and_protocol) ... ok\ntest_commit_crash_points_and_interrupted_recovery (__main__.EngineTests.test_commit_crash_points_and_interrupted_recovery) ... ok\ntest_compaction_and_its_crash_boundaries (__main__.EngineTests.test_compaction_and_its_crash_boundaries) ... ok\ntest_large_tree_splits_deletes_and_reopen (__main__.EngineTests.test_large_tree_splits_deletes_and_reopen) ... ok\ntest_quoted_text_roundtrips_at_scan_boundaries (__main__.EngineTests.test_quoted_text_roundtrips_at_scan_boundaries) ... ok\ntest_quotes_unicode_and_errors (__main__.EngineTests.test_quotes_unicode_and_errors) ... ok\ntest_random_transactions_against_reference (__main__.EngineTests.test_random_transactions_against_reference) ... ok\ntest_sort_keys_can_exceed_cache_budget (__main__.EngineTests.test_sort_keys_can_exceed_cache_budget) ... ok\ntest_statement_and_transaction_atomicity (__main__.EngineTests.test_statement_and_transaction_atomicity) ... ok\ntest_topk_projects_only_final_rows (__main__.EngineTests.test_topk_projects_only_final_rows) ... ok\ntest_vector_filter_topk_and_transaction (__main__.EngineTests.test_vector_filter_topk_and_transaction) ... ok\ntest_vector_index_preserves_rounded_l2_ties (__main__.EngineTests.test_vector_index_preserves_rounded_l2_ties) ... ok\n\n----------------------------------------------------------------------\nRan 12 tests in 25.544s\n\nOK\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "新增多列排序独立参考回归，ASan/UBSan 通过",
+        "output": "test_multicolumn_order_matches_reference (__main__.EngineTests.test_multicolumn_order_matches_reference) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 0.220s\n\nOK\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "当前镜像 11 项回归",
+        "output": "test_boundaries_and_protocol (__main__.EngineTests.test_boundaries_and_protocol) ... ok\ntest_commit_crash_points_and_interrupted_recovery (__main__.EngineTests.test_commit_crash_points_and_interrupted_recovery) ... ok\ntest_compaction_and_its_crash_boundaries (__main__.EngineTests.test_compaction_and_its_crash_boundaries) ... ok\ntest_large_tree_splits_deletes_and_reopen (__main__.EngineTests.test_large_tree_splits_deletes_and_reopen) ... ok\ntest_quoted_text_roundtrips_at_scan_boundaries (__main__.EngineTests.test_quoted_text_roundtrips_at_scan_boundaries) ... ok\ntest_quotes_unicode_and_errors (__main__.EngineTests.test_quotes_unicode_and_errors) ... ok\ntest_random_transactions_against_reference (__main__.EngineTests.test_random_transactions_against_reference) ... ok\ntest_statement_and_transaction_atomicity (__main__.EngineTests.test_statement_and_transaction_atomicity) ... ok\ntest_topk_projects_only_final_rows (__main__.EngineTests.test_topk_projects_only_final_rows) ... ok\ntest_vector_filter_topk_and_transaction (__main__.EngineTests.test_vector_filter_topk_and_transaction) ... ok\ntest_vector_index_preserves_rounded_l2_ties (__main__.EngineTests.test_vector_index_preserves_rounded_l2_ties) ... ok\n\n----------------------------------------------------------------------\nRan 11 tests in 35.549s\n\nOK\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "当前镜像追加超排序缓存回归",
+        "output": "test_sort_keys_can_exceed_cache_budget (__main__.EngineTests.test_sort_keys_can_exceed_cache_budget) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 15.639s\n\nOK\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "当前镜像追加多列排序参考回归",
+        "output": "test_multicolumn_order_matches_reference (__main__.EngineTests.test_multicolumn_order_matches_reference) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 0.462s\n\nOK\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "当前镜像原版官方公开 20 例",
+        "output": "{\n  \"scope\": \"public-protocol-check\",\n  \"passed\": true,\n  \"cases\": [\n    {\n      \"id\": \"sql_crud\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2890\n    },\n    {\n      \"id\": \"sql_comparisons\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2847\n    },\n    {\n      \"id\": \"sql_ordering\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2859\n    },\n    {\n      \"id\": \"sql_empty\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2774\n    },\n    {\n      \"id\": \"sql_primary_key\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2773\n    },\n    {\n      \"id\": \"sql_unicode\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2789\n    },\n    {\n      \"id\": \"sql_bigint\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2829\n    },\n    {\n      \"id\": \"sql_unsupported\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2782\n    },\n    {\n      \"id\": \"storage_restart\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5201\n    },\n    {\n      \"id\": \"vector_euclidean\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2918\n    },\n    {\n      \"id\": \"transaction_commit\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2826\n    },\n    {\n      \"id\": \"transaction_rollback\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2831\n    },\n    {\n      \"id\": \"storage_mutations\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5243\n    },\n    {\n      \"id\": \"storage_multiple_tables\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5175\n    },\n    {\n      \"id\": \"vector_ties_and_filter\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2825\n    },\n    {\n      \"id\": \"vector_float32\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 2809\n    },\n    {\n      \"id\": \"vector_index_maintenance\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5209\n    },\n    {\n      \"id\": \"transaction_failed_insert\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5296\n    },\n    {\n      \"id\": \"transaction_autocommit_atomic\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5216\n    },\n    {\n      \"id\": \"transaction_shutdown_rollback\",\n      \"status\": \"PASS\",\n      \"message\": \"\",\n      \"duration_ms\": 5233\n    }\n  ],\n  \"note\": \"Local diagnostic only; no performance/Agent scores or platform callbacks.\"\n}\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "同机 B-C-C-B 大文本持久化写入，包含重启内容核对",
+        "output": "{\n  \"rows\": 2000,\n  \"text_bytes\": 32768,\n  \"rounds\": [\n    {\n      \"order\": 1,\n      \"variant\": \"baseline\",\n      \"write_seconds\": 6.140099374984857,\n      \"storage_bytes\": 65861017\n    },\n    {\n      \"order\": 2,\n      \"variant\": \"candidate\",\n      \"write_seconds\": 5.759254625008907,\n      \"storage_bytes\": 65861017\n    },\n    {\n      \"order\": 3,\n      \"variant\": \"candidate\",\n      \"write_seconds\": 5.803819291992113,\n      \"storage_bytes\": 65861017\n    },\n    {\n      \"order\": 4,\n      \"variant\": \"baseline\",\n      \"write_seconds\": 6.091772707994096,\n      \"storage_bytes\": 65861017\n    }\n  ],\n  \"baseline_seconds\": 6.115936041489476,\n  \"candidate_seconds\": 5.78153695850051,\n  \"reduction_percent\": 5.467668084173206,\n  \"scope\": \"Local same-host wall clock, includes commit acknowledgements; restart/content checks outside timing; not official scoring.\"\n}\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "同机 B-C-C-B 向量基准，波动明显，不宣称稳定提速",
+        "output": "{\n  \"order\": \"B-C-C-B\",\n  \"rounds\": [\n    {\n      \"order\": 1,\n      \"variant\": \"baseline\",\n      \"round\": 1,\n      \"write_seconds\": 3.1901707499928307,\n      \"prepare_seconds\": 0.11153158399974927,\n      \"query_seconds\": 1.1721764645481016,\n      \"query_p50_ms\": 1.2208539992570877,\n      \"query_p95_ms\": 1.3166250137146562,\n      \"exact_truth_checks\": 39,\n      \"storage_bytes\": 6831919\n    },\n    {\n      \"order\": 2,\n      \"variant\": \"candidate\",\n      \"round\": 1,\n      \"write_seconds\": 3.1658037500164937,\n      \"prepare_seconds\": 0.1081024999730289,\n      \"query_seconds\": 0.990111247432651,\n      \"query_p50_ms\": 1.031374980811961,\n      \"query_p95_ms\": 1.3101249933242798,\n      \"exact_truth_checks\": 39,\n      \"storage_bytes\": 6831919\n    },\n    {\n      \"order\": 3,\n      \"variant\": \"candidate\",\n      \"round\": 1,\n      \"write_seconds\": 3.4572409160027746,\n      \"prepare_seconds\": 0.11092129201279022,\n      \"query_seconds\": 0.9926865519955754,\n      \"query_p50_ms\": 1.0289999918313697,\n      \"query_p95_ms\": 1.2949999945703894,\n      \"exact_truth_checks\": 39,\n      \"storage_bytes\": 6831919\n    },\n    {\n      \"order\": 4,\n      \"variant\": \"baseline\",\n      \"round\": 1,\n      \"write_seconds\": 3.5024701670045033,\n      \"prepare_seconds\": 0.10875862499233335,\n      \"query_seconds\": 0.9781200045836158,\n      \"query_p50_ms\": 1.2215000024298206,\n      \"query_p95_ms\": 1.2752079928759485,\n      \"exact_truth_checks\": 39,\n      \"storage_bytes\": 6831919\n    }\n  ],\n  \"comparison\": {\n    \"write_seconds\": {\n      \"baseline\": 3.346320458498667,\n      \"candidate\": 3.311522333009634,\n      \"reduction_percent\": 1.0398922016167296\n    },\n    \"query_seconds\": {\n      \"baseline\": 1.0751482345658587,\n      \"candidate\": 0.9913988997141132,\n      \"reduction_percent\": 7.789561677098714\n    },\n    \"prepare_seconds\": {\n      \"baseline\": 0.11014510449604131,\n      \"candidate\": 0.10951189599290956,\n      \"reduction_percent\": 0.5748857437004952\n    }\n  },\n  \"scope\": \"Same ARM Mac and fresh seeded data; local wall clock only; no official scores or cgroup T/B/M.\"\n}\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "当前镜像超过 2 GiB 数据、2 GiB 禁 swap 容器的写入/查询/重启",
+        "output": "{\n  \"passed\": true,\n  \"rows\": 70000,\n  \"text_bytes\": 32768,\n  \"input_payload_bytes\": 2293760000,\n  \"storage_bytes\": 2308353493,\n  \"memory_limit\": \"2g\",\n  \"elapsed_seconds\": 1925.318631059,\n  \"container_measurements\": [\n    {\n      \"memory_peak_bytes\": 2147483648,\n      \"memory_events\": {\n        \"low\": \"0\",\n        \"high\": \"0\",\n        \"max\": \"4400\",\n        \"oom\": \"0\",\n        \"oom_kill\": \"0\",\n        \"oom_group_kill\": \"0\"\n      },\n      \"io_stat\": \"253:16 rbytes=2084761600 wbytes=2315468800 rios=16618 wios=4725 dbytes=0 dios=0\\n\"\n    },\n    {\n      \"memory_peak_bytes\": 231411712,\n      \"memory_events\": {\n        \"low\": \"0\",\n        \"high\": \"0\",\n        \"max\": \"0\",\n        \"oom\": \"0\",\n        \"oom_kill\": \"0\",\n        \"oom_group_kill\": \"0\"\n      },\n      \"io_stat\": \"253:16 rbytes=222105600 wbytes=0 rios=1767 wios=0 dbytes=0 dios=0\\n\"\n    }\n  ],\n  \"note\": \"Local resource/restart check, not official performance scoring.\"\n}\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "大数据重开后全部主键及抽样内容独立核对",
+        "output": "{\n  \"passed\": true,\n  \"primary_keys_checked\": 70000,\n  \"sampled_content_keys\": [\n    0,\n    1,\n    32767,\n    35000,\n    65535,\n    69999\n  ],\n  \"memory_limit\": \"2g\",\n  \"elapsed_seconds\": 97.63679488900016,\n  \"exact_topk_rows\": [\n    [\n      0\n    ],\n    [\n      17\n    ],\n    [\n      34\n    ]\n  ],\n  \"note\": \"Independent local reopen check; all primary keys, sampled full text and vectors. Not official hidden tests.\"\n}\n"
+      },
+      {
+        "actor": "assistant/tool",
+        "description": "256 MiB 容器的大字段候选 TopK，最终小结果正确且无 OOM",
+        "output": "{\n  \"passed\": true,\n  \"memory_limit_bytes\": 268435456,\n  \"memory_peak_bytes\": 268435456,\n  \"provisional_payload_bytes\": 268435456,\n  \"final_rows\": 64,\n  \"orders\": [\n    \"id DESC\",\n    \"s DESC\"\n  ],\n  \"memory_events\": {\n    \"low\": \"0\",\n    \"high\": \"0\",\n    \"max\": \"3609\",\n    \"oom\": \"0\",\n    \"oom_kill\": \"0\",\n    \"oom_group_kill\": \"0\"\n  },\n  \"note\": \"Local constrained-container correctness check, not official scoring.\"\n}\n"
+      }
+    ]
+  }
+}

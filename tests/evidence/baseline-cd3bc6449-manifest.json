@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-11-11T13:21:23.972514+00:00",
+  "upstream_base": "f4d4e26653af823a7601668802f80e374ad6643c",
+  "core_sha256": {
+    "Dockerfile": "268f708106eb881abd45c90eecc4b9234daec234498196d289273c4768ba040b",
+    "Makefile": "fc742dff0654021138f97c5e3cf75608807e614969f56129c542d09c9a9e362a",
+    "minivectordb/engine.hpp": "7bf43a4a06e34709578f89dc5c61494c8e052bd245cf84a70e209fd580bb1bab",
+    "minivectordb/main.cpp": "1651141381f066fbf712cbcc9164e7f0407cf4c8ebd6a3260004654d063fc48a",
+    "minivectordb/sql.hpp": "1288b6fc6ad6ff73d069a3fdfe466e5f8b3b4b92121444d21602dd8def0939e3",
+    "minivectordb/storage.hpp": "a68326e42b4cd5756b8ebdb49bd1d9350554f110a2d4ab0c75212b9e8f79c997",
+    "third_party/json.hpp": "9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6"
+  },
+  "mac_binary_sha256": "46300e627d9480c7ceccb8d4f70f3368e543bff4755add7537751e5c4ef7f3a0",
+  "linux_image_id": "sha256:0187b33796b96d4f28023b0a06f5fa7e1a5910146dd4af365afbcc82b670a9b7",
+  "linux_image_binary_sha256": "9dc1a682665ac3107545433cdf22943009e58243ca4651c9243932e4635ded87",
+  "linux_environment": "Local UTM x86_64 emulation on an ARM Mac; Ubuntu 24.04, Docker 28.5.1, cgroup v2; correctness/resource checks only.",
+  "official_inputs": "STDIO_PROTOCOL.md, protocol_check/ and mysqltest/ unchanged from upstream_base.",
+  "not_run": [
+    "Official hidden 29-case suite",
+    "Official performance/Agent scoring",
+    "Dataset over 2 GiB under the published 2 GiB memory limit",
+    "Real power-loss or disk-full device fault"
+  ]
+}
