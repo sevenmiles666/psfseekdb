@@ -49,7 +49,7 @@ def dataset(seed):
 
 
 def vector_literal(vector):
-    return json.dumps(vector, separators=(",", ":"))
+    return "'" + json.dumps(vector, separators=(",", ":")) + "'"
 
 
 def input_statements(buckets, vectors, queries):
@@ -82,7 +82,7 @@ def exact_truth(image, helper, buckets, vectors, queries):
 
 def resources(db):
     result = docker("exec", db.container, "/bench-probe", "probe").decode().splitlines()
-    device, peak, limit, swap, journal = result[:5]
+    device, peak, limit, swap, data_file = result[:5]
     devices = {}
     for line in result[5:]:
         fields = line.split()
@@ -93,10 +93,10 @@ def resources(db):
     if counters is not None and "rbytes" in counters and "wbytes" in counters:
         physical_bytes = counters["rbytes"] + counters["wbytes"]
     assert int(limit) == MEMORY and swap == "0" and 0 < int(peak) <= MEMORY
-    assert int(journal) > 0
+    assert int(data_file) > 0
     return {"data_device": device, "io_stat": devices, "io_bytes": physical_bytes,
             "memory_peak_bytes": int(peak), "memory_limit_bytes": int(limit),
-            "swap_limit_bytes": int(swap), "journal_bytes": int(journal)}
+            "swap_limit_bytes": int(swap), "data_file_bytes": int(data_file)}
 
 
 def run_write(image, helper, inserts, buckets, vectors):
@@ -138,7 +138,7 @@ def verify_queries(responses, truth, buckets, vectors, queries, mode):
     return report
 
 
-def run_query(image, helper, mode, inserts, statements, truth, buckets, vectors, queries):
+def run_query(image, helper, mode, inserts, statements, truth, buckets, vectors, queries, index_exact):
     args = SimpleNamespace(image=image, binary=None)
     with fresh_volume() as volume:
         with Server(args, None, MEMORY, mode=mode, volume=volume, probe=helper) as db:
@@ -146,7 +146,7 @@ def run_query(image, helper, mode, inserts, statements, truth, buckets, vectors,
             for insert in inserts:
                 db.ok(insert, 100)
             prepare = perf_counter()
-            if mode == "ann":
+            if mode == "ann" or index_exact:
                 db.ok("CREATE VECTOR INDEX idx ON vectors(v);")
             for statement in statements[:8]:
                 rows, count, error = db.sql(statement)
@@ -206,6 +206,7 @@ def main():
     parser.add_argument("--probe", type=Path, required=True)
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--seed", type=int, default=20261109)
+    parser.add_argument("--index-exact", action="store_true", help="Create the same SQL index in all query modes")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.rounds < 1:
@@ -220,7 +221,8 @@ def main():
               "io.stat is for the volume backing device shared with image storage. "
               "memory.peak includes one final probe process. No host cache reset.",
               "seed": args.seed, "dataset_sha256": input_hash, "rows": ROWS,
-              "dimension": DIMENSION, "queries": QUERIES, "top_k": 10, "rounds": [],
+              "dimension": DIMENSION, "queries": QUERIES, "top_k": 10,
+              "index_exact": args.index_exact, "rounds": [],
               "images": {mode: docker("image", "inspect", image, "--format", "{{.Id}}").decode().strip()
                          for mode, image in (("baseline", args.baseline_image),
                                              ("candidate", args.candidate_image))}}
@@ -238,7 +240,7 @@ def main():
         rotate = number % len(query_order)
         for label, image, mode in query_order[rotate:] + query_order[:rotate]:
             row["query"][label] = run_query(image, helper, mode, inserts, statements, truth,
-                                            buckets, vectors, queries)
+                                            buckets, vectors, queries, args.index_exact)
             print(f"Round {number + 1} {label} query: {row['query'][label]['seconds']:.3f}s, "
                   f"recall={row['query'][label]['recall']}", flush=True)
         report["rounds"].append(row)

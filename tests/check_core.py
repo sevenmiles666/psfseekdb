@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 import queue
 import random
+import struct
 import subprocess
 import tempfile
 import threading
@@ -314,6 +315,65 @@ def check_exact_oracle(args, directory):
     print("24 independent exact TopK queries passed, including 12 filtered queries in 128 dimensions", flush=True)
 
 
+def check_topk_rounding(args, directory):
+    rng = random.Random(20261112)
+    dimension = 129
+
+    def f32(value):
+        return struct.unpack("<f", struct.pack("<f", value))[0]
+
+    def squared_distance(vector, query):
+        total = 0.0
+        for left, right in zip(vector, query):
+            difference = left - right
+            total += difference * difference
+        return total
+
+    with Server(args, directory) as db:
+        for table, scale, size in (("ordinary", 1.0, 2200), ("tiny", 4e-23, 39), ("large", 3e38, 39)):
+            def vector():
+                return [f32(rng.uniform(-1.0, 1.0) * scale) for _ in range(dimension)]
+
+            data = [vector() for _ in range(size)]
+            data[6] = data[0]
+            db.ok(f"CREATE TABLE {table} (id BIGINT PRIMARY KEY, bucket BIGINT, tag VARCHAR(8), "
+                  f"v VECTOR({dimension}));")
+            if table == "ordinary":
+                data[12] = data[0].copy()
+                data[12][-1] = f32(data[12][-1] + 1e-5)
+            rows = list(reversed(list(enumerate(data))))
+            for offset in range(0, len(rows), 100):
+                batch = rows[offset:offset + 100]
+                values = ",".join(f"({key},{key % 3},'{['even', 'odd'][key % 2]}',{json.dumps(v)})"
+                                  for key, v in batch)
+                db.ok(f"INSERT INTO {table} VALUES {values};", len(batch))
+
+            queries = [("WHERE bucket=0 AND tag='even'", lambda key: key % 6 == 0, data[0]),
+                       ("WHERE tag='even'", lambda key: key % 2 == 0, data[0]),
+                       ("", lambda key: True, vector())]
+            if table == "ordinary":
+                queries.append(("", lambda key: True, [2.0, *data[0][1:]]))
+            for where, eligible, query in queries:
+                expected = sorted((math.sqrt(squared_distance(v, query)), key)
+                                  for key, v in enumerate(data) if eligible(key))[:5]
+                output, count, error = db.sql(
+                    f"SELECT id,v,L2_DISTANCE(v,{json.dumps(query)}) AS d FROM {table} "
+                    f"{where} ORDER BY d LIMIT 5;")
+                assert error is None and count == len(expected)
+                assert [row[0] for row in output] == [key for _, key in expected]
+                for (key, stored, distance), (exact, _) in zip(output, expected):
+                    assert [f32(value) for value in stored] == data[key]
+                    assert math.isclose(distance, exact, rel_tol=1e-12)
+
+        db.ok("CREATE TABLE rounded (id BIGINT PRIMARY KEY, v VECTOR(2));")
+        db.ok("INSERT INTO rounded VALUES (2,[1,0]),(1,[1,0.00000001490116119384765625]);", 2)
+        rounded = "SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM rounded ORDER BY d"
+        db.query(rounded + " LIMIT 1;", [[1, 1.0]])
+        db.query(rounded + ";", [[1, 1.0], [2, 1.0]])
+        db.query(rounded + " DESC;", [[1, 1.0], [2, 1.0]])
+    print("Exact TopK passed integer screening, FP32 ties, subnormals, overflow and filter cases", flush=True)
+
+
 def check_index(args, directory):
     query = "SELECT id FROM items WHERE label='g' ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 1;"
     with Server(args, directory, mode="ann") as db:
@@ -414,6 +474,7 @@ def main():
         check_transactions(args, root / "transactions")
         check_crash(args, root / "crash")
         check_exact_oracle(args, root / "oracle")
+        check_topk_rounding(args, root / "topk_rounding")
         check_index(args, root / "index")
         if args.large:
             check_disk_budget(args, root / "large")

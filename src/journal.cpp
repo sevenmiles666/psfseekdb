@@ -136,10 +136,12 @@ RecordRef Journal::append(const Bytes &payload) {
     throw std::length_error("journal record size is out of range");
   }
   const auto length = static_cast<std::uint32_t>(payload.size());
-  Bytes header;
-  header.reserve(frame_header_size);
-  put_u32(header, length);
-  put_u32(header, checksum(payload));
+  const auto crc = checksum(payload);
+  std::array<std::uint8_t, frame_header_size> header{};
+  for (std::size_t i = 0; i < sizeof(length); ++i) {
+    header[i] = static_cast<std::uint8_t>(length >> (8 * i));
+    header[i + sizeof(length)] = static_cast<std::uint8_t>(crc >> (8 * i));
+  }
   append_bytes(header.data(), header.size());
   const RecordRef record{size_, length};
   append_bytes(payload.data(), payload.size());

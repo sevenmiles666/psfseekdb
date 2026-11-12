@@ -63,6 +63,7 @@ enum class TokenKind { End, Word, Identifier, Text, Number, Symbol };
 struct Token {
   TokenKind kind;
   std::string text;
+  std::string_view number{};
 };
 
 bool is_digit(char value) { return value >= '0' && value <= '9'; }
@@ -127,7 +128,7 @@ public:
           ++position_;
         }
       }
-      return {TokenKind::Number, slice(start)};
+      return {TokenKind::Number, {}, input_.substr(start, position_ - start)};
     }
     if (std::string_view("(),[];*=<>").find(first) != std::string_view::npos) {
       if ((first == '<' || first == '>') && peek() == '=') {
@@ -251,16 +252,17 @@ public:
     Vector result;
     if (!take("]")) {
       do {
-        const std::string number = consume(TokenKind::Number, "vector component");
+        const auto number = consume_number("vector component");
         const char *last = number.data() + number.size();
         const char *first = number.data() + (number.front() == '+' ? 1 : 0);
         float value = 0;
         const auto parsed = std::from_chars(first, last, value);
         if (parsed.ec != std::errc{} || parsed.ptr != last) {
           // Keep strtof rounding for components below the smallest float32 subnormal.
+          const std::string text(number);
           char *end = nullptr;
-          value = std::strtof(number.c_str(), &end);
-          if (end != last || !std::isfinite(value)) {
+          value = std::strtof(text.c_str(), &end);
+          if (end != text.data() + text.size() || !std::isfinite(value)) {
             throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
           }
         }
@@ -295,6 +297,15 @@ private:
     }
   }
 
+  std::string_view consume_number(std::string_view description) {
+    if (token_.kind != TokenKind::Number) {
+      throw SqlError("SYNTAX", "expected " + std::string(description));
+    }
+    const auto number = token_.number;
+    advance();
+    return number;
+  }
+
   std::string consume(TokenKind kind, std::string_view description) {
     if (token_.kind != kind) {
       throw SqlError("SYNTAX", "expected " + std::string(description));
@@ -313,7 +324,7 @@ private:
 
   Value value() {
     if (token_.kind == TokenKind::Number) {
-      return read_integer<std::int64_t>(consume(TokenKind::Number, "integer"));
+      return read_integer<std::int64_t>(consume_number("integer"));
     }
     if (token_.kind == TokenKind::Text) {
       return consume(TokenKind::Text, "string");
@@ -363,7 +374,7 @@ private:
           throw SqlError("UNSUPPORTED", "unsupported column type");
         }
         expect("(");
-        column.width = read_integer<std::uint32_t>(consume(TokenKind::Number, "column width"));
+        column.width = read_integer<std::uint32_t>(consume_number("column width"));
         if (column.width == 0) {
           throw SqlError("INVALID_SCHEMA", "column width must be positive");
         }
@@ -503,7 +514,7 @@ private:
       } while (take(","));
     }
     if (take("limit")) {
-      result.limit = read_integer<std::uint64_t>(consume(TokenKind::Number, "row limit"));
+      result.limit = read_integer<std::uint64_t>(consume_number("row limit"));
     }
     return result;
   }
