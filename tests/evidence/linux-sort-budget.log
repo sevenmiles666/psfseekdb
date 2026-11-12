@@ -1,6 +1,0 @@
-test_sort_keys_can_exceed_cache_budget (__main__.EngineTests.test_sort_keys_can_exceed_cache_budget) ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 15.639s
-
-OK

@@ -1,6 +1,4 @@
-.git
-build
-protocol-results
-tests
-agent
-conversation.json
+**
+!src/
+!src/**
+!Dockerfile

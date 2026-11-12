@@ -1,0 +1,93 @@
+{
+  "format": "minivectordb-material-manifest-v1",
+  "code_base_commit": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
+  "canonical_path": "agent/conversation.json",
+  "compatibility_path": "conversation.json",
+  "material_sha256": "7d352a547ff75b9ccb5160dd62dc0d91d14fbdb46c957cad3ad9cd61210f8d34",
+  "material_bytes": 19563,
+  "summary_pointer": "/material_summary",
+  "historical_top_level_keys": [
+    "scope",
+    "synthetic",
+    "user_prompts",
+    "conversations",
+    "experiments",
+    "limitations"
+  ],
+  "historical_payload_sha256": "3454e921250d0cf46adcd81d52887fd89fee65d44f9d7286b5f3a7e5e1551598",
+  "unchanged_runtime_files": [
+    {
+      "path": ".dockerignore",
+      "git_blob_sha1": "a007de43eb7f4a655ec7cc8758705fd0f38fe6f4",
+      "sha256": "917c0f4299d179d8242358a9344606868147ed9c7a10cfb23938b0e80c05bfcd",
+      "mode": "100644"
+    },
+    {
+      "path": "Dockerfile",
+      "git_blob_sha1": "7761ff97bbf78b47b972a912e1f43e7d3d3866da",
+      "sha256": "9a6676965e2eeb741db3d524f82de44922c6bbd98dec6d8844909892b4363953",
+      "mode": "100644"
+    },
+    {
+      "path": "src/database.cpp",
+      "git_blob_sha1": "73e69cb304d349d64664570cde4522fd341fabf7",
+      "sha256": "e81130eff701312549d8dc2659754f57e666ded2c7a2611e3adfe722678dc592",
+      "mode": "100644"
+    },
+    {
+      "path": "src/database.hpp",
+      "git_blob_sha1": "ce97ae8d0d37aac7e95c587c292c2406ac9fbe11",
+      "sha256": "136f181047bad2bfaaf8f3494d2cee00427ce362d35d776df32310e0d39f0c38",
+      "mode": "100644"
+    },
+    {
+      "path": "src/encoding.hpp",
+      "git_blob_sha1": "525b8f9d88f500ff892b17fa61900244bcde0e72",
+      "sha256": "bce675083c0ccc24c6b431cbd1412bf6ea4703eeee1b4d24ddc404c7f1ff691b",
+      "mode": "100644"
+    },
+    {
+      "path": "src/journal.cpp",
+      "git_blob_sha1": "6039f7964bc0b2b4c1fcca6f74e31402311b047c",
+      "sha256": "3ee2ee0f05e055d76b06d1f7061f0136171453018bc8d1dab9cfb786a1c0bf22",
+      "mode": "100644"
+    },
+    {
+      "path": "src/journal.hpp",
+      "git_blob_sha1": "be89c7801779d97de31d67bb1190618b3313fc06",
+      "sha256": "323bf731acbeb9cead87accbe272d7ffdce40ad3485188331c648407a595dcdc",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main.cpp",
+      "git_blob_sha1": "76b5c83bec2f93541220211b577e63f7224df3e2",
+      "sha256": "0128581db9b53836fa015e0eade7f29e3de0a1cec25f46b3ef17fade7d3c1083",
+      "mode": "100644"
+    },
+    {
+      "path": "src/request.cpp",
+      "git_blob_sha1": "212fe9fe1de0bb8808bae8da57ccdd87b72138e9",
+      "sha256": "41e293c86eec0053268e4a4f766f77592f6bda47fe25d377827dc6066605bc7b",
+      "mode": "100644"
+    },
+    {
+      "path": "src/request.hpp",
+      "git_blob_sha1": "415ec775cfef0f3d572d26433a71521648b144e4",
+      "sha256": "eef9917d7828187b7635d8051d1cb0e47486c30be2b31783b3ee18605a542172",
+      "mode": "100644"
+    },
+    {
+      "path": "src/sql.cpp",
+      "git_blob_sha1": "2d4a56e99fccb616b1a107efe506193b7c6068c9",
+      "sha256": "ce1daa750ce445ba6443b96971ce32d3c940c148f609d82136cddd5e5e2caf3d",
+      "mode": "100644"
+    },
+    {
+      "path": "src/sql.hpp",
+      "git_blob_sha1": "a6c2f061ad3b14f63272a8964802918733f38ca0",
+      "sha256": "864f1df835817a3ef659898b604850a72627446adb815121271dcc78be8c928a",
+      "mode": "100644"
+    }
+  ],
+  "note": "这是输入完整性清单，不是平台评审输出，不提供或换算选手自评分数。"
+}
