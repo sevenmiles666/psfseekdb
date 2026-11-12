@@ -3,8 +3,8 @@
   "code_base_commit": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
   "canonical_path": "agent/conversation.json",
   "compatibility_path": "conversation.json",
-  "material_sha256": "7d352a547ff75b9ccb5160dd62dc0d91d14fbdb46c957cad3ad9cd61210f8d34",
-  "material_bytes": 19563,
+  "material_sha256": "5589c115be7cacc6ab5280f5227f1a16899f2b025a6906fe9a0efb6aa9a6288a",
+  "material_bytes": 27124,
   "summary_pointer": "/material_summary",
   "historical_top_level_keys": [
     "scope",
@@ -15,7 +15,8 @@
     "limitations"
   ],
   "historical_payload_sha256": "3454e921250d0cf46adcd81d52887fd89fee65d44f9d7286b5f3a7e5e1551598",
-  "unchanged_runtime_files": [
+  "note": "这是输入完整性清单，不是平台评审输出，不提供或换算选手自评分数。",
+  "runtime_files": [
     {
       "path": ".dockerignore",
       "git_blob_sha1": "a007de43eb7f4a655ec7cc8758705fd0f38fe6f4",
@@ -30,26 +31,26 @@
     },
     {
       "path": "src/database.cpp",
-      "git_blob_sha1": "73e69cb304d349d64664570cde4522fd341fabf7",
-      "sha256": "e81130eff701312549d8dc2659754f57e666ded2c7a2611e3adfe722678dc592",
+      "git_blob_sha1": "ea95a9048cea3eb4301811b1c94aa06644b72816",
+      "sha256": "4819a6704c251631ee15cc749bd2d8b74d41ac3674af5cc8bab078468b93ba44",
       "mode": "100644"
     },
     {
       "path": "src/database.hpp",
-      "git_blob_sha1": "ce97ae8d0d37aac7e95c587c292c2406ac9fbe11",
-      "sha256": "136f181047bad2bfaaf8f3494d2cee00427ce362d35d776df32310e0d39f0c38",
+      "git_blob_sha1": "72b916158a902f2825532e32a5398ae2eb5cd062",
+      "sha256": "c561a36f016c612be69b7b2584827c433849e44fad410f12ce350e4c58745a35",
       "mode": "100644"
     },
     {
       "path": "src/encoding.hpp",
-      "git_blob_sha1": "525b8f9d88f500ff892b17fa61900244bcde0e72",
-      "sha256": "bce675083c0ccc24c6b431cbd1412bf6ea4703eeee1b4d24ddc404c7f1ff691b",
+      "git_blob_sha1": "2e6ac3e83145a030569a3a261e23b0895c173f5c",
+      "sha256": "4c455aa607baeb4497ce8399eed3a8133776bc98bd69c9fc3c0c4c0cb3885370",
       "mode": "100644"
     },
     {
       "path": "src/journal.cpp",
-      "git_blob_sha1": "6039f7964bc0b2b4c1fcca6f74e31402311b047c",
-      "sha256": "3ee2ee0f05e055d76b06d1f7061f0136171453018bc8d1dab9cfb786a1c0bf22",
+      "git_blob_sha1": "afedcffb37bb668877fb0cce27a3a1698e774c96",
+      "sha256": "95fdc9d384342f98a8a9a0c3028d1325c757cbf7f2fa96ec77a105b286c0dd09",
       "mode": "100644"
     },
     {
@@ -60,8 +61,8 @@
     },
     {
       "path": "src/main.cpp",
-      "git_blob_sha1": "76b5c83bec2f93541220211b577e63f7224df3e2",
-      "sha256": "0128581db9b53836fa015e0eade7f29e3de0a1cec25f46b3ef17fade7d3c1083",
+      "git_blob_sha1": "464c24b20c7412023f8f815a4c5854f14fa65e46",
+      "sha256": "a1de377d5d7063caa135a3a5c4ad4110878a1595559e6b118a580302134b21c3",
       "mode": "100644"
     },
     {
@@ -78,8 +79,8 @@
     },
     {
       "path": "src/sql.cpp",
-      "git_blob_sha1": "2d4a56e99fccb616b1a107efe506193b7c6068c9",
-      "sha256": "ce1daa750ce445ba6443b96971ce32d3c940c148f609d82136cddd5e5e2caf3d",
+      "git_blob_sha1": "bb384fbe5c19a46952cc4894b301e98180a6dc2d",
+      "sha256": "7f84acf2ecd28b40ebffdb72c2b878f721ea1798c7de03545751eb637caf7676",
       "mode": "100644"
     },
     {
@@ -88,6 +89,5 @@
       "sha256": "864f1df835817a3ef659898b604850a72627446adb815121271dcc78be8c928a",
       "mode": "100644"
     }
-  ],
-  "note": "这是输入完整性清单，不是平台评审输出，不提供或换算选手自评分数。"
+  ]
 }

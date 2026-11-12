@@ -1,7 +1,8 @@
 #include "database.hpp"
 #include "request.hpp"
 
-#include <iomanip>
+#include <charconv>
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <locale>
@@ -25,20 +26,31 @@ void json_string(std::ostream &out, std::string_view value) {
   out << '"';
 }
 
+template <class Float>
+void json_float(std::ostream &out, Float value) {
+  if (!std::isfinite(value)) throw std::runtime_error("non-finite JSON number");
+  char buffer[64];
+  const auto formatted = std::to_chars(buffer, buffer + sizeof(buffer), value,
+                                       std::chars_format::general,
+                                       std::numeric_limits<Float>::max_digits10);
+  if (formatted.ec != std::errc{}) throw std::runtime_error("format JSON number");
+  out.write(buffer, formatted.ptr - buffer);
+}
+
 void json_value(std::ostream &out, const Value &value) {
   if (const auto *integer = std::get_if<std::int64_t>(&value)) {
     out << *integer;
   } else if (const auto *text = std::get_if<std::string>(&value)) {
     json_string(out, *text);
   } else if (const auto *vector = std::get_if<Vector>(&value)) {
-    out << '[' << std::setprecision(std::numeric_limits<float>::max_digits10);
+    out << '[';
     for (std::size_t i = 0; i < vector->size(); ++i) {
       if (i != 0) out << ',';
-      out << (*vector)[i];
+      json_float(out, (*vector)[i]);
     }
     out << ']';
   } else {
-    out << std::setprecision(std::numeric_limits<double>::max_digits10) << std::get<double>(value);
+    json_float(out, std::get<double>(value));
   }
 }
 

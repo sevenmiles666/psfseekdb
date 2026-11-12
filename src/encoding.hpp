@@ -34,6 +34,17 @@ inline void put_float(Bytes &out, float value) {
   put_u32(out, bits);
 }
 
+inline void put_floats(Bytes &out, const float *values, std::size_t count) {
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  if (count != 0) {
+    const auto *start = reinterpret_cast<const std::uint8_t *>(values);
+    out.insert(out.end(), start, start + count * sizeof(float));
+  }
+#else
+  for (std::size_t i = 0; i < count; ++i) put_float(out, values[i]);
+#endif
+}
+
 inline void put_string(Bytes &out, std::string_view value) {
   if (value.size() > std::numeric_limits<std::uint32_t>::max()) {
     throw std::length_error("value exceeds the on-disk string length range");
@@ -83,6 +94,19 @@ public:
     float value = 0;
     std::memcpy(&value, &bits, sizeof(value));
     return value;
+  }
+
+  void floats(float *values, std::size_t count) {
+    if (count > remaining() / sizeof(float)) {
+      throw std::runtime_error("incomplete vector in journal");
+    }
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    const auto length = count * sizeof(float);
+    if (length != 0) std::memcpy(values, input_.data() + position_, length);
+    position_ += length;
+#else
+    for (std::size_t i = 0; i < count; ++i) values[i] = f32();
+#endif
   }
 
   std::string string() {

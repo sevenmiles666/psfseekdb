@@ -33,7 +33,7 @@ std::size_t column_index(const std::vector<Column> &columns, const std::string &
   return static_cast<std::size_t>(found - columns.begin());
 }
 
-Value convert(const Column &column, const Value &value) {
+Value convert(const Column &column, Value value) {
   switch (column.type) {
     case Type::Bigint:
       if (std::holds_alternative<std::int64_t>(value)) {
@@ -49,18 +49,16 @@ Value convert(const Column &column, const Value &value) {
       }
       break;
     case Type::Vector: {
-      Vector vector;
-      if (const auto *components = std::get_if<Vector>(&value)) {
-        vector = *components;
-      } else if (const auto *text = std::get_if<std::string>(&value)) {
-        vector = parse_vector(*text);
-      } else {
-        break;
+      if (const auto *text = std::get_if<std::string>(&value)) {
+        value = parse_vector(*text);
       }
-      if (vector.size() != column.width) {
-        throw SqlError("VECTOR_DIMENSION", "vector width does not match " + column.name);
+      if (const auto *vector = std::get_if<Vector>(&value)) {
+        if (vector->size() != column.width) {
+          throw SqlError("VECTOR_DIMENSION", "vector width does not match " + column.name);
+        }
+        return value;
       }
-      return vector;
+      break;
     }
   }
   throw SqlError("TYPE_MISMATCH", "value type does not match " + column.name);
@@ -136,7 +134,7 @@ std::optional<std::int64_t> primary_lookup(std::size_t primary,
 
 struct BoundExpression {
   std::size_t column;
-  std::optional<Vector> query;
+  const Vector *query;
   std::string name;
 };
 
@@ -149,7 +147,8 @@ BoundExpression bind_expression(const std::vector<Column> &columns, const Expres
     throw SqlError("VECTOR_DIMENSION", "query dimension does not match " + expression.column);
   }
   const std::string default_name = expression.query ? "L2_DISTANCE" : columns[index].name;
-  return {index, expression.query, expression.alias.empty() ? default_name : expression.alias};
+  return {index, expression.query ? &*expression.query : nullptr,
+          expression.alias.empty() ? default_name : expression.alias};
 }
 
 double squared_distance(const float *left, const Vector &right) {
@@ -162,6 +161,12 @@ double squared_distance(const float *left, const Vector &right) {
 }
 
 using DistanceKernel = double (*)(const float *, const float *, std::size_t);
+
+struct DistanceEstimate {
+  DistanceKernel kernel = nullptr;
+  double relative_margin = 1.0;
+  double absolute_margin = 0.0;
+};
 
 #if defined(__x86_64__) && defined(__GNUC__)
 __attribute__((target("avx2,no-fma")))
@@ -186,25 +191,114 @@ double estimate_squared_distance(const float *left, const float *right, std::siz
   }
   return sum;
 }
+__attribute__((target("avx2,fma")))
+double estimate_squared_distance_f32(const float *left, const float *right, std::size_t size) {
+  auto sum0 = _mm256_setzero_ps();
+  auto sum1 = _mm256_setzero_ps();
+  auto sum2 = _mm256_setzero_ps();
+  auto sum3 = _mm256_setzero_ps();
+  std::size_t i = 0;
+  for (; i + 32 <= size; i += 32) {
+    const auto d0 = _mm256_sub_ps(_mm256_loadu_ps(left + i), _mm256_loadu_ps(right + i));
+    const auto d1 = _mm256_sub_ps(_mm256_loadu_ps(left + i + 8), _mm256_loadu_ps(right + i + 8));
+    const auto d2 = _mm256_sub_ps(_mm256_loadu_ps(left + i + 16), _mm256_loadu_ps(right + i + 16));
+    const auto d3 = _mm256_sub_ps(_mm256_loadu_ps(left + i + 24), _mm256_loadu_ps(right + i + 24));
+    sum0 = _mm256_fmadd_ps(d0, d0, sum0);
+    sum1 = _mm256_fmadd_ps(d1, d1, sum1);
+    sum2 = _mm256_fmadd_ps(d2, d2, sum2);
+    sum3 = _mm256_fmadd_ps(d3, d3, sum3);
+  }
+  for (; i + 8 <= size; i += 8) {
+    const auto diff = _mm256_sub_ps(_mm256_loadu_ps(left + i), _mm256_loadu_ps(right + i));
+    sum0 = _mm256_fmadd_ps(diff, diff, sum0);
+  }
+  const auto sums = _mm256_add_ps(_mm256_add_ps(sum0, sum1), _mm256_add_ps(sum2, sum3));
+  auto total = _mm_add_ps(_mm256_castps256_ps128(sums), _mm256_extractf128_ps(sums, 1));
+  total = _mm_add_ps(total, _mm_movehl_ps(total, total));
+  total = _mm_add_ss(total, _mm_shuffle_ps(total, total, 1));
+  double result = _mm_cvtss_f32(total);
+  // A float overflow requires a scalar double comparison.
+  if (!std::isfinite(result)) return 0.0;
+  for (; i < size; ++i) {
+    const double diff = static_cast<double>(left[i]) - static_cast<double>(right[i]);
+    result += diff * diff;
+  }
+  return result;
+}
+__attribute__((target("avx2")))
+std::uint32_t quantized_squared_distance(const std::int8_t *left, const std::int8_t *right, std::size_t size) {
+  auto low = _mm256_setzero_si256();
+  auto high = _mm256_setzero_si256();
+  std::size_t i = 0;
+  for (; i + 32 <= size; i += 32) {
+    const auto left0 = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i *>(left + i)));
+    const auto right0 = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i *>(right + i)));
+    const auto left1 = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i *>(left + i + 16)));
+    const auto right1 = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i *>(right + i + 16)));
+    const auto diff0 = _mm256_sub_epi16(left0, right0);
+    const auto diff1 = _mm256_sub_epi16(left1, right1);
+    low = _mm256_add_epi32(low, _mm256_madd_epi16(diff0, diff0));
+    high = _mm256_add_epi32(high, _mm256_madd_epi16(diff1, diff1));
+  }
+  auto lanes = _mm256_add_epi32(low, high);
+  for (; i + 16 <= size; i += 16) {
+    const auto a = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i *>(left + i)));
+    const auto b = _mm256_cvtepi8_epi16(_mm_loadu_si128(reinterpret_cast<const __m128i *>(right + i)));
+    const auto diff = _mm256_sub_epi16(a, b);
+    lanes = _mm256_add_epi32(lanes, _mm256_madd_epi16(diff, diff));
+  }
+  auto sum = _mm_add_epi32(_mm256_castsi256_si128(lanes), _mm256_extracti128_si256(lanes, 1));
+  sum = _mm_hadd_epi32(sum, sum);
+  sum = _mm_hadd_epi32(sum, sum);
+  std::uint32_t result = _mm_cvtsi128_si32(sum);
+  for (; i < size; ++i) {
+    const int diff = int(left[i]) - int(right[i]);
+    result += diff * diff;
+  }
+  return result;
+}
 #endif
 
-DistanceKernel distance_kernel() {
+using QuantizedKernel = std::uint32_t (*)(const std::int8_t *, const std::int8_t *, std::size_t);
+
+QuantizedKernel integer_distance_kernel() {
 #if defined(__x86_64__) && defined(__GNUC__)
-  static const DistanceKernel kernel =
-      __builtin_cpu_supports("avx2") ? estimate_squared_distance : nullptr;
-  return kernel;
+  return __builtin_cpu_supports("avx2") ? quantized_squared_distance : nullptr;
 #else
   return nullptr;
 #endif
 }
 
-Value evaluate(const BoundExpression &expression, const Row &row, bool order_key) {
+std::int8_t quantize_component(float value, double step) {
+  return static_cast<std::int8_t>(std::lround(static_cast<double>(value) / step));
+}
+
+DistanceEstimate distance_estimator(std::size_t dimension) {
+#if defined(__x86_64__) && defined(__GNUC__)
+  if (dimension >= 32 && __builtin_cpu_supports("avx2")) {
+    const double rounding_terms = 4.0 * dimension + 32.0;
+    if (dimension <= 4096 && __builtin_cpu_supports("fma")) {
+      // Bound rounding in the differences and sum, including subnormal terms.
+      // Only use this estimate to reject a row outside the expanded cutoff.
+      return {estimate_squared_distance_f32,
+              1.0 + rounding_terms * std::numeric_limits<float>::epsilon(),
+              rounding_terms * std::numeric_limits<float>::denorm_min()};
+    }
+    return {estimate_squared_distance,
+            1.0 + rounding_terms * std::numeric_limits<double>::epsilon(), 0.0};
+  }
+#else
+  (void)dimension;
+#endif
+  return {};
+}
+
+Value evaluate(const BoundExpression &expression, const Row &row) {
   const Value &value = row[expression.column];
   if (!expression.query) {
     return value;
   }
-  const double squared = squared_distance(std::get<Vector>(value).data(), *expression.query);
-  return order_key ? squared : std::sqrt(squared);
+  return std::sqrt(squared_distance(std::get<Vector>(value).data(), *expression.query));
 }
 
 // Runs contain only row references. Their keys are read from the journal during
@@ -508,7 +602,7 @@ void Database::invalidate_cache(std::uint32_t table) {
   }
 }
 
-const Database::SearchCache *Database::search_cache(const Table &table, std::size_t vector_column) {
+Database::SearchCache *Database::search_cache(const Table &table, std::size_t vector_column) {
   if (search_cache_ && search_cache_->table == table.id) {
     return &*search_cache_;
   }
@@ -518,7 +612,7 @@ const Database::SearchCache *Database::search_cache(const Table &table, std::siz
   constexpr std::uint64_t budget = 8 * 1024 * 1024;
   const std::uint64_t dimension = table.columns[vector_column].width;
   const std::uint64_t fixed_per_row = sizeof(CachedRow) + dimension * sizeof(float) +
-                                     table.columns.size() * sizeof(Value);
+                                     table.columns.size() * sizeof(Value) + sizeof(std::uint32_t);
   const auto count = table.rows.size();
   if (count > budget / fixed_per_row) {
     oversized_cache_ = table.id;
@@ -526,7 +620,7 @@ const Database::SearchCache *Database::search_cache(const Table &table, std::siz
   }
 
   search_cache_.reset();
-  SearchCache cache{table.id, {}, {}, {}};
+  SearchCache cache{table.id, {}, {}, {}, std::nullopt, 0.0, {}};
   cache.rows.reserve(count);
   cache.vectors.reserve(count * dimension);
   cache.scalars.reserve(count * table.columns.size());
@@ -553,6 +647,18 @@ const Database::SearchCache *Database::search_cache(const Table &table, std::siz
       cache.scalars.push_back(row[column]);
     }
     cache.rows.push_back({entry.first, entry.second.reference});
+  }
+  if (dimension >= 32 && dimension <= 4096 && cache.vectors.size() >= 256 * 1024 &&
+      cache.vectors.size() <= budget - used && integer_distance_kernel()) {
+    float max_abs = 0;
+    for (const float value : cache.vectors) max_abs = std::max(max_abs, std::abs(value));
+    if (max_abs != 0) {
+      cache.quantization_step = static_cast<double>(max_abs) / 127.0;
+      cache.quantized.reserve(cache.vectors.size());
+      for (const float value : cache.vectors) {
+        cache.quantized.push_back(quantize_component(value, cache.quantization_step));
+      }
+    }
   }
   search_cache_ = std::move(cache);
   return &*search_cache_;
@@ -583,16 +689,15 @@ void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row
       }
       auto &vector = std::get<Vector>(row[i]);
       vector.resize(column.width);
-      for (float &value : vector) {
-        value = input.f32();
-      }
+      input.floats(vector.data(), vector.size());
     }
   }
   input.finish();
 }
 
-void Database::put_row(const Table &table, std::int64_t key, const Row &row) {
-  Bytes payload{static_cast<std::uint8_t>(RecordKind::Put)};
+void Database::put_row(const Table &table, std::int64_t key, const Row &row, Bytes &payload) {
+  payload.clear();
+  payload.push_back(static_cast<std::uint8_t>(RecordKind::Put));
   put_u32(payload, table.id);
   put_i64(payload, key);
   for (std::size_t i = 0; i < row.size(); ++i) {
@@ -602,11 +707,11 @@ void Database::put_row(const Table &table, std::int64_t key, const Row &row) {
     switch (table.columns[i].type) {
       case Type::Bigint: put_i64(payload, std::get<std::int64_t>(row[i])); break;
       case Type::Varchar: put_string(payload, std::get<std::string>(row[i])); break;
-      case Type::Vector:
-        for (const float value : std::get<Vector>(row[i])) {
-          put_float(payload, value);
-        }
+      case Type::Vector: {
+        const auto &vector = std::get<Vector>(row[i]);
+        put_floats(payload, vector.data(), vector.size());
         break;
+      }
     }
   }
   write_change(payload);
@@ -652,7 +757,7 @@ std::uint64_t Database::create_index(const CreateVectorIndex &statement) {
   return 0;
 }
 
-std::uint64_t Database::insert(const Insert &statement) {
+std::uint64_t Database::insert(Insert &statement) {
   Table &target = table(statement.table);
   std::vector<std::size_t> positions(target.columns.size());
   if (statement.columns.empty()) {
@@ -670,18 +775,19 @@ std::uint64_t Database::insert(const Insert &statement) {
     }
   }
   Row values(target.columns.size());
-  for (const Row &row : statement.rows) {
+  Bytes payload;
+  for (Row &row : statement.rows) {
     if (row.size() != positions.size()) {
       throw SqlError("COLUMN_COUNT", "INSERT value count does not match the table");
     }
     for (std::size_t i = 0; i < positions.size(); ++i) {
-      values[positions[i]] = convert(target.columns[positions[i]], row[i]);
+      values[positions[i]] = convert(target.columns[positions[i]], std::move(row[i]));
     }
     const std::int64_t key = std::get<std::int64_t>(values[target.primary_key]);
     if (target.rows.count(key) != 0) {
       throw SqlError("DUPLICATE_KEY", "duplicate primary key " + std::to_string(key));
     }
-    put_row(target, key, values);
+    put_row(target, key, values, payload);
   }
   return statement.rows.size();
 }
@@ -702,6 +808,7 @@ std::uint64_t Database::update(const Update &statement) {
   const auto key = primary_lookup(target.primary_key, predicates);
   auto next = key ? target.rows.find(*key) : target.rows.begin();
   Bytes buffer;
+  Bytes payload;
   Row row;
   std::uint64_t count = 0;
   while (next != target.rows.end()) {
@@ -711,7 +818,7 @@ std::uint64_t Database::update(const Update &statement) {
       for (const auto &change : changes) {
         row[change.first] = change.second;
       }
-      put_row(target, current->first, row);
+      put_row(target, current->first, row, payload);
       ++count;
     }
     if (key) break;
@@ -751,7 +858,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
   std::vector<BoundExpression> projection;
   if (statement.all_columns) {
     for (std::size_t i = 0; i < target.columns.size(); ++i) {
-      projection.push_back({i, std::nullopt, target.columns[i].name});
+      projection.push_back({i, nullptr, target.columns[i].name});
     }
   } else {
     for (const Expression &expression : statement.columns) {
@@ -795,7 +902,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     if (sink) {
       projected.clear();
       for (const BoundExpression &expression : projection) {
-        projected.push_back(evaluate(expression, row, false));
+        projected.push_back(evaluate(expression, row));
       }
       sink(projected);
     }
@@ -830,9 +937,10 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
   }
 
   struct Neighbor {
-    double squared;
+    double distance;
     std::int64_t key;
     RecordRef reference;
+    std::size_t index;
   };
   constexpr std::size_t sort_budget = 2 * 1024 * 1024;
   if (order.size() == 1 && order.front().query && !statement.order.front().descending &&
@@ -840,15 +948,32 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     const auto vector_column = order.front().column;
     const Vector &query = *order.front().query;
     const auto closer = [](const Neighbor &left, const Neighbor &right) {
-      if (left.squared != right.squared) {
-        return left.squared < right.squared;
+      if (left.distance != right.distance) {
+        return left.distance < right.distance;
       }
       return left.key < right.key;
     };
+    auto *cache = search_cache(target, vector_column);
+    const auto estimate = distance_estimator(query.size());
+    QuantizedKernel integer_distance = nullptr;
+    std::vector<std::int8_t> query_quantized;
+    if (cache && !cache->quantized.empty() &&
+        std::all_of(query.begin(), query.end(), [&](float value) {
+          return std::abs(value) <= 127.0 * cache->quantization_step;
+        })) {
+      integer_distance = integer_distance_kernel();
+      query_quantized.reserve(query.size());
+      for (const float value : query) {
+        query_quantized.push_back(quantize_component(value, cache->quantization_step));
+      }
+    }
+    double cutoff = std::numeric_limits<double>::infinity();
+    double worst_squared = cutoff;
     std::vector<Neighbor> nearest;
     nearest.reserve(std::min<std::uint64_t>(limit, target.rows.size()));
-    const auto consider = [&](std::int64_t key, RecordRef reference, const float *vector) {
-      Neighbor candidate{squared_distance(vector, query), key, reference};
+    const auto consider = [&](std::int64_t key, RecordRef reference, const float *vector,
+                              std::size_t index = 0) {
+      Neighbor candidate{std::sqrt(squared_distance(vector, query)), key, reference, index};
       if (nearest.size() < limit) {
         nearest.push_back(candidate);
         std::push_heap(nearest.begin(), nearest.end(), closer);
@@ -856,6 +981,24 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         std::pop_heap(nearest.begin(), nearest.end(), closer);
         nearest.back() = candidate;
         std::push_heap(nearest.begin(), nearest.end(), closer);
+      } else {
+        return;
+      }
+      if (nearest.size() == limit) {
+        const double worst_distance = nearest.front().distance;
+        // Widen the squared cutoff to retain all rows whose rounded L2 distance ties.
+        worst_squared = (worst_distance * worst_distance) *
+                        (1.0 + 4.0 * std::numeric_limits<double>::epsilon());
+        if (integer_distance) {
+          // Each rounded coordinate contributes at most half a step of error.
+          // Triangle inequality adds one step per coordinate for the two vectors.
+          const double radius = worst_distance / cache->quantization_step *
+                                (1.0 + (4.0 * query.size() + 4.0) * std::numeric_limits<double>::epsilon()) +
+                                std::sqrt(static_cast<double>(query.size())) * 1.00000001;
+          cutoff = radius * radius;
+        } else {
+          cutoff = worst_squared * estimate.relative_margin + estimate.absolute_margin;
+        }
       }
     };
     const auto read_candidate = [&](std::int64_t key, RecordRef reference) {
@@ -864,20 +1007,19 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       }
     };
 
-    const auto *cache = search_cache(target, vector_column);
-    const auto estimate = query.size() >= 32 ? distance_kernel() : nullptr;
-    // Both kernels sum the same nonnegative double terms in different orders.
-    // Cover the rounding error of both sums and compute the scalar result near the cutoff.
-    const double margin = 1.0 + (4.0 * query.size() + 16.0) * std::numeric_limits<double>::epsilon();
     const auto consider_cached = [&](std::size_t index) {
       if (!matches(cache->scalars.data() + index * target.columns.size(), predicates)) return;
       const auto &entry = cache->rows[index];
       const auto *vector = cache->vectors.data() + index * query.size();
-      if (estimate && nearest.size() == limit &&
-          estimate(vector, query.data(), query.size()) > nearest.front().squared * margin) {
-        return;
+      if (nearest.size() == limit) {
+        if (integer_distance) {
+          if (integer_distance(cache->quantized.data() + index * query.size(),
+                               query_quantized.data(), query.size()) > cutoff) return;
+        } else if (estimate.kernel && estimate.kernel(vector, query.data(), query.size()) > cutoff) {
+          return;
+        }
       }
-      consider(entry.key, entry.reference, vector);
+      consider(entry.key, entry.reference, vector, index);
     };
 
     if (mode == SearchMode::Ann && target.index) {
@@ -896,7 +1038,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
             (left != entries.rend() && lower_bound(left->first) <= lower_bound(right->first));
         const auto entry = from_left ? *left++ : *right++;
         if (nearest.size() == limit &&
-            lower_bound(entry.first) * approximation > nearest.front().squared) {
+            lower_bound(entry.first) * approximation > worst_squared) {
           break;
         }
         if (cache) {
@@ -911,8 +1053,36 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         }
       }
     } else if (cache) {
-      for (std::size_t i = 0; i < cache->rows.size(); ++i) {
-        consider_cached(i);
+      const auto filter = std::find_if(predicates.begin(), predicates.end(), [&](const BoundPredicate &p) {
+        return p.comparison == Comparison::Eq &&
+               (!cache->equality || cache->equality->column == p.column);
+      });
+      if (filter == predicates.end()) {
+        for (std::size_t i = 0; i < cache->rows.size(); ++i) {
+          consider_cached(i);
+        }
+      } else {
+        const auto scalar = [&](std::uint32_t i) -> const Value & {
+          return cache->scalars[std::size_t(i) * target.columns.size() + filter->column];
+        };
+        if (!cache->equality) {
+          CachedEquality index{filter->column, {}};
+          index.rows.resize(cache->rows.size());
+          std::iota(index.rows.begin(), index.rows.end(), std::uint32_t{0});
+          std::sort(index.rows.begin(), index.rows.end(), [&](auto left, auto right) {
+            const int comparison = compare_values(scalar(left), scalar(right));
+            return comparison == 0 ? left < right : comparison < 0;
+          });
+          cache->equality.emplace(std::move(index));
+        }
+        const auto &indices = cache->equality->rows;
+        const auto first = std::lower_bound(indices.begin(), indices.end(), filter->value,
+            [&](auto index, const Value &value) { return compare_values(scalar(index), value) < 0; });
+        const auto end = std::upper_bound(first, indices.end(), filter->value,
+            [&](const Value &value, auto index) { return compare_values(value, scalar(index)) < 0; });
+        for (auto it = first; it != end; ++it) {
+          consider_cached(*it);
+        }
       }
     } else {
       for (const auto &entry : target.rows) {
@@ -921,8 +1091,27 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     }
     std::sort_heap(nearest.begin(), nearest.end(), closer);
     for (const Neighbor &entry : nearest) {
-      load_row(target, entry.reference, buffer, row);
-      emit();
+      if (!cache) {
+        load_row(target, entry.reference, buffer, row);
+        emit();
+        continue;
+      }
+      if (sink) {
+        const auto *vector = cache->vectors.data() + entry.index * query.size();
+        const auto *scalars = cache->scalars.data() + entry.index * target.columns.size();
+        projected.clear();
+        for (const auto &expression : projection) {
+          if (expression.query) {
+            projected.emplace_back(std::sqrt(squared_distance(vector, *expression.query)));
+          } else if (expression.column == vector_column) {
+            projected.emplace_back(Vector(vector, vector + query.size()));
+          } else {
+            projected.push_back(scalars[expression.column]);
+          }
+        }
+        sink(projected);
+      }
+      ++result.count;
     }
     return result;
   }
@@ -945,7 +1134,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     Candidate candidate{primary_key, record, {}};
     candidate.values.reserve(order.size());
     for (const BoundExpression &expression : order) {
-      candidate.values.push_back(evaluate(expression, row, true));
+      candidate.values.push_back(evaluate(expression, row));
     }
     return candidate;
   };
@@ -1078,7 +1267,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
 
 Execution Database::execute(std::string_view sql, const RowSink &sink, SearchMode mode,
                             const ColumnsSink &columns_sink) {
-  const Statement statement = parse_sql(sql);
+  Statement statement = parse_sql(sql);
   if (const auto *query = std::get_if<Select>(&statement)) {
     return select(*query, sink, mode, columns_sink);
   }
@@ -1094,7 +1283,7 @@ Execution Database::execute(std::string_view sql, const RowSink &sink, SearchMod
       result.count = create_table(*create);
     } else if (const auto *index = std::get_if<CreateVectorIndex>(&statement)) {
       result.count = create_index(*index);
-    } else if (const auto *new_rows = std::get_if<Insert>(&statement)) {
+    } else if (auto *new_rows = std::get_if<Insert>(&statement)) {
       result.count = insert(*new_rows);
     } else if (const auto *changed_rows = std::get_if<Update>(&statement)) {
       result.count = update(*changed_rows);

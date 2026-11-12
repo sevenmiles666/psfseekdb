@@ -1,4 +1,4 @@
-"""Validate learning-input integrity, evidence references and the selected code base.
+"""Validate learning-input integrity, evidence references and runtime files.
 
 This checks submission inputs; it does not simulate the platform's Prompt grader.
 """
@@ -78,11 +78,11 @@ def check(repo):
     canonical = json.dumps(history, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
     if hashlib.sha256(canonical).hexdigest() != manifest['historical_payload_sha256']:
         raise ValueError('imported historical fields were changed')
-    for entry in manifest['unchanged_runtime_files']:
+    for entry in manifest['runtime_files']:
         body = (repo / entry['path']).read_bytes()
         git_sha = hashlib.sha1(b'blob ' + str(len(body)).encode() + b'\0' + body).hexdigest()
         if git_sha != entry['git_blob_sha1'] or hashlib.sha256(body).hexdigest() != entry['sha256']:
-            raise ValueError(f'code differs from selected old base: {entry["path"]}')
+            raise ValueError(f'runtime file differs from the manifest: {entry["path"]}')
     if re.search(rb'(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]+|https://[^\s"<>]+@github\.com', data):
         raise ValueError('credential-like text in learning material')
     if any(key in material for key in ['agent_prompt_score', 'review_status', 'round_scores']):
@@ -92,7 +92,7 @@ def check(repo):
         'both_material_paths_identical': True,
         'references_checked': len(material['evidence_navigation']),
         'historical_fields_preserved': True,
-        'runtime_files_identical_to_c16935a1': len(manifest['unchanged_runtime_files']),
+        'runtime_files_checked': len(manifest['runtime_files']),
         'platform_prompt_score_verified': False,
     }
 

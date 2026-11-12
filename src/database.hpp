@@ -69,11 +69,19 @@ private:
     RecordRef reference;
   };
 
+  struct CachedEquality {
+    std::size_t column;
+    std::vector<std::uint32_t> rows;
+  };
+
   struct SearchCache {
     std::uint32_t table;
     std::vector<CachedRow> rows;
     Vector vectors;
     std::vector<Value> scalars;
+    std::optional<CachedEquality> equality;
+    double quantization_step;
+    std::vector<std::int8_t> quantized;
   };
 
   void recover();
@@ -89,12 +97,12 @@ private:
   void rebuild_index(Table &table);
   void set_row(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay);
   void invalidate_cache(std::uint32_t table);
-  const SearchCache *search_cache(const Table &table, std::size_t vector_column);
+  SearchCache *search_cache(const Table &table, std::size_t vector_column);
   void load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row);
-  void put_row(const Table &table, std::int64_t key, const Row &row);
+  void put_row(const Table &table, std::int64_t key, const Row &row, Bytes &payload);
   std::uint64_t create_table(const CreateTable &statement);
   std::uint64_t create_index(const CreateVectorIndex &statement);
-  std::uint64_t insert(const Insert &statement);
+  std::uint64_t insert(Insert &statement);
   std::uint64_t update(const Update &statement);
   std::uint64_t remove(const Delete &statement);
   Execution select(const Select &statement, const RowSink &sink, SearchMode mode,

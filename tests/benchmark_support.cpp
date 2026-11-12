@@ -1,6 +1,7 @@
 // Independent reference search and Linux container counter reader for local tests.
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -50,7 +51,7 @@ void oracle() {
         const double difference = double(vectors[offset + i]) - double(query[i]);
         distance += difference * difference;
       }
-      const Match candidate{distance, id};
+      const Match candidate{std::sqrt(distance), id};
       if (best.size() < 10) {
         best.push(candidate);
       } else if (candidate < best.top()) {
@@ -79,9 +80,12 @@ std::string counter(const char *path) {
 
 void probe() {
   struct stat data{};
-  struct stat journal{};
-  if (::stat("/data", &data) != 0 || ::stat("/data/store.wal", &journal) != 0) {
+  struct stat storage{};
+  if (::stat("/data", &data) != 0) {
     throw std::runtime_error("cannot identify the benchmark data device");
+  }
+  if (::stat("/data/store.wal", &storage) != 0 && ::stat("/data/database.mvdb", &storage) != 0) {
+    throw std::runtime_error("cannot find the benchmark data file");
   }
   std::ifstream io("/sys/fs/cgroup/io.stat");
   if (!io) {
@@ -91,7 +95,7 @@ void probe() {
             << counter("/sys/fs/cgroup/memory.peak") << '\n'
             << counter("/sys/fs/cgroup/memory.max") << '\n'
             << counter("/sys/fs/cgroup/memory.swap.max") << '\n'
-            << journal.st_size << '\n'
+            << storage.st_size << '\n'
             << io.rdbuf();
 }
 
