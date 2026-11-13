@@ -1,10 +1,10 @@
 {
   "format": "minivectordb-material-manifest-v1",
-  "code_base_commit": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
+  "code_base_commit": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
   "canonical_path": "agent/conversation.json",
   "compatibility_path": "conversation.json",
-  "material_sha256": "93ce7cc7ca592248771c135355b097c6a79e05d642a83ddfe479e7c4069f63bb",
-  "material_bytes": 31284,
+  "material_sha256": "f10cf7e6ed72d5b7f50f59528b58b250e9eb48cae26637e298e1357eb6c369ef",
+  "material_bytes": 35985,
   "summary_pointer": "/material_summary",
   "historical_top_level_keys": [
     "scope",
@@ -31,20 +31,20 @@
     },
     {
       "path": "src/database.cpp",
-      "git_blob_sha1": "2f089505396c2de0ee81411a74316677906f4e3b",
-      "sha256": "bef8dbacb4aeba379504ca09a411dd5514ab93dc79c314324a6fdf857e5d6de0",
+      "git_blob_sha1": "ee855883390147b3bf13722fc822b14902d0ff3f",
+      "sha256": "0de4ee0e0bc2ba197a3938657b0d0b0da1250ccc781c1693e79919400ce406c3",
       "mode": "100644"
     },
     {
       "path": "src/database.hpp",
-      "git_blob_sha1": "2b3b33b572f43d36f0a5785a6ae3ab2a3aa5e877",
-      "sha256": "d9f931b31120b584ce71cf17f4f2a84ce82dcd1948c23652abad6365d2443862",
+      "git_blob_sha1": "a9cc3842ed6f5386e03a818a0e7724249cee0253",
+      "sha256": "469b61ebcc29d7e1275e7a77b27160a68aae4d065cfc304c7a314c68c89d37f1",
       "mode": "100644"
     },
     {
       "path": "src/encoding.hpp",
-      "git_blob_sha1": "ffb9ec9a069d29d3f34cca2c67b72685dd57b956",
-      "sha256": "0f89e3ce5c980a17ab100f0f668f27ec3242d47f7e855d7f785f8d8a03bc7846",
+      "git_blob_sha1": "e4470961ff2e13bb136c815ed5f3b572edadaf94",
+      "sha256": "6171b796b5a5e00b4255f0dcf0d5ad6a299ed89079a67c3eae1366aef90ebc3c",
       "mode": "100644"
     },
     {

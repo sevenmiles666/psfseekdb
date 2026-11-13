@@ -139,7 +139,7 @@
     }
   ],
   "limitations": "用户贡献记录包括赛题材料、失败反馈和榜单截图。实现、测试设计和实验执行由 Agent 完成，独立自测或结果解读需按用户实际参与补充。性能数据来自本地 Docker 对照，数据卷与镜像共用底层设备，峰值内存含页缓存与最终探针，宿主缓存未重置。正式隐藏用例、性能榜指标和 Agent Prompt 分数待平台评测。",
-  "material_summary": "这是实际开发与验证记录，不是选手自评报告。代码基于正式任务 47251293 的 c16935a15dcdd5cc3803ff38746ee774e4b948b1，原始性能指标 E=2758.194681。历史用户引文、Agent 消息及九项实验从该提交的 agent/conversation.json 原样保留；本次新增正式反馈、用户发现第二条旧版指标更高、Agent 核对题面并修正比较结论、用户选择旧版作为修订基础的实际交互。新增内容区分用户、Agent 与平台结果来源，不把 Agent 的实现、实验设计或解释归为学生贡献。输入包含原始结果与可定位引用，没有自行生成 Prompt 分数、截断原始分、声明平台已复核通过或虚构学生解释。本摘要由 Agent 整理，仅用于说明材料范围。 此次合并还记录基于 c16935a 的性能迭代。等值查找和 8 位距离筛选后，最终仍按原始向量计算 L2，修复了舍入并列时按主键排序的边界。同机三轮 Docker 对照通过正确性检查，精确查询中位数从 1.416002 秒降至 0.996496 秒。 2026-11-13 按用户要求继续优化。两种公开生成数据各五轮，以 9eb5b15 为对照，写入耗时下降 6.39% 和 13.47%，查询峰值内存下降 18.74% 和 7.71%，逐条核对 Top-10 与重启后的内容。",
+  "material_summary": "本材料记录 MiniVectorDB 加赛的实际对话与开发实验。用户在历史记录中发现早先提交的性能原始指标 2758.194681 高于另一版，并选择该版本作为修订基础。用户随后确认 fd9011a 的正式性能原始分为 4368、Agent Prompt 原始分为 1，提出继续优化。以 fd9011a 为对照，Agent 测量无损一字节向量编码和等值过滤，两种公开生成的数据各五轮。精确查询的中位耗时分别下降 9.08% 和 5.18%，逐条核对结果以及重启后的记录。用户原话、工具结果和 Agent 的技术取舍按实际来源记录。",
   "provenance": {
     "summary_author": "assistant",
     "code_base_commit": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
@@ -151,10 +151,11 @@
     "added_scope": "完整保留本次结果核对与版本选择片段；不声称覆盖其他会话的全部开发历史。",
     "recorded_at": "2026-11-12T06:50:24.712447+00:00",
     "optimization_evidence_commit": "6318dd7fdc7a1f7604bc5044d09805d4fda1a7a3",
-    "prior_prompt_repair_commit": "2597c624d5399f099144594e0ff5593e09492509"
+    "prior_prompt_repair_commit": "2597c624d5399f099144594e0ff5593e09492509",
+    "latest_optimization_base_commit": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4"
   },
   "current_review": {
-    "scope": "本次材料修订开始前已发生的结果核对和版本取舍；后续材料修订是否被平台接受尚未验证。",
+    "scope": "早期提交的结果核对与版本取舍。fd9011a 后续反馈见 lossless_vector_iteration。",
     "records": [
       {
         "id": "01a1ce58-05c7-7f80-a596-bc593fadc31c",
@@ -214,7 +215,7 @@
     ],
     "assistant_retrospective": "初次汇报只列出新版本的功能通过与 E=378.087631，没有对比旧版。用户指出第二条指标更高，重新回读后确认旧版为 2758.194681，题面排序为从高到低。用户据此要求以旧版为基础。两次数值均超出题面归一化公式的 0–1 范围，平台未提供计算明细，因此不把数值比当作速度倍数。此解释属于 Agent，不能代作学生解释。",
     "student_contribution_boundary": "本段可直接核对的学生贡献是指出旧版指标更高，并要求以旧版为基础处理 Prompt 问题。用户没有自行解释 E 的公式、设计数据库算法或声称亲自执行测试，材料不补写这些内容。多个发言属于同一条结果核对与版本选择链，不因拆分消息而视为多个独立贡献。",
-    "platform_status": "两次正式功能准入通过；两次 Prompt 均未返回有效原始分，详情接口只有泛化原因。本材料没有评审服务的三轮输出、具体错误类型或材料读取摘要，不能声称已修复平台输出。"
+    "platform_status": "当时两次正式功能准入通过，Prompt 均未返回有效原始分。该阶段只有平台泛化提示，缺少三轮输出、具体错误类型和材料读取摘要。"
   },
   "evidence_navigation": [
     {
@@ -246,6 +247,21 @@
       "purpose": "舍入并列反例与修复结果",
       "pointer": "/performance_iteration/experiments/3/output",
       "quote": "修正后两个 L2 距离均舍入为 1.0，Top-1 返回 [[1,1.0]]"
+    },
+    {
+      "purpose": "本次正式原始分和改进目标",
+      "pointer": "/lossless_vector_iteration/conversations/0/content",
+      "quote": "Agent Prompt评测完成；原始分 = 1，需要提高到至少30.性能原始分现在4368，还要继续提高目标是5800"
+    },
+    {
+      "purpose": "选手说明亲自测试的情况",
+      "pointer": "/lossless_vector_iteration/conversations/2/content",
+      "quote": "无，全部靠你发挥"
+    },
+    {
+      "purpose": "离散向量五轮容器对照",
+      "pointer": "/lossless_vector_iteration/experiments/2/output",
+      "quote": "离散向量写入 0.766110 → 0.745737 秒，查询 0.997610 → 0.906993 秒，写入物理 I/O 3268608 → 1994752 字节，查询峰值内存 17780736 → 11440128 字节。"
     }
   ],
   "performance_iteration": {
@@ -367,5 +383,73 @@
     ],
     "assistant_retrospective": "在写入和 I/O 都实测改善后保留无损编码。对外仍按原始 float32 向量返回，精确查询用 double 累加并保留主键并列规则。运行容器的查询端到端收益较小，与 Linux 进程的无过滤查询收益属于不同测量口径。",
     "limitations": "实现、实验和解释由 Agent 完成，用户提出迭代目标。新版可打开原 WAL，新编码的数据卷需用支持该编码的版本打开。正式任务尚未执行，不能将本地效率或召回换算成正式名次。"
+  },
+  "lossless_vector_iteration": {
+    "scope": "2026-11-13 至 2026-11-14。MiniVectorDB 的无损向量编码与等值过滤优化，以用户确认的正式测评版本为对照。",
+    "baseline_commit": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
+    "baseline_reported_by_user": {
+      "performance_raw": 4368,
+      "prompt_raw": 1,
+      "details": "用户提供两项原始分和完整提交 SHA。"
+    },
+    "conversations": [
+      {
+        "id": "round2-lossless-user-1",
+        "role": "user",
+        "content": "Agent Prompt评测完成；原始分 = 1，需要提高到至少30.性能原始分现在4368，还要继续提高目标是5800"
+      },
+      {
+        "id": "round2-lossless-user-2",
+        "role": "user",
+        "content": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
+        "context": "回答上述两项正式成绩对应的 Commit。"
+      },
+      {
+        "id": "round2-lossless-user-3",
+        "role": "user",
+        "content": "无，全部靠你发挥",
+        "context": "回答是否亲自设计或核对过加赛测试。"
+      },
+      {
+        "id": "round2-lossless-user-4",
+        "role": "user",
+        "content": "继续",
+        "context": "继续此前的性能和材料工作。"
+      }
+    ],
+    "experiments": [
+      {
+        "id": "round2-lossless-tool-1",
+        "role": "tool",
+        "procedure": "用相同公开生成数据对照原实现和从 WAL 直接解码的候选。两种数据各 10,000 行，每行 128 维。",
+        "output": "直接解码将离散向量查询的峰值内存从 17,702,912 降至 11,718,656 字节，查询中位耗时从 1.385096 增至 1.738948 秒。连续 FP32 峰值从 19,980,288 降至 15,319,040 字节，查询从 1.306301 增至 1.443248 秒。Agent 因两组查询回退撤销了该方案。"
+      },
+      {
+        "id": "round2-lossless-tool-2",
+        "role": "tool",
+        "procedure": "同一台 Linux 机器交替执行两版，比较量化向量按等值列原地分组前后。每种分布七轮，每轮有过滤、无过滤各 500 条 Top-10。",
+        "output": "离散向量有过滤查询的中位耗时从 0.090696 降到 0.082030 秒。连续 FP32 从 0.110909 降到 0.094993 秒。两种分布的查询结果分别逐项相同。"
+      },
+      {
+        "id": "round2-lossless-tool-3",
+        "role": "tool",
+        "procedure": "相同基线与候选各使用隔离 Docker 数据卷、2 CPU、64 MiB、零 swap。两种分布各五轮。每轮写入 10,000 条 128 维向量，重启后比较记录的 FP32 位值。建索引预热后运行 1,000 条精确 Top-10，半数带等值过滤。独立参考计算核对 ID、距离与排序。",
+        "output": "离散向量写入 0.766110 → 0.745737 秒，查询 0.997610 → 0.906993 秒，写入物理 I/O 3268608 → 1994752 字节，查询峰值内存 17780736 → 11440128 字节。连续 FP32 写入 0.868980 → 0.881218 秒，查询 1.015105 → 0.962477 秒，写入物理 I/O 5197824 → 5197824 字节，查询峰值内存 19996672 → 19918848 字节。每轮两组 Recall@10 的平均值和最小值都是 1.0。"
+      },
+      {
+        "id": "round2-lossless-tool-4",
+        "role": "tool",
+        "procedure": "用公开生成的连续 FP32 数据，在 Linux 上对照使用 ORDER BY d,id LIMIT 10 的 1,000 条查询。运行三轮并比较完整结果的 SHA-256。",
+        "output": "查询总耗时中位数为 6.075824 → 0.209659 秒。结果 SHA-256 均为 c83999ac730fae6983c6c4c9bba56a078572d5a6d2c615f556daefaec16744cf。正式查询写法待平台反馈。"
+      },
+      {
+        "id": "round2-lossless-tool-5",
+        "role": "tool",
+        "procedure": "运行官方公开协议检查、Linux ASan/UBSan 回归和 32 MiB 容器资源用例。用 fd9011a 生成旧 WAL，追加其他编码并核对事务回滚和强杀恢复。",
+        "output": "官方 20/20 通过。ASan/UBSan 无报错。四种 WAL 编码在 CRC 校验、回滚、重启和强杀恢复中通过。32 MiB 限额下对 52,476,221 字节的数据完成重启、建索引、检索和排序。"
+      }
+    ],
+    "assistant_retrospective": "先用逐条 FP32 位值复原检查决定一字节编码是否可用。表内可共用比例时保留整数缓存，出现普通 FP32 时回到原始精度缓存。保留等值分组是因为两种分布上的过滤查询均有收益。连续 FP32 写入中位耗时增加约 1.4%，物理 I/O 相同。",
+    "limitations": "实验和实现由 Agent 完成。本候选的正式性能和 Agent Prompt 原始分需由平台评测。"
   }
 }

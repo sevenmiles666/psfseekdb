@@ -330,13 +330,18 @@ def check_topk_rounding(args, directory):
         return total
 
     with Server(args, directory) as db:
-        workloads = (("blocks", 1.0, 2061, 128), ("ordinary", 1.0, 2200, 129),
+        workloads = (("grid", 1.0, 2061, 128), ("mixed", 1.0, 2061, 128),
+                     ("blocks", 1.0, 2061, 128), ("ordinary", 1.0, 2200, 129),
                      ("tiny", 4e-23, 39, 129), ("large", 3e38, 39, 129))
         for table, scale, size, dimension in workloads:
             def vector():
+                if table in ("grid", "mixed"):
+                    return [rng.randrange(-32, 33) / 8 for _ in range(dimension)]
                 return [f32(rng.uniform(-1.0, 1.0) * scale) for _ in range(dimension)]
 
             data = [vector() for _ in range(size)]
+            if table == "mixed":
+                data[size // 2][-1] = f32(0.1)
             if table == "blocks":
                 data[3] = [-1.0] * dimension
                 data[4] = [1.0] * dimension
@@ -363,6 +368,11 @@ def check_topk_rounding(args, directory):
             if table == "blocks":
                 queries.append(("", lambda key: True, data[0]))
                 queries.append(("", lambda key: True, data[3]))
+            if table in ("grid", "mixed"):
+                data_query = [f32(value + 1e-4) for value in data[0]]
+                queries.append(("", lambda key: True, data[0]))
+                queries.append(("", lambda key: True, data_query))
+                queries.append(("", lambda key: True, [100.0, *data[0][1:]]))
             for where, eligible, query in queries:
                 expected = sorted((math.sqrt(squared_distance(v, query)), key)
                                   for key, v in enumerate(data) if eligible(key))[:5]
@@ -381,6 +391,8 @@ def check_topk_rounding(args, directory):
         db.query(rounded + " LIMIT 1;", [[1, 1.0]])
         db.query(rounded + ";", [[1, 1.0], [2, 1.0]])
         db.query(rounded + " DESC;", [[1, 1.0], [2, 1.0]])
+        db.query(rounded + ", id ASC LIMIT 1;", [[1, 1.0]])
+        db.query(rounded + ", id DESC LIMIT 1;", [[2, 1.0]])
     print("Exact TopK passed integer screening, FP32 ties, subnormals, overflow and filter cases", flush=True)
 
 
@@ -389,7 +401,8 @@ def check_wal_vector_formats(args, directory, reference=None):
     half = [-0.0, 65504.0, 2**-14, *([0.125, -3.5] * 7)]
     packed = [(-1)**i * (0.1 + i * 0.03125) for i in range(17)]
     full = [1e-39, 3e38, *([0.2] * 15)]
-    rows = [half, packed, full]
+    scaled = [-0.0, -15.875, 0.125, *([0.75, -2.25] * 7)]
+    rows = [half, packed, full, scaled]
     packed_bits = lambda values: struct.pack("<17f", *values)
     query = "SELECT v FROM storage ORDER BY id;"
 
@@ -398,7 +411,7 @@ def check_wal_vector_formats(args, directory, reference=None):
 
     def check(db):
         actual, count, error = db.sql(query)
-        assert error is None and count == 3
+        assert error is None and count == len(rows)
         # JSON permits -0 and the Python parser returns that spelling as integer zero.
         assert [packed_bits(row[0]) for row in actual] == [packed_bits([abs(v) if v == 0 else v for v in vector])
                                                           for vector in rows]
@@ -413,6 +426,7 @@ def check_wal_vector_formats(args, directory, reference=None):
     with Server(args, directory) as db:
         insert(db, 0)
         insert(db, 1)
+        insert(db, 3)
         check(db)
         db.ok("BEGIN;")
         db.ok(f"UPDATE storage SET v={json.dumps(full)} WHERE id=1;", 1)
@@ -438,8 +452,11 @@ def check_wal_vector_formats(args, directory, reference=None):
         if kind == 6:
             text_size = struct.unpack_from("<I", journal, frame + 13)[0]
             assert struct.unpack_from("<H", journal, frame + 17 + text_size)[0] == 0x8000
+        elif kind == 8:
+            text_size = struct.unpack_from("<I", journal, frame + 13)[0]
+            assert journal[frame + 18 + text_size] == 0x80
         offset += 8 + size
-    assert offset == len(journal) and {2, 6, 7} <= kinds
+    assert offset == len(journal) and {2, 6, 7, 8} <= kinds
     print("Mixed vector WAL encodings survived bitwise round-trip, rollback and crash recovery", flush=True)
 
 

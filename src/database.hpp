@@ -67,6 +67,7 @@ private:
   struct CachedEquality {
     std::size_t column;
     std::vector<std::uint32_t> rows;
+    std::vector<std::uint32_t> positions;
   };
 
   using CachedColumn = std::variant<std::monostate, std::vector<std::int64_t>, std::vector<std::string>>;
@@ -78,8 +79,12 @@ private:
     std::vector<CachedColumn> scalars;
     std::optional<CachedEquality> equality;
     double quantization_step;
+    double quantization_error;
     std::vector<std::int8_t> quantized;
     std::vector<std::int32_t> quantized_norms;
+    std::vector<std::uint8_t> negative_zeros;
+    bool exact_codes = false;
+    bool can_group_quantized = false;
     std::size_t block_rows;
   };
 

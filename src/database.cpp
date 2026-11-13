@@ -22,7 +22,7 @@ namespace minivector {
 namespace {
 
 enum class RecordKind : std::uint8_t {
-  Create = 1, Put = 2, Delete = 3, Commit = 4, Index = 5, PutHalf = 6, PutPacked = 7
+  Create = 1, Put = 2, Delete = 3, Commit = 4, Index = 5, PutHalf = 6, PutPacked = 7, PutScaledByte = 8
 };
 
 std::optional<VectorEncoding> row_encoding(RecordKind kind) {
@@ -30,6 +30,7 @@ std::optional<VectorEncoding> row_encoding(RecordKind kind) {
     case RecordKind::Put: return VectorEncoding::Full;
     case RecordKind::PutHalf: return VectorEncoding::Half;
     case RecordKind::PutPacked: return VectorEncoding::Packed;
+    case RecordKind::PutScaledByte: return VectorEncoding::ScaledByte;
     default: return std::nullopt;
   }
 }
@@ -187,6 +188,15 @@ struct DistanceEstimate {
 constexpr std::size_t quantized_block_rows = 8;
 constexpr std::size_t quantized_row_bytes = 4;
 
+std::size_t quantized_offset(std::size_t row, std::size_t column, std::size_t dimension,
+                             std::size_t block_rows) {
+  if (row >= block_rows) return row * dimension + column;
+  const auto lane = row % quantized_block_rows;
+  return (row - lane) * dimension +
+      (column / quantized_row_bytes * quantized_block_rows + lane) * quantized_row_bytes +
+      column % quantized_row_bytes;
+}
+
 #if defined(__x86_64__) && defined(__GNUC__)
 __attribute__((target("avx2,no-fma")))
 double estimate_squared_distance(const float *left, const float *right, std::size_t size) {
@@ -283,12 +293,15 @@ __m256i quantized_block_dots(const std::int8_t *vectors, const std::int8_t *quer
 
 __attribute__((target("avx2")))
 unsigned quantized_block_mask(const std::int8_t *vectors, const std::int32_t *norms,
-                              const std::int8_t *query, std::size_t size, std::int32_t cutoff) {
+                              const std::int8_t *query, std::size_t size, std::int32_t cutoff,
+                              std::int32_t *distances) {
   const auto sum = quantized_block_dots(vectors, query, size);
   const auto distance = _mm256_sub_epi32(_mm256_loadu_si256(reinterpret_cast<const __m256i *>(norms)),
                                         _mm256_add_epi32(sum, sum));
   const auto excluded = _mm256_cmpgt_epi32(distance, _mm256_set1_epi32(cutoff));
-  return static_cast<unsigned>(~_mm256_movemask_ps(_mm256_castsi256_ps(excluded))) & 255;
+  const auto mask = static_cast<unsigned>(~_mm256_movemask_ps(_mm256_castsi256_ps(excluded))) & 255;
+  if (mask != 0) _mm256_storeu_si256(reinterpret_cast<__m256i *>(distances), distance);
+  return mask;
 }
 
 __attribute__((target("avx2")))
@@ -319,7 +332,7 @@ std::int32_t quantized_block_row_dot(const std::int8_t *block, std::size_t row,
 using QuantizedKernel = std::int32_t (*)(const std::int8_t *, const std::int8_t *, std::size_t);
 
 using BlockKernel = unsigned (*)(const std::int8_t *, const std::int32_t *, const std::int8_t *,
-                                  std::size_t, std::int32_t);
+                                  std::size_t, std::int32_t, std::int32_t *);
 using BlockRowKernel = std::int32_t (*)(const std::int8_t *, std::size_t, const std::int8_t *, std::size_t);
 
 struct QuantizedBlockKernels {
@@ -344,6 +357,13 @@ QuantizedKernel integer_distance_kernel() {
 
 std::int8_t quantize_component(float value, double step) {
   return static_cast<std::int8_t>(std::lround(static_cast<double>(value) / step));
+}
+
+double quantization_error_bound(double squared_error, std::size_t dimension) {
+  const auto epsilon = std::numeric_limits<double>::epsilon();
+  // Bound norm accumulation and division roundoff for coordinates in [-127,127].
+  return std::sqrt(squared_error) * (1.0 + (dimension + 8.0) * epsilon) +
+         std::sqrt(static_cast<double>(dimension)) * 256.0 * epsilon;
 }
 
 DistanceEstimate distance_estimator(std::size_t dimension) {
@@ -700,9 +720,19 @@ Database::SearchCache *Database::search_cache(const Table &table, std::size_t ve
   }
 
   search_cache_.reset();
-  SearchCache cache{table.id, {}, {}, {}, std::nullopt, 0.0, {}, {}, 0};
+  SearchCache cache{};
+  cache.table = table.id;
   cache.keys.reserve(count);
-  cache.vectors.reserve(count * dimension);
+  const std::size_t components = count * dimension;
+  const auto quantized_bytes = components + count * sizeof(std::int32_t);
+  const auto sign_bytes = (components + 7) / 8;
+  const bool quantize = dimension >= 32 && dimension <= 4096 && components >= 256 * 1024 &&
+                        integer_distance_kernel();
+  // Try an exact byte representation first. If a row cannot share the common
+  // scale, expand the preceding rows into the normal float cache once.
+  cache.exact_codes = quantize && quantized_bytes + sign_bytes <=
+      budget - column_bytes - count * (fixed_per_row - dimension * sizeof(float));
+  if (!cache.exact_codes) cache.vectors.reserve(components);
   cache.scalars.resize(table.columns.size());
   for (std::size_t column = 0; column < table.columns.size(); ++column) {
     if (column == table.primary_key || column == vector_column) continue;
@@ -713,12 +743,72 @@ Database::SearchCache *Database::search_cache(const Table &table, std::size_t ve
     }
   }
   std::uint64_t used = column_bytes + count * fixed_per_row;
+  if (cache.exact_codes) used = used - components * sizeof(float) + quantized_bytes + sign_bytes;
   Bytes buffer;
   Row row;
+  std::vector<std::int8_t> codes;
+  if (cache.exact_codes) codes.resize(dimension);
+  float max_abs = 0;
+  float inverse = 0;
   for (const auto &entry : table.rows) {
     load_row(table, entry.second.reference, buffer, row);
     const auto &vector = std::get<Vector>(row[vector_column]);
-    cache.vectors.insert(cache.vectors.end(), vector.begin(), vector.end());
+    const auto row_index = cache.keys.size();
+    if (quantize) {
+      for (const float value : vector) max_abs = std::max(max_abs, std::abs(value));
+    }
+    if (cache.exact_codes) {
+      if (inverse == 0 && max_abs != 0) {
+        const auto exponent = scaled_byte_exponent(float_bits(max_abs));
+        if (exponent >= -126 && exponent <= 121) {
+          inverse = float_from_bits(std::uint32_t(127 - exponent) << 23);
+          cache.quantization_step = 1.0 / inverse;
+        }
+      }
+      bool exact = inverse != 0 || max_abs == 0;
+      std::int32_t norm = 0;
+      for (std::size_t i = 0; exact && i < dimension; ++i) {
+        int code;
+        exact = exact_scaled_byte(vector[i], inverse, code);
+        if (!exact) break;
+        codes[i] = static_cast<std::int8_t>(code);
+        norm += code * code;
+      }
+      if (exact) {
+        if (cache.quantized.empty()) {
+          cache.quantized.resize(components);
+          cache.negative_zeros.resize(sign_bytes);
+          cache.quantized_norms.resize(count);
+          if (dimension % 32 == 0) cache.block_rows = count - count % quantized_block_rows;
+        }
+        for (std::size_t i = 0; i < dimension; ++i) {
+          cache.quantized[quantized_offset(row_index, i, dimension, cache.block_rows)] = codes[i];
+          if (float_bits(vector[i]) == 0x80000000U) {
+            const auto index = row_index * dimension + i;
+            cache.negative_zeros[index / 8] |= static_cast<std::uint8_t>(1U << (index % 8));
+          }
+        }
+        cache.quantized_norms[row_index] = norm;
+      } else {
+        used = used - quantized_bytes - sign_bytes + components * sizeof(float);
+        if (used > budget) {
+          oversized_cache_ = table.id;
+          return nullptr;
+        }
+        cache.vectors.reserve(components);
+        for (std::size_t previous = 0; previous < row_index; ++previous) {
+          for (std::size_t i = 0; i < dimension; ++i) {
+            const auto index = previous * dimension + i;
+            const auto code = cache.quantized[quantized_offset(previous, i, dimension, cache.block_rows)];
+            const bool negative_zero = code == 0 && (cache.negative_zeros[index / 8] & (1U << (index % 8)));
+            cache.vectors.push_back(negative_zero ? -0.0f : code * static_cast<float>(cache.quantization_step));
+          }
+        }
+        cache.exact_codes = false;
+        std::vector<std::uint8_t>{}.swap(cache.negative_zeros);
+      }
+    }
+    if (!cache.exact_codes) cache.vectors.insert(cache.vectors.end(), vector.begin(), vector.end());
     for (std::size_t column = 0; column < row.size(); ++column) {
       if (column == vector_column || column == table.primary_key) continue;
       if (const auto *text = std::get_if<std::string>(&row[column])) {
@@ -735,36 +825,45 @@ Database::SearchCache *Database::search_cache(const Table &table, std::size_t ve
     }
     cache.keys.push_back(entry.first);
   }
-  const auto dot = integer_distance_kernel();
-  const auto quantized_bytes = cache.vectors.size() + count * sizeof(std::int32_t);
-  if (dimension >= 32 && dimension <= 4096 && cache.vectors.size() >= 256 * 1024 &&
-      quantized_bytes <= budget - used && dot) {
-    float max_abs = 0;
-    for (const float value : cache.vectors) max_abs = std::max(max_abs, std::abs(value));
-    if (max_abs != 0) {
+  if (cache.exact_codes && max_abs == 0) cache.quantization_step = 1.0;
+  if (!cache.exact_codes) {
+    if (quantize && quantized_bytes <= budget - used && max_abs != 0) {
+      used += quantized_bytes;
       cache.quantization_step = static_cast<double>(max_abs) / 127.0;
-      cache.quantized.resize(cache.vectors.size());
+      cache.quantized.resize(components);
       cache.quantized_norms.resize(count);
       // Interleave complete eight-row blocks in the original allocation.
       if (dimension % 32 == 0) cache.block_rows = count - count % quantized_block_rows;
+      double maximum_error_squared = 0.0;
       for (std::size_t row = 0; row < count; ++row) {
         const auto *values = cache.vectors.data() + row * dimension;
         const bool interleaved = row < cache.block_rows;
         const std::size_t lane = row % quantized_block_rows;
         auto *base = cache.quantized.data() + (interleaved ? row - lane : row) * dimension;
         std::int32_t norm = 0;
+        double error_squared = 0.0;
         for (std::size_t i = 0; i < dimension; ++i) {
-          const auto value = quantize_component(values[i], cache.quantization_step);
+          const double scaled = static_cast<double>(values[i]) / cache.quantization_step;
+          const auto value = static_cast<std::int8_t>(std::lround(scaled));
           const std::size_t offset = interleaved ?
               (i / quantized_row_bytes * quantized_block_rows + lane) * quantized_row_bytes +
                   i % quantized_row_bytes : i;
           base[offset] = value;
           norm += int(value) * int(value);
+          const double error = scaled - value;
+          error_squared += error * error;
         }
         cache.quantized_norms[row] = norm;
+        maximum_error_squared = std::max(maximum_error_squared, error_squared);
       }
+      cache.quantization_error = quantization_error_bound(maximum_error_squared, dimension);
+    } else {
+      cache.block_rows = 0;
+      std::vector<std::int8_t>{}.swap(cache.quantized);
+      std::vector<std::int32_t>{}.swap(cache.quantized_norms);
     }
   }
+  cache.can_group_quantized = cache.block_rows != 0 && count * sizeof(std::uint32_t) <= budget - used;
   search_cache_ = std::move(cache);
   return &*search_cache_;
 }
@@ -819,6 +918,7 @@ void Database::put_row(const Table &table, std::int64_t key, const Row &row, Byt
           case VectorEncoding::Full: break;
           case VectorEncoding::Half: payload.front() = static_cast<std::uint8_t>(RecordKind::PutHalf); break;
           case VectorEncoding::Packed: payload.front() = static_cast<std::uint8_t>(RecordKind::PutPacked); break;
+          case VectorEncoding::ScaledByte: payload.front() = static_cast<std::uint8_t>(RecordKind::PutScaledByte); break;
         }
         break;
       }
@@ -1053,31 +1153,47 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     std::size_t index;
   };
   constexpr std::size_t sort_budget = 2 * 1024 * 1024;
-  if (order.size() == 1 && order.front().query && !statement.order.front().descending &&
+  const bool primary_tiebreak = order.size() == 2 && !order[1].query && order[1].column == target.primary_key;
+  if ((order.size() == 1 || primary_tiebreak) && order.front().query && !statement.order.front().descending &&
       limit <= sort_budget / sizeof(Neighbor)) {
     const auto vector_column = order.front().column;
     const Vector &query = *order.front().query;
-    const auto closer = [](const Neighbor &left, const Neighbor &right) {
+    const bool descending_ties = primary_tiebreak && statement.order[1].descending;
+    const auto closer = [&](const Neighbor &left, const Neighbor &right) {
       if (left.distance != right.distance) {
         return left.distance < right.distance;
       }
-      return left.key < right.key;
+      return descending_ties ? left.key > right.key : left.key < right.key;
     };
     auto *cache = search_cache(target, vector_column);
     const auto estimate = distance_estimator(query.size());
     QuantizedKernel dot = nullptr;
     std::vector<std::int8_t> query_quantized;
     std::int32_t query_norm = 0;
+    double error_radius = 0.0;
     QuantizedBlockKernels blocks;
+    bool exact_query = false;
     if (cache && !cache->quantized.empty() &&
         std::all_of(query.begin(), query.end(), [&](float value) {
           return std::abs(value) <= 127.0 * cache->quantization_step;
         })) {
       dot = integer_distance_kernel();
       query_quantized.reserve(query.size());
+      exact_query = cache->exact_codes;
+      const float inverse = static_cast<float>(1.0 / cache->quantization_step);
+      double query_error_squared = 0.0;
       for (const float value : query) {
-        query_quantized.push_back(quantize_component(value, cache->quantization_step));
+        int code;
+        if (exact_query && exact_scaled_byte(value, inverse, code)) {
+          query_quantized.push_back(static_cast<std::int8_t>(code));
+        } else {
+          exact_query = false;
+          query_quantized.push_back(quantize_component(value, cache->quantization_step));
+        }
+        const auto error = static_cast<double>(value) / cache->quantization_step - query_quantized.back();
+        query_error_squared += error * error;
       }
+      error_radius = cache->quantization_error + quantization_error_bound(query_error_squared, query.size());
       query_norm = dot(query_quantized.data(), query_quantized.data(), query.size());
       if (cache->block_rows != 0) blocks = block_kernels();
     }
@@ -1085,9 +1201,9 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     double worst_squared = cutoff;
     std::vector<Neighbor> nearest;
     nearest.reserve(std::min<std::uint64_t>(limit, target.rows.size()));
-    const auto consider = [&](std::int64_t key, RecordRef reference, const float *vector,
-                              std::size_t index = 0) {
-      Neighbor candidate{std::sqrt(squared_distance(vector, query)), key, reference, index};
+    const auto consider_distance = [&](std::int64_t key, RecordRef reference, double squared,
+                                       std::size_t index = 0) {
+      Neighbor candidate{std::sqrt(squared), key, reference, index};
       if (nearest.size() < limit) {
         nearest.push_back(candidate);
         std::push_heap(nearest.begin(), nearest.end(), closer);
@@ -1104,12 +1220,16 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         worst_squared = (worst_distance * worst_distance) *
                         (1.0 + 4.0 * std::numeric_limits<double>::epsilon());
         if (dot) {
-          // Each rounded coordinate contributes at most half a step of error.
-          // Triangle inequality adds one step per coordinate for the two vectors.
-          const double radius = worst_distance / cache->quantization_step *
-                                (1.0 + (4.0 * query.size() + 4.0) * std::numeric_limits<double>::epsilon()) +
-                                std::sqrt(static_cast<double>(query.size())) * 1.00000001;
-          cutoff = radius * radius;
+          // A shared power-of-two scale keeps integer sums exactly representable.
+          if (exact_query) {
+            cutoff = worst_squared / (cache->quantization_step * cache->quantization_step);
+          } else {
+            // The two rounding errors bound the difference between distance norms.
+            const double radius = worst_distance / cache->quantization_step *
+                                  (1.0 + (4.0 * query.size() + 4.0) * std::numeric_limits<double>::epsilon()) +
+                                  error_radius;
+            cutoff = radius * radius;
+          }
         } else {
           cutoff = worst_squared * estimate.relative_margin + estimate.absolute_margin;
         }
@@ -1117,29 +1237,56 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     };
     const auto read_candidate = [&](std::int64_t key, RecordRef reference) {
       if (read_match(reference)) {
-        consider(key, reference, std::get<Vector>(row[vector_column]).data());
+        consider_distance(key, reference, squared_distance(std::get<Vector>(row[vector_column]).data(), query));
       }
     };
 
-    const auto consider_cached = [&](std::size_t index) {
+    Vector decoded;
+    if (cache && cache->exact_codes) decoded.resize(query.size());
+    const auto quantized_position = [&](std::size_t index) {
+      if (cache->equality && !cache->equality->positions.empty()) {
+        return static_cast<std::size_t>(cache->equality->positions[index]);
+      }
+      return index;
+    };
+    const auto cached_vector = [&](std::size_t index) -> const float * {
       const std::size_t offset = index * query.size();
-      if (nearest.size() == limit) {
-        if (dot) {
+      if (!cache->exact_codes) return cache->vectors.data() + offset;
+      const auto position = quantized_position(index);
+      const float scale = static_cast<float>(cache->quantization_step);
+      for (std::size_t i = 0; i < query.size(); ++i) {
+        const auto value = cache->quantized[quantized_offset(position, i, query.size(), cache->block_rows)];
+        const auto component = offset + i;
+        decoded[i] = value == 0 && (cache->negative_zeros[component / 8] & (1U << (component % 8)))
+            ? -0.0f : value * scale;
+      }
+      return decoded.data();
+    };
+    const auto consider_cached = [&](std::size_t index, std::optional<std::int32_t> distance = {}) {
+      if (dot && (exact_query || nearest.size() == limit)) {
+        if (!distance) {
+          const auto position = quantized_position(index);
           std::int32_t cross;
-          if (index < cache->block_rows) {
-            const auto lane = index % quantized_block_rows;
-            const auto *block = cache->quantized.data() + (index - lane) * query.size();
+          if (position < cache->block_rows) {
+            const auto lane = position % quantized_block_rows;
+            const auto *block = cache->quantized.data() + (position - lane) * query.size();
             cross = blocks.row(block, lane, query_quantized.data(), query.size());
           } else {
-            cross = dot(cache->quantized.data() + offset, query_quantized.data(), query.size());
+            cross = dot(cache->quantized.data() + position * query.size(), query_quantized.data(), query.size());
           }
-          if (cache->quantized_norms[index] + query_norm - 2 * cross > cutoff) return;
-        } else if (estimate.kernel &&
-                   estimate.kernel(cache->vectors.data() + offset, query.data(), query.size()) > cutoff) {
+          distance = cache->quantized_norms[position] + query_norm - 2 * cross;
+        }
+        if (*distance > cutoff) return;
+        if (exact_query) {
+          const double scale = cache->quantization_step;
+          consider_distance(cache->keys[index], {}, *distance * scale * scale, index);
           return;
         }
       }
-      consider(cache->keys[index], {}, cache->vectors.data() + offset, index);
+      const auto *vector = cached_vector(index);
+      if (!dot && nearest.size() == limit && estimate.kernel &&
+          estimate.kernel(vector, query.data(), query.size()) > cutoff) return;
+      consider_distance(cache->keys[index], {}, squared_distance(vector, query), index);
     };
     const auto compare_scalar = [&](std::size_t index, std::size_t column, const Value &value) {
       if (column == target.primary_key) return compare(cache->keys[index], std::get<std::int64_t>(value));
@@ -1154,8 +1301,33 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         return compare_scalar(index, predicate.column, predicate.value);
       }, already_matched);
     };
+    const auto scan_blocks = [&](std::size_t begin, std::size_t end, const BoundPredicate *already_matched) {
+      const bool grouped = cache->equality && !cache->equality->positions.empty();
+      const auto visit = [&](std::size_t position, std::optional<std::int32_t> distance = {}) {
+        const auto index = grouped ? cache->equality->rows[position] : position;
+        if (predicates.empty() || (already_matched && predicates.size() == 1) ||
+            matches_cached(index, already_matched)) {
+          consider_cached(index, distance);
+        }
+      };
+      for (; begin < end && (begin % quantized_block_rows != 0 || nearest.size() < limit); ++begin) visit(begin);
+      const auto block_end = std::min(end - end % quantized_block_rows, cache->block_rows);
+      for (; begin < block_end; begin += quantized_block_rows) {
+        const double bound = std::min(cutoff - query_norm, 254.0 * 254.0 * query.size());
+        std::array<std::int32_t, quantized_block_rows> distances;
+        auto mask = blocks.block(cache->quantized.data() + begin * query.size(),
+                                 cache->quantized_norms.data() + begin, query_quantized.data(), query.size(),
+                                 static_cast<std::int32_t>(std::ceil(bound)), distances.data());
+        while (mask != 0) {
+          const unsigned lane = static_cast<unsigned>(__builtin_ctz(mask));
+          visit(begin + lane, distances[lane] + query_norm);
+          mask &= mask - 1;
+        }
+      }
+      for (; begin < end; ++begin) visit(begin);
+    };
 
-    if (mode == SearchMode::Ann && target.index) {
+    if (mode == SearchMode::Ann && target.index && !primary_tiebreak) {
       const auto &entries = target.index->ordered;
       auto right = entries.lower_bound({query.front(), std::numeric_limits<std::int64_t>::min()});
       auto left = std::make_reverse_iterator(right);
@@ -1191,32 +1363,16 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
                (!cache->equality || cache->equality->column == p.column);
       });
       if (filter == predicates.end()) {
-        std::size_t i = 0;
         if (predicates.empty() && blocks.block) {
-          for (; i < limit && i < cache->keys.size(); ++i) consider_cached(i);
-          const auto next_block = (i + quantized_block_rows - 1) / quantized_block_rows * quantized_block_rows;
-          const std::size_t first_block = std::min(next_block, cache->block_rows);
-          for (; i < first_block; ++i) consider_cached(i);
-          for (; i < cache->block_rows; i += quantized_block_rows) {
-            const double bound = cutoff - query_norm;
-            if (bound > 254.0 * 254.0 * query.size()) {
-              for (std::size_t j = 0; j < quantized_block_rows; ++j) consider_cached(i + j);
-              continue;
-            }
-            auto mask = blocks.block(cache->quantized.data() + i * query.size(),
-                                     cache->quantized_norms.data() + i, query_quantized.data(), query.size(),
-                                     static_cast<std::int32_t>(std::ceil(bound)));
-            for (std::size_t j = 0; mask != 0; ++j, mask >>= 1) {
-              if (mask & 1) consider_cached(i + j);
-            }
+          scan_blocks(0, cache->keys.size(), nullptr);
+        } else {
+          for (std::size_t i = 0; i < cache->keys.size(); ++i) {
+            if (predicates.empty() || matches_cached(i)) consider_cached(i);
           }
-        }
-        for (; i < cache->keys.size(); ++i) {
-          if (predicates.empty() || matches_cached(i)) consider_cached(i);
         }
       } else {
         if (!cache->equality) {
-          CachedEquality index{filter->column, {}};
+          CachedEquality index{filter->column, {}, {}};
           index.rows.resize(cache->keys.size());
           std::iota(index.rows.begin(), index.rows.end(), std::uint32_t{0});
           const auto sort = [&](const auto &values) {
@@ -1235,8 +1391,43 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
             [&](auto index, const Value &value) { return compare_scalar(index, filter->column, value) < 0; });
         const auto end = std::upper_bound(first, indices.end(), filter->value,
             [&](const Value &value, auto index) { return compare_scalar(index, filter->column, value) > 0; });
-        for (auto it = first; it != end; ++it) {
-          if (predicates.size() == 1 || matches_cached(*it, &*filter)) consider_cached(*it);
+        if (blocks.block && cache->can_group_quantized && cache->equality->positions.empty() &&
+            end - first >= 4 * static_cast<std::ptrdiff_t>(quantized_block_rows)) {
+          // Reorder the byte cache in place by the scalar key. Keep row identity
+          // and the original vectors in primary-key order.
+          auto &positions = cache->equality->positions;
+          std::vector<bool> visited(indices.size());
+          std::vector<std::int8_t> saved(query.size());
+          positions.resize(indices.size());
+          for (std::size_t i = 0; i < indices.size(); ++i) positions[indices[i]] = i;
+          const auto offset = [&](std::size_t position, std::size_t coordinate) {
+            return quantized_offset(position, coordinate, query.size(), cache->block_rows);
+          };
+          for (std::size_t start = 0; start < indices.size(); ++start) {
+            if (visited[start] || indices[start] == start) continue;
+            const auto norm = cache->quantized_norms[start];
+            for (std::size_t i = 0; i < query.size(); ++i) saved[i] = cache->quantized[offset(start, i)];
+            auto destination = start;
+            while (indices[destination] != start) {
+              const auto source = indices[destination];
+              for (std::size_t i = 0; i < query.size(); ++i) {
+                cache->quantized[offset(destination, i)] = cache->quantized[offset(source, i)];
+              }
+              cache->quantized_norms[destination] = cache->quantized_norms[source];
+              visited[destination] = true;
+              destination = source;
+            }
+            for (std::size_t i = 0; i < query.size(); ++i) cache->quantized[offset(destination, i)] = saved[i];
+            cache->quantized_norms[destination] = norm;
+            visited[destination] = true;
+          }
+        }
+        if (blocks.block && !cache->equality->positions.empty()) {
+          scan_blocks(first - indices.begin(), end - indices.begin(), &*filter);
+        } else {
+          for (auto it = first; it != end; ++it) {
+            if (predicates.size() == 1 || matches_cached(*it, &*filter)) consider_cached(*it);
+          }
         }
       }
     } else {
@@ -1252,12 +1443,18 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         continue;
       }
       if (sink) {
-        const auto *vector = cache->vectors.data() + entry.index * query.size();
+        const float *vector = nullptr;
         projected.clear();
         for (const auto &expression : projection) {
           if (expression.query) {
-            projected.emplace_back(std::sqrt(squared_distance(vector, *expression.query)));
+            if (*expression.query == query) {
+              projected.emplace_back(entry.distance);
+            } else {
+              if (!vector) vector = cached_vector(entry.index);
+              projected.emplace_back(std::sqrt(squared_distance(vector, *expression.query)));
+            }
           } else if (expression.column == vector_column) {
+            if (!vector) vector = cached_vector(entry.index);
             projected.emplace_back(Vector(vector, vector + query.size()));
           } else if (expression.column == target.primary_key) {
             projected.emplace_back(entry.key);

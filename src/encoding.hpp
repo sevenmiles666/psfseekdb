@@ -45,7 +45,7 @@ inline void put_floats(Bytes &out, const float *values, std::size_t count) {
 #endif
 }
 
-enum class VectorEncoding { Full, Half, Packed };
+enum class VectorEncoding { Full, Half, Packed, ScaledByte };
 
 inline std::uint32_t float_bits(float value) {
   std::uint32_t bits;
@@ -63,15 +63,49 @@ inline std::size_t vector_bytes(VectorEncoding encoding, std::size_t count) {
   switch (encoding) {
     case VectorEncoding::Half: return count * 2;
     case VectorEncoding::Packed: return 1 + count * 3 + (count + 1) / 2;
+    case VectorEncoding::ScaledByte: return 1 + count;
     case VectorEncoding::Full: return count * 4;
   }
   throw std::logic_error("unknown vector encoding");
+}
+
+inline int scaled_byte_exponent(std::uint32_t maximum) {
+  return maximum == 0 ? 0 : static_cast<int>(maximum >> 23) - 133;
+}
+
+inline bool exact_scaled_byte(float value, float inverse, int &code) {
+  const double scaled = static_cast<double>(value) * inverse;
+  if (!(scaled >= -127.0 && scaled <= 127.0)) return false;
+  code = static_cast<int>(scaled);
+  return scaled == static_cast<double>(code);
+}
+
+inline bool put_scaled_bytes(Bytes &out, const float *values, std::size_t count, std::uint32_t maximum) {
+  // Choose a power-of-two step that puts the largest magnitude in [64, 128).
+  const int exponent = scaled_byte_exponent(maximum);
+  if (exponent < -126 || exponent > 121) return false;
+  const float inverse = float_from_bits(std::uint32_t(127 - exponent) << 23);
+  const auto start = out.size();
+  out.resize(start + vector_bytes(VectorEncoding::ScaledByte, count));
+  out[start] = static_cast<std::uint8_t>(127 + exponent);
+  for (std::size_t i = 0; i < count; ++i) {
+    const auto bits = float_bits(values[i]);
+    int code;
+    if (!exact_scaled_byte(float_from_bits(bits & 0x7fffffffU), inverse, code)) {
+      out.resize(start);
+      return false;
+    }
+    out[start + 1 + i] = static_cast<std::uint8_t>((bits >> 24 & 0x80U) | code);
+  }
+  return true;
 }
 
 inline VectorEncoding put_vector(Bytes &out, const float *values, std::size_t count) {
   // Only encode bit patterns that round-trip exactly, including signed zero.
   // Nonzero values must be normal binary16 numbers with no discarded bits.
   bool half = true;
+  bool scaled = count >= 16;
+  std::uint32_t maximum = 0;
   unsigned min_exponent = 127;
   unsigned max_exponent = 0;
   for (std::size_t i = 0; i < count; ++i) {
@@ -79,11 +113,17 @@ inline VectorEncoding put_vector(Bytes &out, const float *values, std::size_t co
     const auto magnitude = bits & 0x7fffffffU;
     half &= magnitude == 0 || (magnitude >= 0x38800000U && magnitude <= 0x477fe000U &&
                                (magnitude & 0x1fffU) == 0);
+    if (scaled && magnitude != 0) {
+      // A normal number needs at most seven significant bits for this encoding.
+      scaled = magnitude >= 0x00800000U && (magnitude & 0x1ffffU) == 0;
+      if (magnitude > maximum) maximum = magnitude;
+    }
     const auto exponent = magnitude >> 24;
     if (exponent < min_exponent) min_exponent = exponent;
     if (exponent > max_exponent) max_exponent = exponent;
-    if (!half && max_exponent - min_exponent > 7) break;
+    if (!half && !scaled && max_exponent - min_exponent > 7) break;
   }
+  if (scaled && put_scaled_bytes(out, values, count, maximum)) return VectorEncoding::ScaledByte;
   if (half) {
     for (std::size_t i = 0; i < count; ++i) {
       const auto bits = float_bits(values[i]);
@@ -190,6 +230,17 @@ public:
       floats(values, count);
     } else if (encoding == VectorEncoding::Half) {
       for (std::size_t i = 0; i < count; ++i) values[i] = f16();
+    } else if (encoding == VectorEncoding::ScaledByte) {
+      const std::uint32_t exponent = byte();
+      if (exponent == 0 || exponent > 248) throw std::runtime_error("invalid scaled vector in journal");
+      require(count);
+      const auto *codes = input_.data() + position_;
+      const auto scale = float_from_bits(exponent << 23);
+      for (std::size_t i = 0; i < count; ++i) {
+        const auto magnitude = static_cast<float>(codes[i] & 0x7fU) * scale;
+        values[i] = (codes[i] & 0x80U) ? -magnitude : magnitude;
+      }
+      position_ += count;
     } else {
       const std::uint32_t base = byte();
       const auto component = [&](std::uint32_t code) {
