@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <utility>
 #include <vector>
 
@@ -20,8 +21,8 @@ public:
 
   Request request(std::string_view default_mode) {
     Request result;
-    result.search_mode = std::string(default_mode);
-    object([&](const std::string &key) {
+    result.search_mode = default_mode;
+    object([&](std::string_view key) {
       if (key == "id") {
         skip_space();
         const std::size_t start = position_;
@@ -74,33 +75,52 @@ private:
   void object(Field field) {
     expect('{');
     if (take('}')) return;
-    std::vector<std::string> keys;
+    std::vector<RequestText> keys;
     do {
       auto key = string();
-      if (std::find(keys.begin(), keys.end(), key) != keys.end()) invalid("duplicate JSON key");
+      const auto name = request_text(key);
+      if (std::any_of(keys.begin(), keys.end(), [&](const RequestText &previous) {
+            return request_text(previous) == name;
+          })) invalid("duplicate JSON key");
       expect(':');
-      field(key);
+      field(name);
       keys.push_back(std::move(key));
     } while (take(','));
     expect('}');
   }
 
-  std::optional<std::string> text_field() {
+  std::optional<RequestText> text_field() {
     skip_space();
     if (current() == '"') return string();
     value(0);
     return std::nullopt;
   }
 
-  std::string string() {
+  RequestText string() {
     expect('"');
     std::string result;
     std::size_t start = position_;
     while (position_ < text_.size()) {
+      if (text_.size() - position_ >= sizeof(std::uint64_t)) {
+        std::uint64_t word;
+        std::memcpy(&word, text_.data() + position_, sizeof(word));
+        constexpr auto has_zero_byte = [](std::uint64_t bytes) {
+          return ((bytes - 0x0101010101010101ULL) & ~bytes & 0x8080808080808080ULL) != 0;
+        };
+        // The three high bits are all zero for JSON control bytes.
+        if (!has_zero_byte(word & 0xe0e0e0e0e0e0e0e0ULL) &&
+            !has_zero_byte(word ^ 0x2222222222222222ULL) &&
+            !has_zero_byte(word ^ 0x5c5c5c5c5c5c5c5cULL)) {
+          position_ += sizeof(word);
+          continue;
+        }
+      }
       const auto ch = static_cast<unsigned char>(read());
       if (ch < 0x20) invalid("unescaped JSON control character");
       if (ch == '"' || ch == '\\') {
-        result.append(text_.substr(start, position_ - start - 1));
+        const auto segment = text_.substr(start, position_ - start - 1);
+        if (ch == '"' && result.empty()) return segment;
+        result.append(segment);
         if (ch == '"') return result;
         append_escape(result);
         start = position_;
@@ -202,7 +222,7 @@ private:
       case 'f': literal("false"); return;
       case 'n': literal("null"); return;
       case '{':
-        object([&](const std::string &) { value(depth + 1); });
+        object([&](std::string_view) { value(depth + 1); });
         return;
       case '[':
         ++position_;

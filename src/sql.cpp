@@ -4,6 +4,7 @@
 #include <charconv>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <limits>
 #include <set>
 #include <utility>
@@ -15,7 +16,17 @@ SqlError::SqlError(std::string code, const std::string &message)
 
 std::size_t unicode_length(std::string_view text) {
   std::size_t count = 0;
-  for (std::size_t i = 0; i < text.size(); ++count) {
+  std::size_t i = 0;
+  while (i < text.size()) {
+    while (text.size() - i >= sizeof(std::uint64_t)) {
+      std::uint64_t bytes;
+      std::memcpy(&bytes, text.data() + i, sizeof(bytes));
+      if ((bytes & 0x8080808080808080ULL) != 0) break;
+      i += sizeof(bytes);
+      count += sizeof(bytes);
+    }
+    if (i == text.size()) break;
+    ++count;
     const unsigned char first = text[i++];
     if (first < 0x80) {
       continue;
@@ -139,6 +150,54 @@ public:
     throw SqlError("SYNTAX", "unexpected character at byte " + std::to_string(start));
   }
 
+  Vector vector_body() {
+    const auto skip_spaces = [&] {
+      while (is_space(peek())) ++position_;
+    };
+    Vector result;
+    skip_spaces();
+    if (peek() != ']') {
+      const char *const end = input_.data() + input_.size();
+      result.reserve(32);
+      for (;;) {
+        skip_spaces();
+        const char sign = peek();
+        if (!is_digit(sign) && sign != '+' && sign != '-' && sign != '.') {
+          throw SqlError("SYNTAX", "expected vector component");
+        }
+        const char *const start = input_.data() + position_;
+        const char *const first = start + (sign == '+' ? 1 : 0);
+        float value = 0;
+        const auto parsed = std::from_chars(first, end, value);
+        if ((parsed.ec != std::errc{} && parsed.ec != std::errc::result_out_of_range) ||
+            (sign == '+' && *first == '-') ||
+            (parsed.ptr != end && (*parsed.ptr == 'e' || *parsed.ptr == 'E'))) {
+          throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
+        }
+        if (parsed.ec == std::errc::result_out_of_range) {
+          // strtof preserves the existing rounding behavior below the float32 range.
+          const std::string text(start, parsed.ptr);
+          char *last = nullptr;
+          value = std::strtof(text.c_str(), &last);
+          if (last != text.data() + text.size() || !std::isfinite(value)) {
+            throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
+          }
+        }
+        if (!std::isfinite(value)) {
+          throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
+        }
+        result.push_back(value);
+        position_ = static_cast<std::size_t>(parsed.ptr - input_.data());
+        skip_spaces();
+        if (peek() != ',') break;
+        ++position_;
+      }
+    }
+    if (peek() != ']') throw SqlError("SYNTAX", "expected ]");
+    ++position_;
+    return result;
+  }
+
 private:
   char peek() const { return position_ < input_.size() ? input_[position_] : '\0'; }
 
@@ -147,6 +206,18 @@ private:
   }
 
   Token quoted(char delimiter) {
+    if (delimiter != '`') {
+      const std::size_t closing = input_.find(delimiter, position_);
+      if (closing != std::string_view::npos &&
+          (closing + 1 == input_.size() || input_[closing + 1] != delimiter)) {
+        const auto text = input_.substr(position_, closing - position_);
+        if (text.find('\\') == std::string_view::npos) {
+          unicode_length(text);
+          position_ = closing + 1;
+          return {TokenKind::Text, std::string(text)};
+        }
+      }
+    }
     std::string value;
     while (position_ < input_.size()) {
       char ch = input_[position_++];
@@ -248,28 +319,9 @@ public:
   }
 
   Vector vector() {
-    expect("[");
-    Vector result;
-    if (!take("]")) {
-      do {
-        const auto number = consume_number("vector component");
-        const char *last = number.data() + number.size();
-        const char *first = number.data() + (number.front() == '+' ? 1 : 0);
-        float value = 0;
-        const auto parsed = std::from_chars(first, last, value);
-        if (parsed.ec != std::errc{} || parsed.ptr != last) {
-          // Keep strtof rounding for components below the smallest float32 subnormal.
-          const std::string text(number);
-          char *end = nullptr;
-          value = std::strtof(text.c_str(), &end);
-          if (end != text.data() + text.size() || !std::isfinite(value)) {
-            throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
-          }
-        }
-        result.push_back(value);
-      } while (take(","));
-      expect("]");
-    }
+    if (token_.kind != TokenKind::Symbol || token_.text != "[") throw SqlError("SYNTAX", "expected [");
+    Vector result = lexer_.vector_body();
+    advance();
     return result;
   }
 

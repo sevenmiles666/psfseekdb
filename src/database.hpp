@@ -64,24 +64,23 @@ private:
     std::optional<StoredRow> previous;
   };
 
-  struct CachedRow {
-    std::int64_t key;
-    RecordRef reference;
-  };
-
   struct CachedEquality {
     std::size_t column;
     std::vector<std::uint32_t> rows;
   };
 
+  using CachedColumn = std::variant<std::monostate, std::vector<std::int64_t>, std::vector<std::string>>;
+
   struct SearchCache {
     std::uint32_t table;
-    std::vector<CachedRow> rows;
+    std::vector<std::int64_t> keys;
     Vector vectors;
-    std::vector<Value> scalars;
+    std::vector<CachedColumn> scalars;
     std::optional<CachedEquality> equality;
     double quantization_step;
     std::vector<std::int8_t> quantized;
+    std::vector<std::int32_t> quantized_norms;
+    std::size_t block_rows;
   };
 
   void recover();
@@ -93,7 +92,7 @@ private:
   void transaction(Transaction command);
 
   Table &table(const std::string &name);
-  float read_projection(const Table &table, Reader &row) const;
+  float read_projection(const Table &table, Reader &row, VectorEncoding encoding) const;
   void rebuild_index(Table &table);
   void set_row(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay);
   void invalidate_cache(std::uint32_t table);

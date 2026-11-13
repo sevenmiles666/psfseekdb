@@ -56,11 +56,12 @@ def main():
     parser.add_argument("--candidate", type=Path)
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--seed", type=int, default=20261109)
+    parser.add_argument("--vector-distribution", choices=("grid", "continuous"), default="grid")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.rounds < 1:
         parser.error('--rounds must be positive')
-    inserts, queries = input_statements(*dataset(args.seed))
+    inserts, queries = input_statements(*dataset(args.seed, args.vector_distribution))
     binaries = [("reference", args.reference)]
     if args.candidate:
         binaries.append(("candidate", args.candidate))
@@ -84,7 +85,8 @@ def main():
                           for name in ("write", "unfiltered", "filtered")}
         summary[label]["query_total_wall"] = median(
             record[label]["unfiltered"]["wall"] + record[label]["filtered"]["wall"] for record in rounds)
-    report = {"rows": ROWS, "queries": QUERIES, "seed": args.seed, "same_results_sha256": signature,
+    report = {"rows": ROWS, "queries": QUERIES, "seed": args.seed, "distribution": args.vector_distribution,
+              "same_results_sha256": signature,
               "rounds": rounds, "summary": summary}
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2), flush=True)

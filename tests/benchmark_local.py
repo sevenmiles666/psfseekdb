@@ -39,12 +39,20 @@ def fresh_volume():
         docker("volume", "rm", name)
 
 
-def dataset(seed):
+def dataset(seed, vector_distribution="grid"):
     rng = random.Random(seed)
     buckets = [rng.randrange(16) for _ in range(ROWS)]
-    vectors = [[rng.randrange(-32, 33) / 8 for _ in range(DIMENSION)] for _ in range(ROWS)]
-    queries = [(rng.randrange(16) if i % 2 else -1,
-                [rng.randrange(-32, 33) / 8 for _ in range(DIMENSION)]) for i in range(QUERIES)]
+
+    def grid():
+        return [rng.randrange(-32, 33) / 8 for _ in range(DIMENSION)]
+
+    def continuous():
+        values = [rng.uniform(-4, 4) for _ in range(DIMENSION)]
+        return list(struct.unpack(f"<{DIMENSION}f", struct.pack(f"<{DIMENSION}f", *values)))
+
+    vector = continuous if vector_distribution == "continuous" else grid
+    vectors = [vector() for _ in range(ROWS)]
+    queries = [(rng.randrange(16) if i % 2 else -1, vector()) for i in range(QUERIES)]
     return buckets, vectors, queries
 
 
@@ -112,7 +120,10 @@ def run_write(image, helper, inserts, buckets, vectors):
         with Server(args, None, MEMORY, volume=volume) as db:
             rows, count, error = db.sql("SELECT id,bucket,v FROM vectors ORDER BY id;")
             assert count == len(rows) == ROWS and error is None
-            assert all(row == [i, buckets[i], vectors[i]] for i, row in enumerate(rows))
+            for i, row in enumerate(rows):
+                key, bucket, vector = row
+                assert key == i and bucket == buckets[i]
+                assert struct.pack(f"<{DIMENSION}f", *vector) == struct.pack(f"<{DIMENSION}f", *vectors[i])
     return {"seconds": seconds, "durability_and_content_passed": True, **measured}
 
 
@@ -206,13 +217,14 @@ def main():
     parser.add_argument("--probe", type=Path, required=True)
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--seed", type=int, default=20261109)
+    parser.add_argument("--vector-distribution", choices=("grid", "continuous"), default="grid")
     parser.add_argument("--index-exact", action="store_true", help="Create the same SQL index in all query modes")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.rounds < 1:
         parser.error("--rounds must be positive")
     helper = args.probe.resolve(strict=True)
-    buckets, vectors, queries = dataset(args.seed)
+    buckets, vectors, queries = dataset(args.seed, args.vector_distribution)
     inserts, statements = input_statements(buckets, vectors, queries)
     truth, input_hash = exact_truth(args.candidate_image, helper, buckets, vectors, queries)
     print(f"Independent oracle ready: {ROWS} rows × {DIMENSION}, {QUERIES} queries", flush=True)
@@ -220,7 +232,8 @@ def main():
               "measurement": "Two CPUs, 64 MiB, no swap, disconnected containers with fresh Docker volumes. "
               "io.stat is for the volume backing device shared with image storage. "
               "memory.peak includes one final probe process. No host cache reset.",
-              "seed": args.seed, "dataset_sha256": input_hash, "rows": ROWS,
+              "seed": args.seed, "vector_distribution": args.vector_distribution,
+              "dataset_sha256": input_hash, "rows": ROWS,
               "dimension": DIMENSION, "queries": QUERIES, "top_k": 10,
               "index_exact": args.index_exact, "rounds": [],
               "images": {mode: docker("image", "inspect", image, "--format", "{{.Id}}").decode().strip()

@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import threading
 import uuid
+import zlib
 
 
 class Server:
@@ -317,7 +318,6 @@ def check_exact_oracle(args, directory):
 
 def check_topk_rounding(args, directory):
     rng = random.Random(20261112)
-    dimension = 129
 
     def f32(value):
         return struct.unpack("<f", struct.pack("<f", value))[0]
@@ -330,11 +330,18 @@ def check_topk_rounding(args, directory):
         return total
 
     with Server(args, directory) as db:
-        for table, scale, size in (("ordinary", 1.0, 2200), ("tiny", 4e-23, 39), ("large", 3e38, 39)):
+        workloads = (("blocks", 1.0, 2061, 128), ("ordinary", 1.0, 2200, 129),
+                     ("tiny", 4e-23, 39, 129), ("large", 3e38, 39, 129))
+        for table, scale, size, dimension in workloads:
             def vector():
                 return [f32(rng.uniform(-1.0, 1.0) * scale) for _ in range(dimension)]
 
             data = [vector() for _ in range(size)]
+            if table == "blocks":
+                data[3] = [-1.0] * dimension
+                data[4] = [1.0] * dimension
+                data[8] = data[0]
+                data[-1] = data[0]
             data[6] = data[0]
             db.ok(f"CREATE TABLE {table} (id BIGINT PRIMARY KEY, bucket BIGINT, tag VARCHAR(8), "
                   f"v VECTOR({dimension}));")
@@ -353,6 +360,9 @@ def check_topk_rounding(args, directory):
                        ("", lambda key: True, vector())]
             if table == "ordinary":
                 queries.append(("", lambda key: True, [2.0, *data[0][1:]]))
+            if table == "blocks":
+                queries.append(("", lambda key: True, data[0]))
+                queries.append(("", lambda key: True, data[3]))
             for where, eligible, query in queries:
                 expected = sorted((math.sqrt(squared_distance(v, query)), key)
                                   for key, v in enumerate(data) if eligible(key))[:5]
@@ -372,6 +382,65 @@ def check_topk_rounding(args, directory):
         db.query(rounded + ";", [[1, 1.0], [2, 1.0]])
         db.query(rounded + " DESC;", [[1, 1.0], [2, 1.0]])
     print("Exact TopK passed integer screening, FP32 ties, subnormals, overflow and filter cases", flush=True)
+
+
+def check_wal_vector_formats(args, directory, reference=None):
+    schema = "CREATE TABLE storage (label VARCHAR(16), v VECTOR(17), id BIGINT PRIMARY KEY, bucket BIGINT);"
+    half = [-0.0, 65504.0, 2**-14, *([0.125, -3.5] * 7)]
+    packed = [(-1)**i * (0.1 + i * 0.03125) for i in range(17)]
+    full = [1e-39, 3e38, *([0.2] * 15)]
+    rows = [half, packed, full]
+    packed_bits = lambda values: struct.pack("<17f", *values)
+    query = "SELECT v FROM storage ORDER BY id;"
+
+    def insert(db, key):
+        db.ok(f"INSERT INTO storage VALUES ('记录😀',{json.dumps(rows[key])},{key},{key % 2});", 1)
+
+    def check(db):
+        actual, count, error = db.sql(query)
+        assert error is None and count == 3
+        # JSON permits -0 and the Python parser returns that spelling as integer zero.
+        assert [packed_bits(row[0]) for row in actual] == [packed_bits([abs(v) if v == 0 else v for v in vector])
+                                                          for vector in rows]
+        zeros = json.dumps([0] * 17)
+        db.query(f"SELECT id,bucket,label FROM storage WHERE label='记录😀' AND bucket=0 "
+                 f"ORDER BY L2_DISTANCE(v,{zeros}) LIMIT 2;", [[0, 0, "记录😀"], [2, 0, "记录😀"]])
+
+    with Server(reference or args, directory) as db:
+        db.ok(schema)
+        insert(db, 2)
+        db.ok("CREATE VECTOR INDEX formats ON storage(v);")
+    with Server(args, directory) as db:
+        insert(db, 0)
+        insert(db, 1)
+        check(db)
+        db.ok("BEGIN;")
+        db.ok(f"UPDATE storage SET v={json.dumps(full)} WHERE id=1;", 1)
+        db.ok("DELETE FROM storage WHERE id=0;", 1)
+        db.ok("ROLLBACK;")
+        check(db)
+        db.ok("BEGIN;")
+        db.ok("UPDATE storage SET label='pending😀' WHERE id=2;", 1)
+        db.stop(crash=True)
+    with Server(args, directory, mode="ann") as db:
+        check(db)
+
+    # Check committed frame kinds so the comparison exercises every codec.
+    journal = (directory / "store.wal").read_bytes()
+    kinds = set()
+    offset = 8
+    while offset < len(journal):
+        size, crc = struct.unpack_from("<II", journal, offset)
+        frame = offset + 8
+        assert zlib.crc32(journal[frame:frame + size]) == crc
+        kind = journal[frame]
+        kinds.add(kind)
+        if kind == 6:
+            text_size = struct.unpack_from("<I", journal, frame + 13)[0]
+            assert struct.unpack_from("<H", journal, frame + 17 + text_size)[0] == 0x8000
+        offset += 8 + size
+    assert offset == len(journal) and {2, 6, 7} <= kinds
+    print("Mixed vector WAL encodings survived bitwise round-trip, rollback and crash recovery", flush=True)
 
 
 def check_index(args, directory):
@@ -461,12 +530,16 @@ def main():
     launch = parser.add_mutually_exclusive_group(required=True)
     launch.add_argument("--binary", type=Path)
     launch.add_argument("--image")
+    parser.add_argument("--reference-binary", type=Path, help="seed the mixed-format recovery test using an older build")
     parser.add_argument("--large", action="store_true", help="also use the 32 MiB Docker memory limit case")
     args = parser.parse_args()
     if args.large and not args.image:
         parser.error("--large requires --image")
     if args.binary:
         args.binary = args.binary.resolve(strict=True)
+    reference = None
+    if args.reference_binary:
+        reference = argparse.Namespace(image=None, binary=args.reference_binary.resolve(strict=True))
     with tempfile.TemporaryDirectory(prefix="mvdb-check-") as work:
         root = Path(work).resolve()
         check_protocol(args, root / "protocol")
@@ -475,6 +548,7 @@ def main():
         check_crash(args, root / "crash")
         check_exact_oracle(args, root / "oracle")
         check_topk_rounding(args, root / "topk_rounding")
+        check_wal_vector_formats(args, root / "wal_vector_formats", reference)
         check_index(args, root / "index")
         if args.large:
             check_disk_budget(args, root / "large")

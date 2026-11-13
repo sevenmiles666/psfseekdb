@@ -45,6 +45,82 @@ inline void put_floats(Bytes &out, const float *values, std::size_t count) {
 #endif
 }
 
+enum class VectorEncoding { Full, Half, Packed };
+
+inline std::uint32_t float_bits(float value) {
+  std::uint32_t bits;
+  std::memcpy(&bits, &value, sizeof(bits));
+  return bits;
+}
+
+inline float float_from_bits(std::uint32_t bits) {
+  float value;
+  std::memcpy(&value, &bits, sizeof(value));
+  return value;
+}
+
+inline std::size_t vector_bytes(VectorEncoding encoding, std::size_t count) {
+  switch (encoding) {
+    case VectorEncoding::Half: return count * 2;
+    case VectorEncoding::Packed: return 1 + count * 3 + (count + 1) / 2;
+    case VectorEncoding::Full: return count * 4;
+  }
+  throw std::logic_error("unknown vector encoding");
+}
+
+inline VectorEncoding put_vector(Bytes &out, const float *values, std::size_t count) {
+  // Only encode bit patterns that round-trip exactly, including signed zero.
+  // Nonzero values must be normal binary16 numbers with no discarded bits.
+  bool half = true;
+  unsigned min_exponent = 127;
+  unsigned max_exponent = 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    const auto bits = float_bits(values[i]);
+    const auto magnitude = bits & 0x7fffffffU;
+    half &= magnitude == 0 || (magnitude >= 0x38800000U && magnitude <= 0x477fe000U &&
+                               (magnitude & 0x1fffU) == 0);
+    const auto exponent = magnitude >> 24;
+    if (exponent < min_exponent) min_exponent = exponent;
+    if (exponent > max_exponent) max_exponent = exponent;
+    if (!half && max_exponent - min_exponent > 7) break;
+  }
+  if (half) {
+    for (std::size_t i = 0; i < count; ++i) {
+      const auto bits = float_bits(values[i]);
+      const auto magnitude = bits & 0x7fffffffU;
+      std::uint32_t code = (bits >> 16) & 0x8000U;
+      if (magnitude != 0) code |= (magnitude - 0x38000000U) >> 13;
+      out.push_back(static_cast<std::uint8_t>(code));
+      out.push_back(static_cast<std::uint8_t>(code >> 8));
+    }
+    return VectorEncoding::Half;
+  }
+  if (count >= 16 && max_exponent - min_exponent <= 7) {
+    // Pack sign and the upper exponent delta into a nibble per component.
+    // The other 24 bits, including the entire mantissa, are stored verbatim.
+    out.push_back(static_cast<std::uint8_t>(min_exponent));
+    const auto code = [&](std::uint32_t bits) {
+      return ((bits >> 28) & 8) | (((bits >> 24) & 127) - min_exponent);
+    };
+    const auto put_low_bytes = [&](std::uint32_t bits) {
+      out.push_back(static_cast<std::uint8_t>(bits));
+      out.push_back(static_cast<std::uint8_t>(bits >> 8));
+      out.push_back(static_cast<std::uint8_t>(bits >> 16));
+    };
+    for (std::size_t i = 0; i < count; i += 2) {
+      const auto first = float_bits(values[i]);
+      const auto second = i + 1 < count ? float_bits(values[i + 1]) : 0;
+      const auto second_code = i + 1 < count ? code(second) : 0;
+      out.push_back(static_cast<std::uint8_t>(code(first) | (second_code << 4)));
+      put_low_bytes(first);
+      if (i + 1 < count) put_low_bytes(second);
+    }
+    return VectorEncoding::Packed;
+  }
+  put_floats(out, values, count);
+  return VectorEncoding::Full;
+}
+
 inline void put_string(Bytes &out, std::string_view value) {
   if (value.size() > std::numeric_limits<std::uint32_t>::max()) {
     throw std::length_error("value exceeds the on-disk string length range");
@@ -94,6 +170,42 @@ public:
     float value = 0;
     std::memcpy(&value, &bits, sizeof(value));
     return value;
+  }
+
+  float f16() {
+    const std::uint32_t low = byte();
+    const std::uint32_t high = byte();
+    const std::uint32_t half = low | (high << 8);
+    const std::uint32_t magnitude = half & 0x7fffU;
+    if (magnitude != 0 && (magnitude < 0x0400U || magnitude >= 0x7c00U)) {
+      throw std::runtime_error("invalid lossless binary16 value in journal");
+    }
+    std::uint32_t bits = (half & 0x8000U) << 16;
+    if (magnitude != 0) bits |= (magnitude << 13) + 0x38000000U;
+    return float_from_bits(bits);
+  }
+
+  void vector(float *values, std::size_t count, VectorEncoding encoding) {
+    if (encoding == VectorEncoding::Full) {
+      floats(values, count);
+    } else if (encoding == VectorEncoding::Half) {
+      for (std::size_t i = 0; i < count; ++i) values[i] = f16();
+    } else {
+      const std::uint32_t base = byte();
+      const auto component = [&](std::uint32_t code) {
+        const auto exponent = base + (code & 7);
+        if (exponent > 127) throw std::runtime_error("invalid packed exponent in journal");
+        const std::uint32_t low = byte();
+        const std::uint32_t middle = byte();
+        const std::uint32_t high = byte();
+        return float_from_bits(((code & 8) << 28) | (exponent << 24) | (high << 16) | (middle << 8) | low);
+      };
+      for (std::size_t i = 0; i < count; i += 2) {
+        const auto pair = byte();
+        values[i] = component(pair & 15);
+        if (i + 1 < count) values[i + 1] = component(pair >> 4);
+      }
+    }
   }
 
   void floats(float *values, std::size_t count) {

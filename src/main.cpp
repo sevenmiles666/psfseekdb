@@ -78,16 +78,17 @@ void write_query_prefix(std::string_view id, const std::vector<std::string> &col
 }
 
 void execute_request(Database &database, const Request &request) {
-  if (!request.operation || *request.operation != "execute") {
+  if (!request.operation || request_text(*request.operation) != "execute") {
     throw SqlError("UNSUPPORTED_OP", "expected execute or shutdown");
   }
   if (!request.sql) {
     throw SqlError("INVALID_REQUEST", "execute requires a SQL string");
   }
-  if (!request.search_mode || (*request.search_mode != "exact" && *request.search_mode != "ann")) {
+  const auto search_mode = request.search_mode ? request_text(*request.search_mode) : std::string_view{};
+  if (search_mode != "exact" && search_mode != "ann") {
     throw SqlError("INVALID_REQUEST", "search_mode must be exact or ann");
   }
-  const auto mode = *request.search_mode == "ann" ? SearchMode::Ann : SearchMode::Exact;
+  const auto mode = search_mode == "ann" ? SearchMode::Ann : SearchMode::Exact;
   bool first_row = true;
   const auto emit_row = [&](const Row &row) {
     if (!first_row) std::cout << ',';
@@ -97,7 +98,7 @@ void execute_request(Database &database, const Request &request) {
   const auto emit_columns = [&](const std::vector<std::string> &columns) {
     write_query_prefix(request.id, columns);
   };
-  const Execution result = database.execute(*request.sql, emit_row, mode, emit_columns);
+  const Execution result = database.execute(request_text(*request.sql), emit_row, mode, emit_columns);
   if (result.columns.empty()) {
     write_response_prefix(request.id, true);
     std::cout << ",\"affected_rows\":" << result.count;
@@ -116,7 +117,7 @@ int run(const std::filesystem::path &directory, SearchMode default_mode) {
     try {
       const auto request = parse_request(line, default_mode == SearchMode::Ann ? "ann" : "exact");
       id = request.id;
-      if (request.operation && *request.operation == "shutdown") {
+      if (request.operation && request_text(*request.operation) == "shutdown") {
         database.close();
         write_response_prefix(id, true);
         std::cout << "}\n" << std::flush;
