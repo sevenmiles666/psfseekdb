@@ -3,8 +3,8 @@
   "code_base_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
   "canonical_path": "agent/conversation.json",
   "compatibility_path": "conversation.json",
-  "material_sha256": "f5b23eb89252dd6d52829792105f9a0faa35f2f95c9075e1749f7a5d49d1727d",
-  "material_bytes": 65562,
+  "material_sha256": "173252783cba5f4d9889aaffb74600409e75a1a1794e347c75ff821784eda8fa",
+  "material_bytes": 71147,
   "summary_pointer": "/material_summary",
   "historical_top_level_keys": [
     "scope",

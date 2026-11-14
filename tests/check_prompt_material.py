@@ -130,6 +130,32 @@ def check_repository_evidence(repo, material):
     return len(evidence['source_files'])
 
 
+def check_development_traces(material):
+    index = material.get('development_trace_index')
+    if index is None:
+        return 0, 0
+    if index['role'] != 'assistant':
+        raise ValueError('development index must retain assistant attribution')
+    ids = set()
+    references = 0
+    for trace in index['traces']:
+        if trace['id'] in ids:
+            raise ValueError('duplicate development trace id')
+        ids.add(trace['id'])
+        if not trace['result_records']:
+            raise ValueError('development trace needs actual results')
+        for field, role in [('assistant_records', 'assistant'), ('result_records', 'tool')]:
+            for ref in trace[field]:
+                check_reference(material, ref, role)
+                references += 1
+        for ref in trace.get('retrospective_records', []):
+            if not ref['pointer'].endswith('/assistant_retrospective'):
+                raise ValueError('retrospective must reference an assistant retrospective field')
+            check_reference(material, ref)
+            references += 1
+    return len(ids), references
+
+
 def check(repo):
     manifest = load_json((repo / 'agent/material-manifest.json').read_bytes())
     data = (repo / manifest['canonical_path']).read_bytes()
@@ -171,6 +197,7 @@ def check(repo):
         if git_sha != entry['git_blob_sha1'] or hashlib.sha256(body).hexdigest() != entry['sha256']:
             raise ValueError(f'runtime file differs from the manifest: {entry["path"]}')
     repository_sources = check_repository_evidence(repo, material)
+    development_traces, development_references = check_development_traces(material)
     if re.search(rb'(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]+|https://[^\s"<>]+@github\.com', data):
         raise ValueError('credential-like text in learning material')
     if any(key in material for key in ['agent_prompt_score', 'review_status', 'round_scores']):
@@ -184,6 +211,8 @@ def check(repo):
         'historical_fields_preserved': True,
         'runtime_files_checked': len(manifest['runtime_files']),
         'repository_evidence_sources_checked': repository_sources,
+        'development_traces_checked': development_traces,
+        'development_references_checked': development_references,
         'platform_prompt_score_verified': False,
     }
 
