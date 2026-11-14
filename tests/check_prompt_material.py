@@ -49,8 +49,58 @@ def resolve_pointer(document, pointer):
         if re.search(r'~(?![01])', part):
             raise ValueError('invalid JSON pointer escape')
         key = part.replace('~1', '/').replace('~0', '~')
-        value = value[int(key)] if isinstance(value, list) else value[key]
+        if isinstance(value, list):
+            if not re.fullmatch(r'0|[1-9][0-9]*', key):
+                raise ValueError('invalid JSON pointer array index')
+            value = value[int(key)]
+        else:
+            value = value[key]
     return value
+
+
+def check_reference(material, ref, expected_role=None):
+    value = resolve_pointer(material, ref['pointer'])
+    quote = ref['quote']
+    if not isinstance(value, str) or not isinstance(quote, str) or not 0 < len(quote) <= 240 or quote not in value:
+        raise ValueError(f'evidence quote does not match {ref["pointer"]}')
+    if expected_role is not None:
+        parent = ref['pointer'].rsplit('/', 1)[0]
+        role = None
+        while parent:
+            record = resolve_pointer(material, parent)
+            if isinstance(record, dict) and 'role' in record:
+                role = record['role']
+                break
+            parent = parent.rsplit('/', 1)[0]
+        if role != expected_role:
+            raise ValueError(f'evidence role must be {expected_role}: {ref["pointer"]}')
+
+
+def check_learning_episodes(material):
+    ids = set()
+    used_student = set()
+    used_result = set()
+    references = 0
+    for episode in material.get('learning_episodes', []):
+        identity = episode['id']
+        if not isinstance(identity, str) or not identity or identity in ids:
+            raise ValueError('duplicate or empty learning episode id')
+        ids.add(identity)
+        if not episode.get('student_records') or not episode.get('result_records'):
+            raise ValueError('learning episode needs actual student and result records')
+        for field, role, used in [
+            ('student_records', 'user', used_student),
+            ('result_records', 'tool', used_result),
+            ('assistant_records', 'assistant', None),
+        ]:
+            for ref in episode.get(field, []):
+                check_reference(material, ref, role)
+                if used is not None:
+                    if ref['pointer'] in used:
+                        raise ValueError(f'duplicate {field} source across learning episodes')
+                    used.add(ref['pointer'])
+                references += 1
+    return len(ids), references
 
 
 def check(repo):
@@ -70,14 +120,24 @@ def check(repo):
     if not isinstance(summary, str) or not summary.strip():
         raise ValueError('material summary must be a nonempty string')
     for ref in material['evidence_navigation']:
-        value = resolve_pointer(material, ref['pointer'])
-        quote = ref['quote']
-        if not isinstance(value, str) or not isinstance(quote, str) or not 0 < len(quote) <= 240 or quote not in value:
-            raise ValueError(f'evidence quote does not match {ref["pointer"]}')
+        check_reference(material, ref)
+    episodes, episode_references = check_learning_episodes(material)
+    if manifest.get('format') == 'minivectordb-material-manifest-v2' and not episodes:
+        raise ValueError('v2 material needs at least one navigable learning episode')
     history = {key: material[key] for key in manifest['historical_top_level_keys']}
     canonical = json.dumps(history, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
     if hashlib.sha256(canonical).hexdigest() != manifest['historical_payload_sha256']:
         raise ValueError('imported historical fields were changed')
+    if 'imported_source' in manifest:
+        source = manifest['imported_source']
+        restored = {entry['key']: resolve_pointer(material, entry['preserved_at']) for entry in source['fields']}
+        payload = json.dumps(restored, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
+        if hashlib.sha256(payload).hexdigest() != source['canonical_payload_sha256']:
+            raise ValueError('source material was modified or incompletely preserved')
+        if material['submission_context']['repository_snapshot_commit'] != source['commit']:
+            raise ValueError('source commit differs from the manifest')
+        for key in ['current_grade_source', 'participation_record']:
+            check_reference(material, material['submission_context'][key], 'user')
     for entry in manifest['runtime_files']:
         body = (repo / entry['path']).read_bytes()
         git_sha = hashlib.sha1(b'blob ' + str(len(body)).encode() + b'\0' + body).hexdigest()
@@ -91,6 +151,8 @@ def check(repo):
         'status': 'PASS', 'bytes': len(data), 'sha256': digest,
         'both_material_paths_identical': True,
         'references_checked': len(material['evidence_navigation']),
+        'learning_episodes_checked': episodes,
+        'episode_references_checked': episode_references,
         'historical_fields_preserved': True,
         'runtime_files_checked': len(manifest['runtime_files']),
         'platform_prompt_score_verified': False,

@@ -1,10 +1,10 @@
 {
-  "format": "minivectordb-material-manifest-v1",
-  "code_base_commit": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
+  "format": "minivectordb-material-manifest-v2",
+  "code_base_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
   "canonical_path": "agent/conversation.json",
   "compatibility_path": "conversation.json",
-  "material_sha256": "f10cf7e6ed72d5b7f50f59528b58b250e9eb48cae26637e298e1357eb6c369ef",
-  "material_bytes": 35985,
+  "material_sha256": "3d721dc24fc5cd32e5efee8406d7ec1cddcf625081a6eacc296c62d82aabdb22",
+  "material_bytes": 40253,
   "summary_pointer": "/material_summary",
   "historical_top_level_keys": [
     "scope",
@@ -89,5 +89,65 @@
       "sha256": "864f1df835817a3ef659898b604850a72627446adb815121271dcc78be8c928a",
       "mode": "100644"
     }
-  ]
+  ],
+  "imported_source": {
+    "commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+    "material_sha256": "f10cf7e6ed72d5b7f50f59528b58b250e9eb48cae26637e298e1357eb6c369ef",
+    "canonical_payload_sha256": "26f21ed2e7c3ef82c6268a34c00db02e437158d33b84f815d47a5ce7726d508d",
+    "fields": [
+      {
+        "key": "scope",
+        "preserved_at": "/scope"
+      },
+      {
+        "key": "synthetic",
+        "preserved_at": "/synthetic"
+      },
+      {
+        "key": "user_prompts",
+        "preserved_at": "/user_prompts"
+      },
+      {
+        "key": "conversations",
+        "preserved_at": "/conversations"
+      },
+      {
+        "key": "experiments",
+        "preserved_at": "/experiments"
+      },
+      {
+        "key": "limitations",
+        "preserved_at": "/limitations"
+      },
+      {
+        "key": "material_summary",
+        "preserved_at": "/submission_context/previous_material_summary"
+      },
+      {
+        "key": "provenance",
+        "preserved_at": "/provenance"
+      },
+      {
+        "key": "current_review",
+        "preserved_at": "/current_review"
+      },
+      {
+        "key": "evidence_navigation",
+        "preserved_at": "/evidence_navigation"
+      },
+      {
+        "key": "performance_iteration",
+        "preserved_at": "/performance_iteration"
+      },
+      {
+        "key": "compact_storage_iteration",
+        "preserved_at": "/compact_storage_iteration"
+      },
+      {
+        "key": "lossless_vector_iteration",
+        "preserved_at": "/lossless_vector_iteration"
+      }
+    ]
+  },
+  "local_validation_only": true
 }

@@ -1,4 +1,67 @@
 {
+  "material_summary": "本文件是 MiniVectorDB 的实际交互与实验材料，数据库快照为 dccb61e。新增 learning_episodes 将已有的指标质疑、实际结果核对、Agent 更正及用户版本选择串成一条可定位链；这些发言来自同一问题，不拆成多个贡献。历史开发、测试和性能优化记录完整保留，其中技术解释、实验设计和执行主要来自 Agent，不能据此声称学生亲自完成。fd9011a 的 Prompt 原始分 1 和性能原始分 4368 是用户提供的历史成绩，本次没有重新读取到平台明细。本次只修订材料组织和校验，不新增学生发言或编写学生反思，不自定评审分数。实现与测试结果见原 experiments 和各 iteration，原文通过 JSON pointer 导航。",
+  "learning_episodes": [
+    {
+      "id": "metric-comparison-and-version-choice",
+      "topic": "发现旧版正式性能指标更高，要求核对并选择旧版作为后续基础。",
+      "student_records": [
+        {
+          "pointer": "/current_review/records/2/content",
+          "quote": "你看看第二个那个指标还高点"
+        },
+        {
+          "pointer": "/current_review/records/4/content",
+          "quote": "那你就以旧版为底子"
+        }
+      ],
+      "result_records": [
+        {
+          "pointer": "/current_review/experiments/0/output",
+          "quote": "性能评测完成；原始指标 E = 2758.194681"
+        },
+        {
+          "pointer": "/current_review/experiments/1/output",
+          "quote": "性能评测完成；原始指标 E = 378.087631"
+        },
+        {
+          "pointer": "/current_review/experiments/2/output",
+          "quote": "按从高到低排列"
+        }
+      ],
+      "assistant_records": [
+        {
+          "pointer": "/current_review/records/1/content",
+          "quote": "性能评测完成，原始指标 **E = 378.087631**。"
+        },
+        {
+          "pointer": "/current_review/records/3/content",
+          "quote": "我刚才漏了两次对比，新版功能通过不能代表性能提升。"
+        }
+      ],
+      "sequence": "Agent 初次汇报新版本正式结果时没有比较旧版；用户指出第二条指标更高。Agent 核对两条正式记录和题面排序方向，承认遗漏比较并更正结论。用户接着要求以旧版为基础处理 Prompt 问题。实际结果数据在 result_records 所指字符串内，用户本人没有声称执行性能测量或独立推导指标公式。",
+      "attribution": "用户贡献是发现比较遗漏并提出版本选择；公式解释和接口回读属于 Agent／工具来源。",
+      "deduplication": "质疑、核对后的选择和相关正式结果属于同一条链，仅在这里组织一次。"
+    }
+  ],
+  "submission_context": {
+    "local_revision_date": "2026-11-14 Asia/Shanghai",
+    "repository_snapshot_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+    "historical_code_origin": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
+    "current_snapshot_note": "历史 code_base_commit 描述各次迭代的起点，本次材料修订直接叠加 dccb61e 快照，不回退性能实现。",
+    "imported_material_sha256": "f10cf7e6ed72d5b7f50f59528b58b250e9eb48cae26637e298e1357eb6c369ef",
+    "previous_material_summary": "本材料记录 MiniVectorDB 加赛的实际对话与开发实验。用户在历史记录中发现早先提交的性能原始指标 2758.194681 高于另一版，并选择该版本作为修订基础。用户随后确认 fd9011a 的正式性能原始分为 4368、Agent Prompt 原始分为 1，提出继续优化。以 fd9011a 为对照，Agent 测量无损一字节向量编码和等值过滤，两种公开生成的数据各五轮。精确查询的中位耗时分别下降 9.08% 和 5.18%，逐条核对结果以及重启后的记录。用户原话、工具结果和 Agent 的技术取舍按实际来源记录。",
+    "scope_note": "其余原有顶层字段、用户引文、Agent 解释、工具记录原样保留；旧 limitations 的等待状态按相应历史时点解读。",
+    "current_grade_source": {
+      "pointer": "/lossless_vector_iteration/conversations/0/content",
+      "quote": "Agent Prompt评测完成；原始分 = 1，需要提高到至少30.性能原始分现在4368，还要继续提高目标是5800"
+    },
+    "participation_record": {
+      "pointer": "/lossless_vector_iteration/conversations/2/content",
+      "quote": "无，全部靠你发挥"
+    },
+    "participation_note": "上述回答针对是否亲自设计或核对过测试。不能把其后新增的 Agent 实验当成学生本人完成的验证，也不能把性能提升目标改写为已经发生的技术理解。",
+    "verification_scope": "本次校验输入格式、证据引用、角色归属、重复实例、原材料保留及运行文件一致性；没有运行平台评审。"
+  },
   "scope": "2026-11-09 至 2026-11-12 的 MiniVectorDB 开发、自测、官方 JSONL 适配和性能迭代。",
   "synthetic": false,
   "user_prompts": [
@@ -139,7 +202,6 @@
     }
   ],
   "limitations": "用户贡献记录包括赛题材料、失败反馈和榜单截图。实现、测试设计和实验执行由 Agent 完成，独立自测或结果解读需按用户实际参与补充。性能数据来自本地 Docker 对照，数据卷与镜像共用底层设备，峰值内存含页缓存与最终探针，宿主缓存未重置。正式隐藏用例、性能榜指标和 Agent Prompt 分数待平台评测。",
-  "material_summary": "本材料记录 MiniVectorDB 加赛的实际对话与开发实验。用户在历史记录中发现早先提交的性能原始指标 2758.194681 高于另一版，并选择该版本作为修订基础。用户随后确认 fd9011a 的正式性能原始分为 4368、Agent Prompt 原始分为 1，提出继续优化。以 fd9011a 为对照，Agent 测量无损一字节向量编码和等值过滤，两种公开生成的数据各五轮。精确查询的中位耗时分别下降 9.08% 和 5.18%，逐条核对结果以及重启后的记录。用户原话、工具结果和 Agent 的技术取舍按实际来源记录。",
   "provenance": {
     "summary_author": "assistant",
     "code_base_commit": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
