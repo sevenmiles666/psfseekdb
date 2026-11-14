@@ -1,5 +1,5 @@
 {
-  "material_summary": "本文件是 MiniVectorDB 的实际交互与实验材料，数据库快照为 dccb61e。新增 learning_episodes 将已有的指标质疑、实际结果核对、Agent 更正及用户版本选择串成一条可定位链；这些发言来自同一问题，不拆成多个贡献。历史开发、测试和性能优化记录完整保留，其中技术解释、实验设计和执行主要来自 Agent，不能据此声称学生亲自完成。fd9011a 的 Prompt 原始分 1 和性能原始分 4368 是用户提供的历史成绩，本次没有重新读取到平台明细。本次只修订材料组织和校验，不新增学生发言或编写学生反思，不自定评审分数。实现与测试结果见原 experiments 和各 iteration，原文通过 JSON pointer 导航。",
+  "material_summary": "本文件是 MiniVectorDB 的实际交互与实验材料，数据库快照为 dccb61e。新增 learning_episodes 将已有的指标质疑、实际结果核对、Agent 更正及用户版本选择串成一条可定位链；这些发言来自同一问题，不拆成多个贡献。历史开发、测试和性能优化记录完整保留，其中技术解释、实验设计和执行主要来自 Agent，不能据此声称学生亲自完成。fd9011a 的 Prompt 原始分 1 和性能原始分 4368 是用户提供的历史成绩，本次没有重新读取到平台明细。本次只修订材料组织和校验，不新增学生发言或编写学生反思，不自定评审分数。repository_evidence 补充 GitHub 核查：8 个账号关联提交、6 份历史测试报告共 26 轮的数值复算及源码佐证；提交作者与学生理解分开归属，保留连续数据写入约慢 1.4% 的取舍，历史测试未在本次重跑。实现与测试结果见原 experiments 和各 iteration，原文通过 JSON pointer 导航。",
   "learning_episodes": [
     {
       "id": "metric-comparison-and-version-choice",
@@ -61,6 +61,569 @@
     },
     "participation_note": "上述回答针对是否亲自设计或核对过测试。不能把其后新增的 Agent 实验当成学生本人完成的验证，也不能把性能提升目标改写为已经发生的技术理解。",
     "verification_scope": "本次校验输入格式、证据引用、角色归属、重复实例、原材料保留及运行文件一致性；没有运行平台评审。"
+  },
+  "repository_evidence": {
+    "role": "tool",
+    "kind": "repository_history_and_saved_test_report_audit",
+    "audit_date": "2026-11-14 Asia/Shanghai",
+    "repository": "https://github.com/sevenmiles666/psfseekdb",
+    "snapshot_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+    "attribution": "GitHub API 将下列提交关联到 sevenmiles666 账号；账号资料未提供实名。提交关联能证明仓库存在这些改动，不能单凭提交作者断定某位学生独立完成设计、理解或测试。仓库原对话仍按 user／assistant／tool 原角色保存。本节为 Agent 本次查证整理，不新增学生发言，也不把八个提交（含一次合并）计为八条学习实例。",
+    "commits": [
+      {
+        "sha": "590ff199321bc592cd4f3b0260645a70d995fbb3",
+        "github_author_account": "sevenmiles666",
+        "date_utc": "2026-11-09T04:46:57Z",
+        "subject": "feat: bootstrap MiniVectorDB round-two engine",
+        "url": "https://github.com/sevenmiles666/psfseekdb/commit/590ff199321bc592cd4f3b0260645a70d995fbb3",
+        "changed_files": [
+          ".dockerignore",
+          "Dockerfile",
+          "README.md",
+          "agent/conversation.json",
+          "conversation.json",
+          "src/database.cpp",
+          "src/database.hpp",
+          "src/encoding.hpp",
+          "src/journal.cpp",
+          "src/journal.hpp",
+          "src/main.cpp",
+          "src/sql.cpp",
+          "src/sql.hpp",
+          "tests/check_core.py"
+        ],
+        "parent_count": 1
+      },
+      {
+        "sha": "62967c0d741a09ca01f263cc70059df61bebb2c3",
+        "github_author_account": "sevenmiles666",
+        "date_utc": "2026-11-09T05:56:14Z",
+        "subject": "feat: maintain vector indexes and optimize exact TopK",
+        "url": "https://github.com/sevenmiles666/psfseekdb/commit/62967c0d741a09ca01f263cc70059df61bebb2c3",
+        "changed_files": [
+          "README.md",
+          "agent/conversation.json",
+          "src/database.cpp",
+          "src/database.hpp",
+          "src/encoding.hpp",
+          "src/main.cpp",
+          "src/sql.cpp",
+          "src/sql.hpp",
+          "tests/benchmark_local.py",
+          "tests/benchmark_support.cpp",
+          "tests/check_core.py",
+          "tests/round2-benchmark.json"
+        ],
+        "parent_count": 1
+      },
+      {
+        "sha": "001819de55ae299e0cc74be306bea5f8438cae6b",
+        "github_author_account": "sevenmiles666",
+        "date_utc": "2026-11-12T05:28:03Z",
+        "subject": "fix: support official MiniVectorDB JSONL protocol",
+        "url": "https://github.com/sevenmiles666/psfseekdb/commit/001819de55ae299e0cc74be306bea5f8438cae6b",
+        "changed_files": [
+          "Dockerfile",
+          "README.md",
+          "src/database.cpp",
+          "src/database.hpp",
+          "src/main.cpp",
+          "src/request.cpp",
+          "src/request.hpp",
+          "tests/check_core.py"
+        ],
+        "parent_count": 1
+      },
+      {
+        "sha": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
+        "github_author_account": "sevenmiles666",
+        "date_utc": "2026-11-12T05:34:17Z",
+        "subject": "perf: accelerate float32 loads and cached vector search",
+        "url": "https://github.com/sevenmiles666/psfseekdb/commit/c16935a15dcdd5cc3803ff38746ee774e4b948b1",
+        "changed_files": [
+          "README.md",
+          "agent/conversation.json",
+          "src/database.cpp",
+          "src/sql.cpp",
+          "tests/benchmark_local.py",
+          "tests/round2-jsonl-benchmark.json"
+        ],
+        "parent_count": 1
+      },
+      {
+        "sha": "6318dd7fdc7a1f7604bc5044d09805d4fda1a7a3",
+        "github_author_account": "sevenmiles666",
+        "date_utc": "2026-11-12T06:54:55Z",
+        "subject": "perf: prune exact vector scans with bounded quantization",
+        "url": "https://github.com/sevenmiles666/psfseekdb/commit/6318dd7fdc7a1f7604bc5044d09805d4fda1a7a3",
+        "changed_files": [
+          "README.md",
+          "agent/conversation.json",
+          "src/database.cpp",
+          "src/database.hpp",
+          "src/encoding.hpp",
+          "src/journal.cpp",
+          "src/main.cpp",
+          "src/sql.cpp",
+          "tests/benchmark_local.py",
+          "tests/benchmark_native.py",
+          "tests/benchmark_support.cpp",
+          "tests/check_core.py",
+          "tests/round2-race-benchmark.json",
+          "tests/round2-race-native.json"
+        ],
+        "parent_count": 1
+      },
+      {
+        "sha": "9eb5b15446170c0ca001e3fb0907a963a88923e4",
+        "github_author_account": "sevenmiles666",
+        "date_utc": "2026-11-12T07:00:42Z",
+        "subject": "Merge tested MiniVectorDB optimizations with Prompt material repair",
+        "url": "https://github.com/sevenmiles666/psfseekdb/commit/9eb5b15446170c0ca001e3fb0907a963a88923e4",
+        "changed_files": [
+          ".gitattributes",
+          "README.md",
+          "agent/README.md",
+          "agent/conversation.json",
+          "agent/material-manifest.json",
+          "conversation.json",
+          "src/database.cpp",
+          "src/database.hpp",
+          "src/encoding.hpp",
+          "src/journal.cpp",
+          "src/main.cpp",
+          "src/sql.cpp",
+          "tests/benchmark_local.py",
+          "tests/benchmark_native.py",
+          "tests/benchmark_support.cpp",
+          "tests/check_core.py",
+          "tests/check_prompt_material.py",
+          "tests/round2-race-benchmark.json",
+          "tests/round2-race-native.json",
+          "tests/round2-race-vs-c16935a.json"
+        ],
+        "parent_count": 2
+      },
+      {
+        "sha": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
+        "github_author_account": "sevenmiles666",
+        "date_utc": "2026-11-13T06:37:17Z",
+        "subject": "perf: reduce vector WAL and exact search overhead",
+        "url": "https://github.com/sevenmiles666/psfseekdb/commit/fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
+        "changed_files": [
+          "README.md",
+          "agent/README.md",
+          "agent/conversation.json",
+          "agent/material-manifest.json",
+          "conversation.json",
+          "src/database.cpp",
+          "src/database.hpp",
+          "src/encoding.hpp",
+          "src/main.cpp",
+          "src/request.cpp",
+          "src/request.hpp",
+          "src/sql.cpp",
+          "tests/benchmark_local.py",
+          "tests/benchmark_native.py",
+          "tests/check_core.py",
+          "tests/round2-compact-continuous.json",
+          "tests/round2-compact-grid.json"
+        ],
+        "parent_count": 1
+      },
+      {
+        "sha": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+        "github_author_account": "sevenmiles666",
+        "date_utc": "2026-11-13T16:39:46Z",
+        "subject": "perf: compact lossless vectors and group filtered top-k scans",
+        "url": "https://github.com/sevenmiles666/psfseekdb/commit/dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+        "changed_files": [
+          "README.md",
+          "agent/README.md",
+          "agent/conversation.json",
+          "agent/material-manifest.json",
+          "conversation.json",
+          "src/database.cpp",
+          "src/database.hpp",
+          "src/encoding.hpp",
+          "tests/check_core.py",
+          "tests/round2-byte-continuous.json",
+          "tests/round2-byte-grid.json"
+        ],
+        "parent_count": 1
+      }
+    ],
+    "historical_conversation_check": {
+      "snapshots_examined": 6,
+      "unique_older_user_messages": 12,
+      "all_older_user_messages_already_in_latest_material": true,
+      "new_missing_user_messages_found": 0,
+      "pull_requests_found": 0,
+      "issues_found": 0,
+      "commit_comments_found": 0,
+      "scope": "本仓库保存的六版旧材料及 API 返回的 PR、Issue 和提交评论；不涵盖私人聊天或其他仓库。"
+    },
+    "benchmark_audit": {
+      "method": "从仓库保存的原始轮次重新计算中位数并逐轮核对正确性字段；本次没有重新运行数据库工作负载。",
+      "report_count": 6,
+      "paired_rounds": 26,
+      "measurement_limits": "历史报告记录 2 CPU、64 MiB、无 swap、全新数据卷；未清宿主页缓存，io.stat 设备与镜像存储共享，memory.peak 含最终探测进程。不能替代官方评测。",
+      "reports": [
+        {
+          "path": "tests/round2-jsonl-benchmark.json",
+          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-jsonl-benchmark.json",
+          "git_blob_sha1": "e0d116a659a61ecced084d447af0d53b3ed82ae8",
+          "sha256": "ddc59a7ba7ef52b44fc459fdc3ea3b73a25c8fd00577492a5a05c4ddbce8314a",
+          "rounds": 3,
+          "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
+          "distribution": "grid",
+          "rows": 10000,
+          "dimension": 128,
+          "queries": 1000,
+          "top_k": 10,
+          "images": {
+            "baseline": "sha256:511da2a8745c1b91aec191b51da330c9844eda75d72568397d9f312fce97ab44",
+            "candidate": "sha256:55e21129d623797e9f84d5b20c3bb7ebe3d657459bc57163b62d323291cfdd2c"
+          },
+          "medians_recomputed": {
+            "write": {
+              "baseline": {
+                "seconds": 1.2969211999998151,
+                "io_bytes": 5828608,
+                "memory_peak_bytes": 14835712
+              },
+              "candidate": {
+                "seconds": 1.2245911999998498,
+                "io_bytes": 5828608,
+                "memory_peak_bytes": 15327232
+              }
+            },
+            "query": {
+              "baseline": {
+                "seconds": 2.3592173999995794,
+                "io_bytes": 5828608,
+                "memory_peak_bytes": 21102592
+              },
+              "exact": {
+                "seconds": 2.107304600000134,
+                "io_bytes": 5828608,
+                "memory_peak_bytes": 21598208
+              }
+            }
+          },
+          "stored_summaries_match_raw_rounds": true,
+          "all_persisted_content_checks_passed": true,
+          "all_query_content_checks_passed": true,
+          "minimum_recall_at_10": 1.0
+        },
+        {
+          "path": "tests/round2-race-vs-c16935a.json",
+          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-race-vs-c16935a.json",
+          "git_blob_sha1": "cd55582797907ce42adbc91c81fbc4dfd1fa8322",
+          "sha256": "9976fabaad5af3bc63488e22cbdf090c73f889a6cd5072aab90af94aff8d34d9",
+          "rounds": 3,
+          "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
+          "distribution": "grid",
+          "rows": 10000,
+          "dimension": 128,
+          "queries": 1000,
+          "top_k": 10,
+          "images": {
+            "baseline": "sha256:c47963bbcb11f2b83a9f0961156a2b31094824cf8bd51f58d8681cce42260c81",
+            "candidate": "sha256:9e3a769ba053e8b9d78949c07904cc9e0a29b6ba90576d0cea3a2faf2a9fb9e9"
+          },
+          "medians_recomputed": {
+            "write": {
+              "baseline": {
+                "seconds": 0.8788831640003991,
+                "io_bytes": 5828608,
+                "memory_peak_bytes": 14008320
+              },
+              "candidate": {
+                "seconds": 0.798417406000226,
+                "io_bytes": 5828608,
+                "memory_peak_bytes": 13307904
+              }
+            },
+            "query": {
+              "baseline": {
+                "seconds": 1.416001865999533,
+                "io_bytes": 5832704,
+                "memory_peak_bytes": 20303872
+              },
+              "exact": {
+                "seconds": 0.9964962200001537,
+                "io_bytes": 5832704,
+                "memory_peak_bytes": 21147648
+              }
+            }
+          },
+          "stored_summaries_match_raw_rounds": true,
+          "all_persisted_content_checks_passed": true,
+          "all_query_content_checks_passed": true,
+          "minimum_recall_at_10": 1.0
+        },
+        {
+          "path": "tests/round2-compact-grid.json",
+          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-compact-grid.json",
+          "git_blob_sha1": "d71153c09ccee9a05728b9c7503b11cd0e6880ce",
+          "sha256": "83f903a6997791744cb264d8994e3bc67b326acdd7ba661ccfd8bd5cd5fbf520",
+          "rounds": 5,
+          "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
+          "distribution": "grid",
+          "rows": 10000,
+          "dimension": 128,
+          "queries": 1000,
+          "top_k": 10,
+          "images": {
+            "baseline": "sha256:94d0e6357f22491b5e448bed46a256c11bc0a4b930ce301ba7dcf7ba2fd3f98f",
+            "candidate": "sha256:ee9bf6ea589b387649eacfa16f8e58c56896bfdc5540385274b59138cb3ade53"
+          },
+          "medians_recomputed": {
+            "write": {
+              "baseline": {
+                "seconds": 0.793494733999978,
+                "io_bytes": 5828608,
+                "memory_peak_bytes": 13295616
+              },
+              "candidate": {
+                "seconds": 0.7427591880000364,
+                "io_bytes": 3268608,
+                "memory_peak_bytes": 10887168
+              }
+            },
+            "query": {
+              "baseline": {
+                "seconds": 0.9506687690000035,
+                "io_bytes": 5832704,
+                "memory_peak_bytes": 21876736
+              },
+              "exact": {
+                "seconds": 0.927497737000067,
+                "io_bytes": 3272704,
+                "memory_peak_bytes": 17776640
+              }
+            }
+          },
+          "stored_summaries_match_raw_rounds": true,
+          "all_persisted_content_checks_passed": true,
+          "all_query_content_checks_passed": true,
+          "minimum_recall_at_10": 1.0
+        },
+        {
+          "path": "tests/round2-compact-continuous.json",
+          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-compact-continuous.json",
+          "git_blob_sha1": "dda598752f9276a7409cc1e57872d46513edf061",
+          "sha256": "2153ac0a3288b3a29289c36d32ab07dc9fbf70c7b6ec7c74f3cd83b2ce97d592",
+          "rounds": 5,
+          "dataset_sha256": "e877273434950c5977a9cb4aabab9f35da52a3854a6185fa26f8d110b30ad91b",
+          "distribution": "continuous",
+          "rows": 10000,
+          "dimension": 128,
+          "queries": 1000,
+          "top_k": 10,
+          "images": {
+            "baseline": "sha256:94d0e6357f22491b5e448bed46a256c11bc0a4b930ce301ba7dcf7ba2fd3f98f",
+            "candidate": "sha256:ee9bf6ea589b387649eacfa16f8e58c56896bfdc5540385274b59138cb3ade53"
+          },
+          "medians_recomputed": {
+            "write": {
+              "baseline": {
+                "seconds": 0.9644647790000818,
+                "io_bytes": 5828608,
+                "memory_peak_bytes": 13910016
+              },
+              "candidate": {
+                "seconds": 0.8345966860001681,
+                "io_bytes": 5197824,
+                "memory_peak_bytes": 13152256
+              }
+            },
+            "query": {
+              "baseline": {
+                "seconds": 0.9683262260000447,
+                "io_bytes": 5832704,
+                "memory_peak_bytes": 21897216
+              },
+              "exact": {
+                "seconds": 0.9605871599997045,
+                "io_bytes": 5201920,
+                "memory_peak_bytes": 20209664
+              }
+            }
+          },
+          "stored_summaries_match_raw_rounds": true,
+          "all_persisted_content_checks_passed": true,
+          "all_query_content_checks_passed": true,
+          "minimum_recall_at_10": 1.0
+        },
+        {
+          "path": "tests/round2-byte-grid.json",
+          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-byte-grid.json",
+          "git_blob_sha1": "f4001832e81d96b1982ec4545f0da1be72ac5928",
+          "sha256": "2f4982aaa1d226d48cb9124562d3fafd5d2c0761d2cc185d22876fbec5d8511c",
+          "rounds": 5,
+          "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
+          "distribution": "grid",
+          "rows": 10000,
+          "dimension": 128,
+          "queries": 1000,
+          "top_k": 10,
+          "images": {
+            "baseline": "sha256:5b41338988b0af28f30e28953b91861ee89916f0fd9f425fe3b77e2d9adc263e",
+            "candidate": "sha256:bf4308bf22578d95307a7485d8a435d7b84d13b40c322cac7ccac85b969f6327"
+          },
+          "medians_recomputed": {
+            "write": {
+              "baseline": {
+                "seconds": 0.7661099939998621,
+                "io_bytes": 3268608,
+                "memory_peak_bytes": 10653696
+              },
+              "candidate": {
+                "seconds": 0.7457368430000315,
+                "io_bytes": 1994752,
+                "memory_peak_bytes": 9043968
+              }
+            },
+            "query": {
+              "baseline": {
+                "seconds": 0.9976097240000854,
+                "io_bytes": 3272704,
+                "memory_peak_bytes": 17780736
+              },
+              "exact": {
+                "seconds": 0.9069932639999934,
+                "io_bytes": 1998848,
+                "memory_peak_bytes": 11440128
+              }
+            }
+          },
+          "stored_summaries_match_raw_rounds": true,
+          "all_persisted_content_checks_passed": true,
+          "all_query_content_checks_passed": true,
+          "minimum_recall_at_10": 1.0
+        },
+        {
+          "path": "tests/round2-byte-continuous.json",
+          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-byte-continuous.json",
+          "git_blob_sha1": "c2457102c49390974366ce5b3349523b5d47bdc4",
+          "sha256": "dae7ddc3737d2aaf745b235e5492456b94d55e8ecc9a3d261a4cad5e3c02bc64",
+          "rounds": 5,
+          "dataset_sha256": "e877273434950c5977a9cb4aabab9f35da52a3854a6185fa26f8d110b30ad91b",
+          "distribution": "continuous",
+          "rows": 10000,
+          "dimension": 128,
+          "queries": 1000,
+          "top_k": 10,
+          "images": {
+            "baseline": "sha256:5b41338988b0af28f30e28953b91861ee89916f0fd9f425fe3b77e2d9adc263e",
+            "candidate": "sha256:bf4308bf22578d95307a7485d8a435d7b84d13b40c322cac7ccac85b969f6327"
+          },
+          "medians_recomputed": {
+            "write": {
+              "baseline": {
+                "seconds": 0.8689803029999439,
+                "io_bytes": 5197824,
+                "memory_peak_bytes": 12619776
+              },
+              "candidate": {
+                "seconds": 0.8812175440000374,
+                "io_bytes": 5197824,
+                "memory_peak_bytes": 12664832
+              }
+            },
+            "query": {
+              "baseline": {
+                "seconds": 1.0151046720000068,
+                "io_bytes": 5201920,
+                "memory_peak_bytes": 19996672
+              },
+              "exact": {
+                "seconds": 0.9624765639998714,
+                "io_bytes": 5201920,
+                "memory_peak_bytes": 19918848
+              }
+            }
+          },
+          "stored_summaries_match_raw_rounds": true,
+          "all_persisted_content_checks_passed": true,
+          "all_query_content_checks_passed": true,
+          "minimum_recall_at_10": 1.0
+        }
+      ],
+      "tradeoff": "字节编码版 grid 五轮的查询中位数从 0.997609724 秒降至 0.906993264 秒，查询峰值内存中位数从 17780736 降至 11440128 字节。continuous 五轮查询从 1.015104672 降至 0.962476564 秒，但写入从 0.868980303 升至 0.881217544 秒，约慢 1.4%。这些是各报告内基线与候选的本地对照，没有换算成官方 E 或 Prompt 分数。"
+    },
+    "code_and_test_corroboration": [
+      {
+        "path": "src/encoding.hpp",
+        "start_line": 76,
+        "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/src/encoding.hpp#L76",
+        "purpose": "字节编码仅接受可精确缩放的值；不满足条件时由其他编码路径保存。",
+        "excerpt": "inline bool exact_scaled_byte(float value, float inverse, int &code) {\n  const double scaled = static_cast<double>(value) * inverse;\n  if (!(scaled >= -127.0 && scaled <= 127.0)) return false;\n  code = static_cast<int>(scaled);\n  return scaled == static_cast<double>(code);\n}\n\ninline bool put_scaled_bytes(Bytes &out, const float *values, std::size_t count, std::uint32_t maximum) {\n  // Choose a power-of-two step that puts the largest magnitude in [64, 128).\n  const int exponent = scaled_byte_exponent(maximum);\n  if (exponent < -126 || exponent > 121) return false;\n  const float inverse = float_from_bits(std::uint32_t(127 - exponent) << 23);\n  const auto start = out.size();\n  out.resize(start + vector_bytes(VectorEncoding::ScaledByte, count));\n  out[start] = static_cast<std::uint8_t>(127 + exponent);\n  for (std::size_t i = 0; i < count; ++i) {"
+      },
+      {
+        "path": "tests/check_core.py",
+        "start_line": 388,
+        "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/check_core.py#L388",
+        "purpose": "L2 距离经输出舍入后相等的排序回归；核对默认主键次序与显式降序。",
+        "excerpt": "        db.ok(\"CREATE TABLE rounded (id BIGINT PRIMARY KEY, v VECTOR(2));\")\n        db.ok(\"INSERT INTO rounded VALUES (2,[1,0]),(1,[1,0.00000001490116119384765625]);\", 2)\n        rounded = \"SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM rounded ORDER BY d\"\n        db.query(rounded + \" LIMIT 1;\", [[1, 1.0]])\n        db.query(rounded + \";\", [[1, 1.0], [2, 1.0]])\n        db.query(rounded + \" DESC;\", [[1, 1.0], [2, 1.0]])\n        db.query(rounded + \", id ASC LIMIT 1;\", [[1, 1.0]])\n        db.query(rounded + \", id DESC LIMIT 1;\", [[2, 1.0]])"
+      },
+      {
+        "path": "tests/benchmark_local.py",
+        "start_line": 121,
+        "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/benchmark_local.py#L121",
+        "purpose": "独立检查重启后的持久化向量 float32 位模式，而不只检查行数。",
+        "excerpt": "            rows, count, error = db.sql(\"SELECT id,bucket,v FROM vectors ORDER BY id;\")\n            assert count == len(rows) == ROWS and error is None\n            for i, row in enumerate(rows):\n                key, bucket, vector = row\n                assert key == i and bucket == buckets[i]\n                assert struct.pack(f\"<{DIMENSION}f\", *vector) == struct.pack(f\"<{DIMENSION}f\", *vectors[i])\n    return {\"seconds\": seconds, \"durability_and_content_passed\": True, **measured}"
+      }
+    ],
+    "source_files": [
+      {
+        "path": "tests/round2-jsonl-benchmark.json",
+        "git_blob_sha1": "e0d116a659a61ecced084d447af0d53b3ed82ae8",
+        "sha256": "ddc59a7ba7ef52b44fc459fdc3ea3b73a25c8fd00577492a5a05c4ddbce8314a"
+      },
+      {
+        "path": "tests/round2-race-vs-c16935a.json",
+        "git_blob_sha1": "cd55582797907ce42adbc91c81fbc4dfd1fa8322",
+        "sha256": "9976fabaad5af3bc63488e22cbdf090c73f889a6cd5072aab90af94aff8d34d9"
+      },
+      {
+        "path": "tests/round2-compact-grid.json",
+        "git_blob_sha1": "d71153c09ccee9a05728b9c7503b11cd0e6880ce",
+        "sha256": "83f903a6997791744cb264d8994e3bc67b326acdd7ba661ccfd8bd5cd5fbf520"
+      },
+      {
+        "path": "tests/round2-compact-continuous.json",
+        "git_blob_sha1": "dda598752f9276a7409cc1e57872d46513edf061",
+        "sha256": "2153ac0a3288b3a29289c36d32ab07dc9fbf70c7b6ec7c74f3cd83b2ce97d592"
+      },
+      {
+        "path": "tests/round2-byte-grid.json",
+        "git_blob_sha1": "f4001832e81d96b1982ec4545f0da1be72ac5928",
+        "sha256": "2f4982aaa1d226d48cb9124562d3fafd5d2c0761d2cc185d22876fbec5d8511c"
+      },
+      {
+        "path": "tests/round2-byte-continuous.json",
+        "git_blob_sha1": "c2457102c49390974366ce5b3349523b5d47bdc4",
+        "sha256": "dae7ddc3737d2aaf745b235e5492456b94d55e8ecc9a3d261a4cad5e3c02bc64"
+      },
+      {
+        "path": "src/encoding.hpp",
+        "git_blob_sha1": "e4470961ff2e13bb136c815ed5f3b572edadaf94",
+        "sha256": "6171b796b5a5e00b4255f0dcf0d5ad6a299ed89079a67c3eae1366aef90ebc3c"
+      },
+      {
+        "path": "tests/check_core.py",
+        "git_blob_sha1": "39c3b5aa4f300c18847bb73bb1cd112c19b0e29d",
+        "sha256": "37dcf7c50b750b5d364796d0feb97251c95dec10e67ae160d2af3d965b064e92"
+      },
+      {
+        "path": "tests/benchmark_local.py",
+        "git_blob_sha1": "6ee0e83e9f868f1541656f13d2d2238703bc6444",
+        "sha256": "333008f73471b677b056c6f89d5b096e1fbf0b47f2626e21d703ec5ff0877916"
+      }
+    ]
   },
   "scope": "2026-11-09 至 2026-11-12 的 MiniVectorDB 开发、自测、官方 JSONL 适配和性能迭代。",
   "synthetic": false,

@@ -103,6 +103,33 @@ def check_learning_episodes(material):
     return len(ids), references
 
 
+def check_repository_evidence(repo, material):
+    evidence = material.get('repository_evidence')
+    if evidence is None:
+        return 0
+    if evidence['role'] != 'tool' or evidence['snapshot_commit'] != material['submission_context']['repository_snapshot_commit']:
+        raise ValueError('repository evidence attribution or snapshot differs')
+    for entry in evidence['source_files']:
+        body = (repo / entry['path']).read_bytes()
+        git_sha = hashlib.sha1(b'blob ' + str(len(body)).encode() + b'\0' + body).hexdigest()
+        if git_sha != entry['git_blob_sha1'] or hashlib.sha256(body).hexdigest() != entry['sha256']:
+            raise ValueError(f'repository evidence source differs: {entry["path"]}')
+    for excerpt in evidence['code_and_test_corroboration']:
+        lines = (repo / excerpt['path']).read_text().splitlines()
+        start = excerpt['start_line'] - 1
+        expected = excerpt['excerpt'].splitlines()
+        if start < 0 or lines[start:start + len(expected)] != expected:
+            raise ValueError('repository code excerpt differs')
+    for report in evidence['benchmark_audit']['reports']:
+        raw = load_json((repo / report['path']).read_bytes())
+        for phase, variants in report['medians_recomputed'].items():
+            for variant, metrics in variants.items():
+                summary_variant = 'exact' if variant == 'candidate' else variant
+                if raw['summary'][summary_variant][phase + '_median'] != metrics:
+                    raise ValueError('repository benchmark summary differs')
+    return len(evidence['source_files'])
+
+
 def check(repo):
     manifest = load_json((repo / 'agent/material-manifest.json').read_bytes())
     data = (repo / manifest['canonical_path']).read_bytes()
@@ -143,6 +170,7 @@ def check(repo):
         git_sha = hashlib.sha1(b'blob ' + str(len(body)).encode() + b'\0' + body).hexdigest()
         if git_sha != entry['git_blob_sha1'] or hashlib.sha256(body).hexdigest() != entry['sha256']:
             raise ValueError(f'runtime file differs from the manifest: {entry["path"]}')
+    repository_sources = check_repository_evidence(repo, material)
     if re.search(rb'(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]+|https://[^\s"<>]+@github\.com', data):
         raise ValueError('credential-like text in learning material')
     if any(key in material for key in ['agent_prompt_score', 'review_status', 'round_scores']):
@@ -155,6 +183,7 @@ def check(repo):
         'episode_references_checked': episode_references,
         'historical_fields_preserved': True,
         'runtime_files_checked': len(manifest['runtime_files']),
+        'repository_evidence_sources_checked': repository_sources,
         'platform_prompt_score_verified': False,
     }
 
