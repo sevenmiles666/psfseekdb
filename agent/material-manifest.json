@@ -1,10 +1,10 @@
 {
-  "format": "minivectordb-material-manifest-v1",
-  "code_base_commit": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
+  "format": "minivectordb-material-manifest-v2",
+  "code_base_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
   "canonical_path": "agent/conversation.json",
   "compatibility_path": "conversation.json",
-  "material_sha256": "f10cf7e6ed72d5b7f50f59528b58b250e9eb48cae26637e298e1357eb6c369ef",
-  "material_bytes": 35985,
+  "material_sha256": "3ae237531c8a2a6c643846bcbce8537c087a9fa53101c275c1f497b0b5592bf8",
+  "material_bytes": 129458,
   "summary_pointer": "/material_summary",
   "historical_top_level_keys": [
     "scope",
@@ -31,14 +31,14 @@
     },
     {
       "path": "src/database.cpp",
-      "git_blob_sha1": "ee855883390147b3bf13722fc822b14902d0ff3f",
-      "sha256": "0de4ee0e0bc2ba197a3938657b0d0b0da1250ccc781c1693e79919400ce406c3",
+      "git_blob_sha1": "e042419e14d38740c2ba1bd6a239b576db59b0ed",
+      "sha256": "9552cfc8b1f83e7f94904a0baec756cadc6a815a2341a9cd2ceff82b510a2f5c",
       "mode": "100644"
     },
     {
       "path": "src/database.hpp",
-      "git_blob_sha1": "a9cc3842ed6f5386e03a818a0e7724249cee0253",
-      "sha256": "469b61ebcc29d7e1275e7a77b27160a68aae4d065cfc304c7a314c68c89d37f1",
+      "git_blob_sha1": "f408ad5f6b51ef80185952aa6a674ed6b208666e",
+      "sha256": "fba5892711c6a9f6ef4c609febca759063df2daac0e5a4b247c90d02820e9246",
       "mode": "100644"
     },
     {
@@ -49,14 +49,14 @@
     },
     {
       "path": "src/journal.cpp",
-      "git_blob_sha1": "afedcffb37bb668877fb0cce27a3a1698e774c96",
-      "sha256": "95fdc9d384342f98a8a9a0c3028d1325c757cbf7f2fa96ec77a105b286c0dd09",
+      "git_blob_sha1": "4c92531b4892da617e9e1680427372b3264bb2d5",
+      "sha256": "2853fe5905ea1fb704dbb2260b6ee50a5d0fb3840a523413bac8457b4617372a",
       "mode": "100644"
     },
     {
       "path": "src/journal.hpp",
-      "git_blob_sha1": "be89c7801779d97de31d67bb1190618b3313fc06",
-      "sha256": "323bf731acbeb9cead87accbe272d7ffdce40ad3485188331c648407a595dcdc",
+      "git_blob_sha1": "31e89a5cdf59a41a9c4e359eeaa05fc60cb29389",
+      "sha256": "55c93ab0fdc76142c342117df8b863adaf8488755275355ab802e909806c6dda",
       "mode": "100644"
     },
     {
@@ -89,5 +89,118 @@
       "sha256": "864f1df835817a3ef659898b604850a72627446adb815121271dcc78be8c928a",
       "mode": "100644"
     }
-  ]
+  ],
+  "imported_source": {
+    "commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+    "material_sha256": "f10cf7e6ed72d5b7f50f59528b58b250e9eb48cae26637e298e1357eb6c369ef",
+    "canonical_payload_sha256": "26f21ed2e7c3ef82c6268a34c00db02e437158d33b84f815d47a5ce7726d508d",
+    "fields": [
+      {
+        "key": "scope",
+        "preserved_at": "/scope"
+      },
+      {
+        "key": "synthetic",
+        "preserved_at": "/synthetic"
+      },
+      {
+        "key": "user_prompts",
+        "preserved_at": "/user_prompts"
+      },
+      {
+        "key": "conversations",
+        "preserved_at": "/conversations"
+      },
+      {
+        "key": "experiments",
+        "preserved_at": "/experiments"
+      },
+      {
+        "key": "limitations",
+        "preserved_at": "/limitations"
+      },
+      {
+        "key": "material_summary",
+        "preserved_at": "/submission_context/previous_material_summary"
+      },
+      {
+        "key": "provenance",
+        "preserved_at": "/provenance"
+      },
+      {
+        "key": "current_review",
+        "preserved_at": "/current_review"
+      },
+      {
+        "key": "evidence_navigation",
+        "preserved_at": "/evidence_navigation"
+      },
+      {
+        "key": "performance_iteration",
+        "preserved_at": "/performance_iteration"
+      },
+      {
+        "key": "compact_storage_iteration",
+        "preserved_at": "/compact_storage_iteration"
+      },
+      {
+        "key": "lossless_vector_iteration",
+        "preserved_at": "/lossless_vector_iteration"
+      }
+    ]
+  },
+  "local_validation_only": true,
+  "recovered_session_payload_sha256": "15e39f8675822a459bb25be8954a18aa75087303a1f8e87dc0ce46835ce88c7b",
+  "normalized_recovered_outputs": [
+    {
+      "pointer": "/recovered_sessions/0/experiments/0/output",
+      "original_text_sha256": "c25bb31c63ce745c92d7d9173a5a26bd6869c05ed9b38309bda79cd626a33f51",
+      "canonical_json_payload_sha256": "69c5eebeabc3389116096931cea8386bbe153e0df5e78c7ab3415e960de1dfc9"
+    },
+    {
+      "pointer": "/recovered_sessions/0/continuations/0/experiments/0/output",
+      "original_text_sha256": "34e928e8c5256635114afa938cdfa0f779efa4148237f1fac489626b2846ad56",
+      "canonical_json_payload_sha256": "64317d56a5db223c58bf08bd37a47ff7946a5625fd53600128b4f9ede31d8dec"
+    },
+    {
+      "pointer": "/recovered_sessions/0/continuations/0/experiments/1/output",
+      "original_text_sha256": "dc4119e5218c9314a0f71175fdbeb07a2b82c6638cce86c0c65073ef71d2aae3",
+      "canonical_json_payload_sha256": "a30bd45fd590f377e03b9c28356c718ec08ca989810c3052fe2387e0a5e64072"
+    }
+  ],
+  "local_verification_payload_sha256": "b116cc4951bc4d3145e1bd2274644017652ec63645821cdb1fe4a4f3a0a3edb9",
+  "verification_tools": [
+    {
+      "path": "tests/run_learning_experiments.py",
+      "sha256": "e6cf277a4ae62eea6b7e1a83fbe04ae03732b99dcca4840c9a1bdef01b02d196"
+    },
+    {
+      "path": "tests/run_prompt_verification.py",
+      "sha256": "5264559adc82b241e77e537a344e26347693d389b6523fa18a67cc9217b0a95b"
+    },
+    {
+      "path": "tests/prompt_oracle.cpp",
+      "sha256": "3740f0a3b0e30c65182349a802e083aefb3dab87084307d866d0fe69309b8851"
+    },
+    {
+      "path": "tests/run_linux_resource_validation.py",
+      "sha256": "2f9596dbb10d3eecb4102e75f1c9acbf8f64b643e60291b566ee4e95f9ae0ff8"
+    },
+    {
+      "path": "tests/check_optimizations.py",
+      "sha256": "0cc69f8abbcb45774b9e6c892c71d528d0df7e598f2ed19d338f74355678b1c5"
+    },
+    {
+      "path": "tests/check_optimization_resources.py",
+      "sha256": "7b97b341d41a8579c7650e5f7b0b78fae486034641342bb289ce1ac43c98c052"
+    }
+  ],
+  "development_prompt": {
+    "path": "agent/learning_prompt.md",
+    "pointer": "/development_prompt_revision/content",
+    "sha256": "13e13a6d292c41bc2f6cc357034e6f597d17a366e65e085d7b69e511609b35a2",
+    "status": "used_for_local_optimization"
+  },
+  "local_engine_optimization_payload_sha256": "882ae688a9a8fa5195f53eda9e7d6da84a6bf8020b5f2201af230f922ef2cb69",
+  "runtime_revision_note": "code_base_commit 是原 ltc 基线；runtime_files 是当前本地六项改动后的文件，原始验证仍对应其原始二进制。"
 }

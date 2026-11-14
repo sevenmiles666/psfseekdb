@@ -1,0 +1,260 @@
+{
+  "format": "minivectordb-verification-plan-v1",
+  "source_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+  "status": "executed_with_documented_environment",
+  "scope": "十类计划有实际本地执行记录；Linux 32 MiB 硬限额、零 swap 和 cgroup 块设备 I/O 已在本地 UTM x86_64 补测。",
+  "local_execution": {
+    "runner": "tests/run_learning_experiments.py",
+    "argv_template": [
+      "python3",
+      "tests/run_learning_experiments.py",
+      "--binary",
+      "<verified-binary>",
+      "--source-commit",
+      "<actual-source-commit>",
+      "--case",
+      "<runner-case>",
+      "--output",
+      "<output.json>"
+    ],
+    "preconditions": [
+      "核对二进制与源码摘要，记录编译器、平台和兼容参数",
+      "每个场景使用独立临时数据目录；恢复步骤复用该场景目录",
+      "实际执行后保留原始报告，计划状态与输出引用同步更新。"
+    ],
+    "executed_command": [
+      "python3",
+      "tests/run_prompt_verification.py",
+      "--binary",
+      "<verified-ltc-binary>",
+      "--reference",
+      "<clean-cdf66ba1-build>",
+      "--oracle",
+      "<compiled-prompt-oracle>",
+      "--output",
+      "<raw-report.json>"
+    ]
+  },
+  "cases": [
+    {
+      "id": "filtered-topk",
+      "priority": 1,
+      "status": "PASS",
+      "runner_case": "filtered-topk",
+      "question": "先在全表取 K 条再过滤，是否会遗漏符合 WHERE 的最近行？",
+      "input": "(id,bucket,v)=(1,0,[0,0]),(2,1,[3,4]),(3,1,[0,6]),(4,0,[0.1,0]); query=[0,0], WHERE bucket=1, K=2",
+      "oracle": "逐行筛选 bucket，再手算 L2，完整结果为 [[2,5.0],[3,6.0]]。K=10 时仍为两行；bucket=99 时为空。",
+      "extensions": [
+        "建索引前后",
+        "重启后",
+        "多条件过滤与非等值过滤"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/extended/0/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。"
+    },
+    {
+      "id": "rounded-l2-ties",
+      "priority": 2,
+      "status": "PASS",
+      "runner_case": "rounded-l2-ties",
+      "question": "平方距离不同但返回的 L2 相同时，应以哪个值排序？",
+      "input": "id=2: [1,0]; id=1: [1,0.00000001490116119384765625]; query=[0,0]",
+      "oracle": "double 的 sqrt 返回值均为 1.0。默认距离并列按主键升序，Top-1 为 [[1,1.0]]；显式次排序 id DESC 时为 id=2。",
+      "extensions": [
+        "LIMIT 与全排序",
+        "距离 DESC",
+        "索引前后及重启"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/basic/2/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。"
+    },
+    {
+      "id": "statement-and-transaction-atomicity",
+      "priority": 3,
+      "status": "PASS",
+      "runner_case": "statement-and-transaction-atomicity",
+      "question": "失败语句撤销范围与显式事务回滚范围是否被混淆？",
+      "input": "已有 1；分别执行一条 INSERT (2),(1)，或两条自动提交 INSERT；事务内先插入 2，再执行冲突 INSERT (3),(1)，最后分别 COMMIT/ROLLBACK。",
+      "oracle": "单条失败后 [1]；拆分自动提交后 [1,2]；显式事务 COMMIT 后 [1,2]、ROLLBACK 后 [1]。重启后同样成立。",
+      "extensions": [
+        "同一 runner 的 autocommit-before-begin 场景：2 在 BEGIN 前插入，回滚与重启后均保留"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/basic/0/output"
+        },
+        {
+          "pointer": "/local_verification/basic/7/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。"
+    },
+    {
+      "id": "confirmed-commit-and-crash",
+      "priority": 4,
+      "status": "PASS",
+      "runner_case": "confirmed-commit-and-crash",
+      "question": "未提交数据和已确认提交数据在进程异常退出后是否正确区分？",
+      "input": "已提交 1；BEGIN 后插入 2，在 COMMIT 前强杀；恢复后 BEGIN 插入 3，收到 COMMIT 成功再强杀。",
+      "oracle": "第一次恢复只有 [1]，第二次及再次重启为 [1,3]。",
+      "extensions": [
+        "恢复后向量索引结果",
+        "不完整 WAL 尾帧"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/basic/4/output"
+        },
+        {
+          "pointer": "/local_verification/extended/2/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。"
+    },
+    {
+      "id": "index-transaction-visibility",
+      "priority": 5,
+      "status": "PASS",
+      "runner_case": "index-transaction-visibility",
+      "question": "表数据、精确检索与索引缓存是否看见同一事务状态？",
+      "input": "初始 (1,[0,0]),(2,[2,0])，建索引；事务内将 1 改为 [9,0]、删除 2、插入 (3,[0.5,0])，查表与到零向量的 TopK，再回滚与重启。",
+      "oracle": "事务内可见 ID 为 [1,3]，TopK 为 [3,1]；回滚后与重启后的 TopK 均为 [1,2]。",
+      "extensions": [
+        "COMMIT 路径",
+        "ann 显式模式与 exact 默认模式分开核对"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/basic/3/output"
+        },
+        {
+          "pointer": "/local_verification/extended/1/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。"
+    },
+    {
+      "id": "float32-and-lossless-encoding",
+      "priority": 6,
+      "status": "PASS",
+      "runner_case": "float32-roundtrip-and-rejection",
+      "question": "无损编码是否逐位保持已转换的 float32，并在不适用时回退？",
+      "input": "离散值、0.1、1.23456789、最小正次正规数、1e-30、-1e30；维度错误及 1e100 溢出。",
+      "oracle": "独立 struct.pack('<f') 比较存储前后的位模式，正常关闭重启后仍相同；非法输入不留行。",
+      "extensions": [
+        "负零符号位",
+        "表内混合编码与缓存回退",
+        "31/32/33/128/129 维"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/basic/5/output"
+        },
+        {
+          "pointer": "/local_verification/extended/3/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。"
+    },
+    {
+      "id": "quantized-filter-boundaries",
+      "priority": 7,
+      "status": "PASS",
+      "runner_case": null,
+      "tooling": "tests/check_core.py 与独立 FP32 暴力参考；新增边界输入后执行",
+      "question": "量化误差上界、八行批量筛选及范围外回退能否保证 exact 不漏候选？",
+      "input": "距离接近截断边界；查询超过编码范围；行数非 8 倍数；维度 31/32/33/128/129；低选择性与高选择性过滤。",
+      "oracle": "先将向量转为 float32，再独立 double 累加并 sqrt，按返回距离及主键排序；逐项比较 ID、距离、过滤和完整行数。",
+      "extensions": [
+        "建索引前后",
+        "写入新数据触发缓存重建",
+        "禁用可选 SIMD 路径作交叉检查"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/extended/4/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。"
+    },
+    {
+      "id": "wal-compatibility-and-torn-tail",
+      "priority": 8,
+      "status": "PASS",
+      "runner_case": null,
+      "tooling": "tests/check_core.py 与版本隔离的 WAL 夹具",
+      "question": "混合编码、校验失败及不完整尾帧是否保持已提交前缀并且可重复恢复？",
+      "input": "用实际旧版本生成 WAL，新版重开并追加不同编码；在已提交前缀后构造不完整事务尾帧。",
+      "oracle": "记录精确的旧／新版本及兼容方向，核对 FP32 位值、CRC32、已提交前缀与未提交修改；连续重开得到同一结果。",
+      "extensions": [
+        "不要把尾帧截断与已提交帧损坏当成同一种行为",
+        "不强制宣称旧版能读取新版编码"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/extended/5/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。"
+    },
+    {
+      "id": "unicode-and-error-state",
+      "priority": 9,
+      "status": "PASS",
+      "runner_case": "unicode-character-length",
+      "question": "VARCHAR 是否按字符数限制并按 Unicode 码点排序？",
+      "input": "VARCHAR(2) 插入 '你🙂' 和 '你a'，拒绝 '你🙂a'。",
+      "oracle": "前两行成功；过长字符串失败后不留行；排序为 '你a' 在 '你🙂' 前；重启后内容相同。",
+      "extensions": [
+        "错误请求后继续执行",
+        "JSON Unicode 转义",
+        "请求 ID 与返回 ID 对应"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/basic/6/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。"
+    },
+    {
+      "id": "resource-and-performance-tradeoffs",
+      "priority": 10,
+      "status": "PASS",
+      "runner_case": null,
+      "tooling": "tests/check_core.py --large；tests/benchmark_local.py；独立结果校验",
+      "question": "减少 I/O 或内存的方案是否以查询、恢复或写入回退为代价？",
+      "input": "超内存持久化数据；离散与连续 FP32 两种分布；过滤与无过滤两组；相同输入、资源限额、预热和持久化策略，隔离目录交替运行。",
+      "oracle": "先核对每条 exact 结果与重启数据，再分别报告时间、物理 I/O、内存、恢复时间及中位数；保留退化数据，不换算平台得分。",
+      "extensions": [
+        "冷热缓存分开",
+        "Linux 容器与原生进程分开",
+        "收益与噪声接近时保留基线"
+      ],
+      "result_references": [
+        {
+          "pointer": "/local_verification/extended/6/output"
+        },
+        {
+          "pointer": "/local_verification/benchmark/0/output"
+        },
+        {
+          "pointer": "/local_verification/benchmark/1/output"
+        },
+        {
+          "pointer": "/local_verification/linux_vm/output"
+        }
+      ],
+      "execution_note": "核验范围以引用中的实际输入和输出为准；扩展列表不自动表示全部组合均已执行。",
+      "environment_note": "原生时间对照在 macOS；Linux 资源与核心回归已在 UTM x86_64 仿真中补测。来宾块设备 I/O 不等于 Mac 实体 SSD I/O。Linux 本地构建使用缓存 GCC 13.3，仓库 Dockerfile 指定 13.4，未改该文件。"
+    }
+  ]
+}

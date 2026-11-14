@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <map>
+#include <list>
 #include <memory>
 #include <set>
 #include <utility>
@@ -48,6 +49,9 @@ private:
     std::size_t primary_key;
     std::map<std::int64_t, StoredRow> rows;
     std::optional<VectorIndex> index;
+    std::size_t cache_reads = 0;
+    bool delay_cache = false;
+    bool cache_unfit = false;
   };
 
   struct Savepoint {
@@ -74,6 +78,11 @@ private:
 
   struct SearchCache {
     std::uint32_t table;
+    std::size_t vector_column = 0;
+    std::uint64_t used_bytes = 0;
+    std::vector<bool> unavailable_columns;
+    std::size_t switch_column = 0;
+    std::uint64_t switch_credit = 0;
     std::vector<std::int64_t> keys;
     Vector vectors;
     std::vector<CachedColumn> scalars;
@@ -89,6 +98,8 @@ private:
   };
 
   void recover();
+  void maybe_checkpoint();
+  void checkpoint();
   bool apply_record(const Bytes &payload, RecordRef record, bool replay = false);
   void write_change(const Bytes &payload);
   Savepoint savepoint() const;
@@ -101,7 +112,12 @@ private:
   void rebuild_index(Table &table);
   void set_row(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay);
   void invalidate_cache(std::uint32_t table);
-  SearchCache *search_cache(const Table &table, std::size_t vector_column);
+  SearchCache *search_cache(Table &table, std::size_t vector_column,
+                            const std::vector<std::size_t> &columns);
+  void cache_columns(SearchCache &cache, const Table &table, const std::vector<std::size_t> &columns);
+  void reorder_quantized(SearchCache &cache, const std::vector<std::uint32_t> &permutation,
+                         std::size_t dimension);
+  std::uint64_t cache_bytes() const;
   void load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row);
   void put_row(const Table &table, std::int64_t key, const Row &row, Bytes &payload);
   std::uint64_t create_table(const CreateTable &statement);
@@ -118,8 +134,8 @@ private:
   std::vector<std::unique_ptr<Table>> tables_;
   std::vector<Undo> undo_;
   std::optional<Savepoint> transaction_;
-  std::optional<SearchCache> search_cache_;
-  std::optional<std::uint32_t> oversized_cache_;
+  std::list<SearchCache> search_caches_;
+  std::uint64_t checkpoint_check_at_ = 4 * 1024 * 1024;
 };
 
 }  // namespace minivector
