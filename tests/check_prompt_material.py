@@ -196,6 +196,12 @@ def check(repo):
                              separators=(',', ':'), allow_nan=False).encode('utf-8')
         if hashlib.sha256(payload).hexdigest() != manifest['recovered_session_payload_sha256']:
             raise ValueError('recovered historical session was changed')
+    for entry in manifest.get('normalized_recovered_outputs', []):
+        payload = load_json(resolve_pointer(material, entry['pointer']).encode('utf-8'))
+        canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                               separators=(',', ':'), allow_nan=False).encode('utf-8')
+        if hashlib.sha256(canonical).hexdigest() != entry['canonical_json_payload_sha256']:
+            raise ValueError('normalized SQL payload differs from its source')
     for entry in manifest['runtime_files']:
         body = (repo / entry['path']).read_bytes()
         git_sha = hashlib.sha1(b'blob ' + str(len(body)).encode() + b'\0' + body).hexdigest()

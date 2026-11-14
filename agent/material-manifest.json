@@ -3,8 +3,8 @@
   "code_base_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
   "canonical_path": "agent/conversation.json",
   "compatibility_path": "conversation.json",
-  "material_sha256": "cc38d270a88d1a1ae49dcf477248f582ca75bd120ddb1edf9dc2076c3d31c811",
-  "material_bytes": 97318,
+  "material_sha256": "ebdc09ec5904a82e1f0d9be9d4352e2bdbc997b91c9942e5167ef89221c1d85b",
+  "material_bytes": 58900,
   "summary_pointer": "/material_summary",
   "historical_top_level_keys": [
     "scope",
@@ -150,5 +150,22 @@
     ]
   },
   "local_validation_only": true,
-  "recovered_session_payload_sha256": "0281ee1200f3d23990c9238a239f2eee45262d59dd2b6b7abfdea8b174111469"
+  "recovered_session_payload_sha256": "15e39f8675822a459bb25be8954a18aa75087303a1f8e87dc0ce46835ce88c7b",
+  "normalized_recovered_outputs": [
+    {
+      "pointer": "/recovered_sessions/0/experiments/0/output",
+      "original_text_sha256": "c25bb31c63ce745c92d7d9173a5a26bd6869c05ed9b38309bda79cd626a33f51",
+      "canonical_json_payload_sha256": "69c5eebeabc3389116096931cea8386bbe153e0df5e78c7ab3415e960de1dfc9"
+    },
+    {
+      "pointer": "/recovered_sessions/0/continuations/0/experiments/0/output",
+      "original_text_sha256": "34e928e8c5256635114afa938cdfa0f779efa4148237f1fac489626b2846ad56",
+      "canonical_json_payload_sha256": "64317d56a5db223c58bf08bd37a47ff7946a5625fd53600128b4f9ede31d8dec"
+    },
+    {
+      "pointer": "/recovered_sessions/0/continuations/0/experiments/1/output",
+      "original_text_sha256": "dc4119e5218c9314a0f71175fdbeb07a2b82c6638cce86c0c65073ef71d2aae3",
+      "canonical_json_payload_sha256": "a30bd45fd590f377e03b9c28356c718ec08ca989810c3052fe2387e0a5e64072"
+    }
+  ]
 }

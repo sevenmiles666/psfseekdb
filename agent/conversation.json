@@ -1,9 +1,72 @@
 {
-  "material_summary": "MiniVectorDB 实际交互及实验材料，代码快照 dccb61e。用户发现旧版正式性能指标更高，促使 Agent 回查两条正式记录和排序规则、更正比较结论，并据此选择旧版基础；learning_episodes 将这条实际交互与结果组织在一起。development_trace_index 另按“发现问题—采取改动—实际结果—取舍”串联五组历史技术过程：JSONL 协议修复、L2 舍入并列、CRC 方案淘汰、直接解码回退、无损编码与过滤优化。每处引用均定位到本文件的原始字符串，技术过程保持 Agent／工具归属。recovered_sessions 恢复早期当前会话中“拿不准，两种都试”的原话和两组实际 SQL 响应；这段来自另一实现，保留来源与不确定性，不将实验设计或正确解释改归给学生。该原子性链还附有当前会话的详细解释请求、Agent 实际回复和队友版本的事务边界核验，仍按同一条链组织。所有导入记录完整保留，GitHub 提交和六份报告共 26 轮的复算放在末尾 repository_evidence。历史成绩及参与范围见 submission_context，本次是本地材料修订，未进行正式评审。",
+  "material_summary": "MiniVectorDB 实际开发对话及验证结果，当前代码为 dccb61e。开头 current_review 完整保留一次用户发现 Agent 比较遗漏的过程：旧版 E=2758.194681，新版 E=378.087631；回查官方从高到低的排序规则后，Agent 更正结论，用户选择旧版继续。recovered_sessions 保留原子性问答与逐条 SQL 响应，包含用户拿不准的原话、Agent 的解释及队友版本的后续核验。其后为仓库原有开发记录和实验，原文完整保留。历史成绩、代码关系和参与者范围见 submission_context。",
+  "current_review": {
+    "scope": "早期提交的结果核对与版本取舍。fd9011a 后续反馈见 lossless_vector_iteration。",
+    "records": [
+      {
+        "id": "01a1ce58-05c7-7f80-a596-bc593fadc31c",
+        "role": "user",
+        "content": "提测一下\n",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      },
+      {
+        "id": "msg_03f4e4a4ac35adde016af55e72e82087d1bc6749c53bffd378",
+        "role": "assistant",
+        "content": "提测完成，任务号 `47251308`，版本 `bb7c32c1`。\n\n- **正式功能准入通过**。\n- 性能评测完成，原始指标 **E = 378.087631**。\n- Prompt 项未计分，平台提示“无效或待复核”等可能原因，未明确具体原因。材料格式检查正常，排名分暂未显示。\n\n[完整提测结果](/Users/ezio/Documents/ChatGPT/OceanBase%20数据库/MiniVectorDB正式提测_2026-11-12.md)",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      },
+      {
+        "id": "01a1ce7a-12bd-70f0-abad-bd62425761c5",
+        "role": "user",
+        "content": "你看看第二个那个指标还高点\n",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      },
+      {
+        "id": "msg_03f4e4a4ac35adde016af55f084bc887d1b0c71a3a1696fa58",
+        "role": "assistant",
+        "content": "是，第二条旧版确实更高：\n\n| 版本 | 性能指标 E |\n|---|---:|\n| 第二条旧版 `c16935a1` | **2758.194681** |\n| 最新版 `bb7c32c1` | **378.087631** |\n\n题面规定 **E 越高排名越好**，按这个规则，旧版更优。我刚才漏了两次对比，新版功能通过不能代表性能提升。\n\n不过两次数值都超出了题面公式的 0–1 范围，平台实际计算口径还需核实，不能直接换算成速度倍数。",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      },
+      {
+        "id": "01a1ce7c-cb65-7212-8f64-84c24554986c",
+        "role": "user",
+        "content": "那你就以旧版为底子，解决一下Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。\n",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      }
+    ],
+    "experiments": [
+      {
+        "id": "platform-task-47251293",
+        "role": "tool",
+        "source": "已登录平台 queryTestPlatformTaskRecordList 回读；只提取本队相应任务字段，Unicode 转义解码，未修改数值。",
+        "output": "{\"id\":47251293,\"commitId\":\"c16935a15dcdd5cc3803ff38746ee774e4b948b1\",\"branch\":\"2026-competition\",\"taskStatus\":2,\"successCount\":1,\"failCount\":0,\"testStartTime\":\"2026-11-12T06:03:03.000+00:00\",\"testEndTime\":\"2026-11-12T06:08:30.000+00:00\",\"testCaseResult\":[{\"testCase\":\"MySQL 正式用例\",\"resultStatus\":1,\"score\":\"0\",\"questionScore\":\"0\",\"message\":\"此项为准入条件，不计排名分\",\"playoffFeedback\":{\"performance\":\"性能评测完成；原始指标 E = 2758.194681\",\"prompt\":\"Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。\"}}]}"
+      },
+      {
+        "id": "platform-task-47251308",
+        "role": "tool",
+        "source": "已登录平台 queryTestPlatformTaskRecordList 回读；只提取本队相应任务字段，Unicode 转义解码，未修改数值。",
+        "output": "{\"id\":47251308,\"commitId\":\"bb7c32c1a9329e0512915d5f162a81531a28e7bc\",\"branch\":\"2026-competition-round2\",\"taskStatus\":2,\"successCount\":1,\"failCount\":0,\"testStartTime\":\"2026-11-12T06:19:48.000+00:00\",\"testEndTime\":\"2026-11-12T06:29:19.000+00:00\",\"testCaseResult\":[{\"testCase\":\"MySQL 正式用例\",\"resultStatus\":1,\"score\":\"0\",\"questionScore\":\"0\",\"message\":\"此项为准入条件，不计排名分\",\"playoffFeedback\":{\"performance\":\"性能评测完成；原始指标 E = 378.087631\",\"prompt\":\"Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。\"}}]}"
+      },
+      {
+        "id": "official-rule-20261111",
+        "role": "tool",
+        "source": "2026-11-12 读取官方语雀题面；文档 updated_at=2026-11-11T10:25:24.000Z，第 3.3.3 节。",
+        "output": "E 仅用于排序，不直接计入总分。三轮 E 取中位数后四舍五入保留六位小数，按从高到低排列"
+      }
+    ],
+    "assistant_retrospective": "初次汇报只列出新版本的功能通过与 E=378.087631，没有对比旧版。用户指出第二条指标更高，重新回读后确认旧版为 2758.194681，题面排序为从高到低。用户据此要求以旧版为基础。两次数值均超出题面归一化公式的 0–1 范围，平台未提供计算明细，因此不把数值比当作速度倍数。此解释属于 Agent，不能代作学生解释。",
+    "student_contribution_boundary": "本段可直接核对的学生贡献是指出旧版指标更高，并要求以旧版为基础处理 Prompt 问题。用户没有自行解释 E 的公式、设计数据库算法或声称亲自执行测试，材料不补写这些内容。多个发言属于同一条结果核对与版本选择链，不因拆分消息而视为多个独立贡献。",
+    "platform_status": "当时两次正式功能准入通过，Prompt 均未返回有效原始分。该阶段只有平台泛化提示，缺少三轮输出、具体错误类型和材料读取摘要。"
+  },
   "learning_episodes": [
     {
       "id": "metric-comparison-and-version-choice",
-      "topic": "发现旧版正式性能指标更高，要求核对并选择旧版作为后续基础。",
+      "topic": "质疑新版本性能结论，核对结果后选择旧版。",
       "student_records": [
         {
           "pointer": "/current_review/records/2/content",
@@ -38,17 +101,24 @@
           "quote": "我刚才漏了两次对比，新版功能通过不能代表性能提升。"
         }
       ],
-      "sequence": "Agent 初次汇报新版本正式结果时没有比较旧版；用户指出第二条指标更高。Agent 核对两条正式记录和题面排序方向，承认遗漏比较并更正结论。用户接着要求以旧版为基础处理 Prompt 问题。实际结果数据在 result_records 所指字符串内，用户本人没有声称执行性能测量或独立推导指标公式。",
-      "attribution": "用户贡献是发现比较遗漏并提出版本选择；公式解释和接口回读属于 Agent／工具来源。",
-      "deduplication": "质疑、核对后的选择和相关正式结果属于同一条链，仅在这里组织一次。"
+      "sequence": "Agent 汇报新版结果；用户指出旧版指标更高；Agent 回查两次正式任务和排序方向，承认遗漏比较；用户据此选择旧版继续。",
+      "attribution": "质疑和版本选择来自用户；接口回查、公式解释来自 Agent。相关发言与核查结果归在同一条链。"
     },
     {
       "id": "uncertain-atomicity-request-and-measurement",
-      "topic": "用户拿不准多行插入冲突后状态，允许比较；Agent 具体化并执行两种插入方式。",
+      "topic": "多行冲突、自动提交与显式事务的撤销边界。",
       "student_records": [
         {
           "pointer": "/recovered_sessions/0/records/1/content",
           "quote": "都试一下吧，我拿不准，或者你选"
+        },
+        {
+          "pointer": "/recovered_sessions/0/continuations/0/records/1/content",
+          "quote": "详细说说"
+        },
+        {
+          "pointer": "/recovered_sessions/0/continuations/0/records/3/content",
+          "quote": "那你觉得呢"
         }
       ],
       "assistant_records": [
@@ -75,150 +145,10 @@
           "quote": "插入 2 在 BEGIN 前已自动提交：后续冲突和 ROLLBACK 后为 [[1], [2]]，重启后仍为 [[1], [2]]。"
         }
       ],
-      "sequence": "Agent 提出问题，用户表明不确定并允许试验。Agent 比较批量语句和拆开的自动提交语句，记录每条 SQL 的响应，并向用户解释两者结果。后续用户请求详细说明并请 Agent 判断；Agent 结合队友版本的实测解释语句与事务边界，并核验插入移到 BEGIN 前的变体。",
-      "attribution": "问题、实验的具体设计与解释来自 Agent；用户原话只有不确定和测试请求。不能据此补写学生正确预测或学生复盘。",
-      "deduplication": "两种 SQL 形式属于这次原子性比较的同一条链，不按每条 SQL 或每次运行拆分。",
-      "eligibility_note": "互动和实际结果存在，但学生技术贡献较弱；保留完整上下文供评审判断，不预先指定分数或计为已完成的高档实例。"
+      "sequence": "用户表示不确定并允许比较，后来请求解释；Agent 运行比较并说明结果，追加事务和 BEGIN 前自动提交的边界验证。",
+      "attribution": "问题、具体实验设计和技术解释来自 Agent；用户发言按原话保留。历史另一实现与当前队友版本的结果分别标明来源，整个讨论归在同一条链。"
     }
   ],
-  "development_trace_index": {
-    "role": "assistant",
-    "source": "Agent 对本文件已有历史记录的索引整理；引文保持原话，解释为本次整理。",
-    "attribution": "下列技术过程由 Agent 设计、执行并解释，结果来自工具记录；用于交代工作上下文，不作为新增学生学习实例。",
-    "traces": [
-      {
-        "id": "jsonl-handshake-repair",
-        "topic": "本地功能检查通过仍可能在官方握手阶段失败。",
-        "observation": "旧入口先输出 READY，官方驱动要求 JSON 就绪消息，故 SQL 尚未执行就报解析错误。",
-        "change": "将 Docker 默认入口接到官方 JSONL 协议，随后验证逐请求响应、字段、事务和重启。",
-        "outcome": "旧版握手失败被实际复现，适配后 20 组公开用例、95 条 SQL 通过；公开用例通过与隐藏正式准入分别记录。",
-        "assistant_records": [
-          {
-            "pointer": "/conversations/4/content",
-            "quote": "旧版启动时输出 READY，而检查器要求 {\"type\":\"ready\"}"
-          }
-        ],
-        "result_records": [
-          {
-            "pointer": "/experiments/4/output",
-            "quote": "invalid JSON response: Expecting value: line 1 column 1 (char 0)"
-          },
-          {
-            "pointer": "/experiments/5/output",
-            "quote": "全部 20 组公开用例、95 条 SQL 通过。"
-          }
-        ]
-      },
-      {
-        "id": "rounded-l2-tie-correction",
-        "topic": "平方距离不同，但返回的 L2 距离舍入相等时仍须按主键处理并列。",
-        "observation": "主键 1 的向量为 [1,0.00000001490116119384765625]、主键 2 为 [1,0]，以零向量查询。",
-        "change": "以返回的 L2 距离判断并列，并回归 LIMIT、全排序及 DESC。",
-        "outcome": "修正前 Top-1 为主键 2，修正后为主键 1；五轮对照的 1,000 条查询仍逐项相同。",
-        "assistant_records": [],
-        "retrospective_records": [
-          {
-            "pointer": "/performance_iteration/assistant_retrospective",
-            "quote": "舍入反例促使最终排序以返回的 L2 距离处理并列。"
-          }
-        ],
-        "result_records": [
-          {
-            "pointer": "/performance_iteration/experiments/3/output",
-            "quote": "修正前 Top-1 返回 [[2,1]]。修正后两个 L2 距离均舍入为 1.0，Top-1 返回 [[1,1.0]]"
-          }
-        ]
-      },
-      {
-        "id": "crc-measurement-and-rejection",
-        "topic": "正确性通过的 CRC 优化，也要用测量决定是否保留。",
-        "observation": "分别比较查表 CRC32 与八字节 CRC32，而不是将同时修改的整版差异都归给 CRC。",
-        "change": "独立校验后做七轮写入对照。",
-        "outcome": "写入中位数仅改善约 1.27%，Agent 保留原 CRC 实现；该实验记录与同次八行筛选的结果分别解读。",
-        "assistant_records": [
-          {
-            "pointer": "/compact_storage_iteration/conversations/2/content",
-            "quote": "CRC32 改动通过了独立校验，但七轮写入中位耗时只改善约 1%，我会保留原实现。"
-          }
-        ],
-        "result_records": [
-          {
-            "pointer": "/compact_storage_iteration/experiments/1/output",
-            "quote": "CRC32 七轮写入中位数 0.622116 到 0.614195 秒，约 1.27% 的差异，保留原实现。"
-          }
-        ]
-      },
-      {
-        "id": "direct-decode-memory-time-tradeoff",
-        "topic": "从 WAL 直接解码可节省内存，但可能使查询变慢。",
-        "observation": "将直接解码候选与原实现对照，分别测试离散和连续 FP32 向量。",
-        "change": "比较两种分布的查询耗时和峰值内存，再决定是否保留。",
-        "outcome": "两种分布都节省内存且查询回退，Agent 撤销该方案；后续保留的是过滤分组和无损编码。",
-        "assistant_records": [],
-        "result_records": [
-          {
-            "pointer": "/lossless_vector_iteration/experiments/0/output",
-            "quote": "直接解码将离散向量查询的峰值内存从 17,702,912 降至 11,718,656 字节，查询中位耗时从 1.385096 增至 1.738948 秒。"
-          }
-        ]
-      },
-      {
-        "id": "lossless-encoding-two-distributions",
-        "topic": "压缩只能在可逐位复原 float32 时采用，并用两种分布检查收益边界。",
-        "observation": "以用户提供的正式版本 fd9011a 为实验基线，分别测试离散网格和连续 FP32。",
-        "change": "保留可精确编码时的一字节向量格式及等值过滤分组，其他值回退到保留原始精度的路径。",
-        "outcome": "两种分布各五轮，逐位核对重启记录并独立核对 TopK；离散数据查询和内存改善，连续数据写入约慢 1.4%，I/O 相同。混合旧新格式、回滚和强杀恢复也有独立回归。",
-        "assistant_records": [],
-        "retrospective_records": [
-          {
-            "pointer": "/lossless_vector_iteration/assistant_retrospective",
-            "quote": "连续 FP32 写入中位耗时增加约 1.4%，物理 I/O 相同。"
-          }
-        ],
-        "result_records": [
-          {
-            "pointer": "/lossless_vector_iteration/experiments/2/output",
-            "quote": "连续 FP32 写入 0.868980 → 0.881218 秒，查询 1.015105 → 0.962477 秒"
-          },
-          {
-            "pointer": "/lossless_vector_iteration/experiments/4/output",
-            "quote": "四种 WAL 编码在 CRC 校验、回滚、重启和强杀恢复中通过。"
-          }
-        ]
-      }
-    ]
-  },
-  "submission_context": {
-    "local_revision_date": "2026-11-14 Asia/Shanghai",
-    "repository_snapshot_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
-    "historical_code_origin": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
-    "current_snapshot_note": "历史 code_base_commit 描述各次迭代的起点，本次材料修订直接叠加 dccb61e 快照，不回退性能实现。",
-    "imported_material_sha256": "f10cf7e6ed72d5b7f50f59528b58b250e9eb48cae26637e298e1357eb6c369ef",
-    "previous_material_summary": "本材料记录 MiniVectorDB 加赛的实际对话与开发实验。用户在历史记录中发现早先提交的性能原始指标 2758.194681 高于另一版，并选择该版本作为修订基础。用户随后确认 fd9011a 的正式性能原始分为 4368、Agent Prompt 原始分为 1，提出继续优化。以 fd9011a 为对照，Agent 测量无损一字节向量编码和等值过滤，两种公开生成的数据各五轮。精确查询的中位耗时分别下降 9.08% 和 5.18%，逐条核对结果以及重启后的记录。用户原话、工具结果和 Agent 的技术取舍按实际来源记录。",
-    "scope_note": "其余原有顶层字段、用户引文、Agent 解释、工具记录原样保留；旧 limitations 的等待状态按相应历史时点解读。",
-    "current_grade_source": {
-      "pointer": "/lossless_vector_iteration/conversations/0/content",
-      "quote": "Agent Prompt评测完成；原始分 = 1，需要提高到至少30.性能原始分现在4368，还要继续提高目标是5800"
-    },
-    "participation_record": {
-      "pointer": "/lossless_vector_iteration/conversations/2/content",
-      "quote": "无，全部靠你发挥"
-    },
-    "participation_note": "上述回答针对是否亲自设计或核对过测试。不能把其后新增的 Agent 实验当成学生本人完成的验证，也不能把性能提升目标改写为已经发生的技术理解。",
-    "verification_scope": "本次校验输入格式、证据引用、角色归属、重复实例、原材料保留及运行文件一致性；没有运行平台评审。",
-    "source_contexts": [
-      {
-        "id": "imported-team-material",
-        "source_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
-        "participant_note": "仓库保存的历史 user／assistant／tool 记录。未核实其用户实名，不将其中一次“无，全部靠你发挥”的回答泛化为全体队员从未参与。"
-      },
-      {
-        "id": "current-chat",
-        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded",
-        "participant_note": "current_review 与新恢复的早期原子性交流来自当前会话；角色和原话按实际记录保存。"
-      }
-    ]
-  },
   "recovered_sessions": [
     {
       "id": "current-chat-historical-atomicity",
@@ -260,7 +190,7 @@
           "id": "historical-atomicity-comparison",
           "role": "tool",
           "source": "固定提交保存的 tests/evidence/learning-atomicity.json；已核对与历史 conversation.json 嵌入输出一致。",
-          "output": "[\n  {\n    \"scenario\": \"one_multirow_statement\",\n    \"records\": [\n      {\n        \"sql\": \"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\n        \"response\": {\n          \"id\": 1,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (1);\",\n        \"response\": {\n          \"affected_rows\": 1,\n          \"id\": 2,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (2),(1);\",\n        \"response\": {\n          \"error\": {\n            \"code\": \"duplicate_key\",\n            \"message\": \"Duplicate primary key\"\n          },\n          \"id\": 3,\n          \"ok\": false\n        }\n      },\n      {\n        \"sql\": \"SELECT id FROM t ORDER BY id;\",\n        \"response\": {\n          \"columns\": [\n            \"id\"\n          ],\n          \"id\": 4,\n          \"ok\": true,\n          \"rows\": [\n            [\n              1\n            ]\n          ]\n        }\n      }\n    ]\n  },\n  {\n    \"scenario\": \"two_autocommit_statements\",\n    \"records\": [\n      {\n        \"sql\": \"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\n        \"response\": {\n          \"id\": 1,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (1);\",\n        \"response\": {\n          \"affected_rows\": 1,\n          \"id\": 2,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (2);\",\n        \"response\": {\n          \"affected_rows\": 1,\n          \"id\": 3,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (1);\",\n        \"response\": {\n          \"error\": {\n            \"code\": \"duplicate_key\",\n            \"message\": \"Duplicate primary key\"\n          },\n          \"id\": 4,\n          \"ok\": false\n        }\n      },\n      {\n        \"sql\": \"SELECT id FROM t ORDER BY id;\",\n        \"response\": {\n          \"columns\": [\n            \"id\"\n          ],\n          \"id\": 5,\n          \"ok\": true,\n          \"rows\": [\n            [\n              1\n            ],\n            [\n              2\n            ]\n          ]\n        }\n      }\n    ]\n  }\n]\n",
+          "output": "[{\"scenario\":\"one_multirow_statement\",\"records\":[{\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\"response\":{\"id\":1,\"ok\":true}},{\"sql\":\"INSERT INTO t VALUES (1);\",\"response\":{\"affected_rows\":1,\"id\":2,\"ok\":true}},{\"sql\":\"INSERT INTO t VALUES (2),(1);\",\"response\":{\"error\":{\"code\":\"duplicate_key\",\"message\":\"Duplicate primary key\"},\"id\":3,\"ok\":false}},{\"sql\":\"SELECT id FROM t ORDER BY id;\",\"response\":{\"columns\":[\"id\"],\"id\":4,\"ok\":true,\"rows\":[[1]]}}]},{\"scenario\":\"two_autocommit_statements\",\"records\":[{\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\"response\":{\"id\":1,\"ok\":true}},{\"sql\":\"INSERT INTO t VALUES (1);\",\"response\":{\"affected_rows\":1,\"id\":2,\"ok\":true}},{\"sql\":\"INSERT INTO t VALUES (2);\",\"response\":{\"affected_rows\":1,\"id\":3,\"ok\":true}},{\"sql\":\"INSERT INTO t VALUES (1);\",\"response\":{\"error\":{\"code\":\"duplicate_key\",\"message\":\"Duplicate primary key\"},\"id\":4,\"ok\":false}},{\"sql\":\"SELECT id FROM t ORDER BY id;\",\"response\":{\"columns\":[\"id\"],\"id\":5,\"ok\":true,\"rows\":[[1],[2]]}}]}]",
           "summary": "one_multirow_statement: rows=[[1]]; two_autocommit_statements: rows=[[1], [2]]"
         }
       ],
@@ -307,14 +237,14 @@
               "role": "tool",
               "id": "statement-and-transaction-atomicity",
               "recorded_at": "2026-11-14T08:02:27.137917+00:00",
-              "output": "[\n  {\n    \"event\": \"ready\",\n    \"response\": {\n      \"type\": \"ready\"\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 1,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE batch (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 1,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 2,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO batch VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 2,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 3,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO batch VALUES (2),(1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 3,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 4,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM batch ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 4,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 5,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE split (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 5,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 6,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO split VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 6,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 7,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO split VALUES (2);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 7,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 8,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO split VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 8,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 9,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM split ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 9,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 10,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE tx_commit (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 10,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 11,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_commit VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 11,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 12,\n      \"op\": \"execute\",\n      \"sql\": \"BEGIN;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 12,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 13,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_commit VALUES (2);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 13,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 14,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_commit VALUES (3),(1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 14,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 15,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_commit ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 15,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 16,\n      \"op\": \"execute\",\n      \"sql\": \"COMMIT;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 16,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 17,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_commit ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 17,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 18,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE tx_rollback (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 18,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 19,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_rollback VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 19,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 20,\n      \"op\": \"execute\",\n      \"sql\": \"BEGIN;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 20,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 21,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_rollback VALUES (2);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 21,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 22,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_rollback VALUES (3),(1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 22,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 23,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_rollback ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 23,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 24,\n      \"op\": \"execute\",\n      \"sql\": \"ROLLBACK;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 24,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 25,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_rollback ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 25,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ]\n      ]\n    }\n  },\n  {\n    \"event\": \"EOF_and_wait\"\n  },\n  {\n    \"event\": \"ready\",\n    \"response\": {\n      \"type\": \"ready\"\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 1,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM batch ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 1,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 2,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM split ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 2,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 3,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_commit ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 3,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 4,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_rollback ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 4,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ]\n      ]\n    }\n  },\n  {\n    \"event\": \"EOF_and_wait\"\n  }\n]",
+              "output": "[{\"event\":\"ready\",\"response\":{\"type\":\"ready\"}},{\"request\":{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE batch (id BIGINT PRIMARY KEY);\",\"search_mode\":\"exact\"},\"response\":{\"id\":1,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO batch VALUES (1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":2,\"ok\":true,\"affected_rows\":1}},{\"request\":{\"id\":3,\"op\":\"execute\",\"sql\":\"INSERT INTO batch VALUES (2),(1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":3,\"ok\":false,\"error\":{\"code\":\"DUPLICATE_KEY\",\"message\":\"duplicate primary key 1\"}}},{\"request\":{\"id\":4,\"op\":\"execute\",\"sql\":\"SELECT id FROM batch ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":4,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1]]}},{\"request\":{\"id\":5,\"op\":\"execute\",\"sql\":\"CREATE TABLE split (id BIGINT PRIMARY KEY);\",\"search_mode\":\"exact\"},\"response\":{\"id\":5,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":6,\"op\":\"execute\",\"sql\":\"INSERT INTO split VALUES (1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":6,\"ok\":true,\"affected_rows\":1}},{\"request\":{\"id\":7,\"op\":\"execute\",\"sql\":\"INSERT INTO split VALUES (2);\",\"search_mode\":\"exact\"},\"response\":{\"id\":7,\"ok\":true,\"affected_rows\":1}},{\"request\":{\"id\":8,\"op\":\"execute\",\"sql\":\"INSERT INTO split VALUES (1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":8,\"ok\":false,\"error\":{\"code\":\"DUPLICATE_KEY\",\"message\":\"duplicate primary key 1\"}}},{\"request\":{\"id\":9,\"op\":\"execute\",\"sql\":\"SELECT id FROM split ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":9,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[2]]}},{\"request\":{\"id\":10,\"op\":\"execute\",\"sql\":\"CREATE TABLE tx_commit (id BIGINT PRIMARY KEY);\",\"search_mode\":\"exact\"},\"response\":{\"id\":10,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":11,\"op\":\"execute\",\"sql\":\"INSERT INTO tx_commit VALUES (1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":11,\"ok\":true,\"affected_rows\":1}},{\"request\":{\"id\":12,\"op\":\"execute\",\"sql\":\"BEGIN;\",\"search_mode\":\"exact\"},\"response\":{\"id\":12,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":13,\"op\":\"execute\",\"sql\":\"INSERT INTO tx_commit VALUES (2);\",\"search_mode\":\"exact\"},\"response\":{\"id\":13,\"ok\":true,\"affected_rows\":1}},{\"request\":{\"id\":14,\"op\":\"execute\",\"sql\":\"INSERT INTO tx_commit VALUES (3),(1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":14,\"ok\":false,\"error\":{\"code\":\"DUPLICATE_KEY\",\"message\":\"duplicate primary key 1\"}}},{\"request\":{\"id\":15,\"op\":\"execute\",\"sql\":\"SELECT id FROM tx_commit ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":15,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[2]]}},{\"request\":{\"id\":16,\"op\":\"execute\",\"sql\":\"COMMIT;\",\"search_mode\":\"exact\"},\"response\":{\"id\":16,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":17,\"op\":\"execute\",\"sql\":\"SELECT id FROM tx_commit ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":17,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[2]]}},{\"request\":{\"id\":18,\"op\":\"execute\",\"sql\":\"CREATE TABLE tx_rollback (id BIGINT PRIMARY KEY);\",\"search_mode\":\"exact\"},\"response\":{\"id\":18,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":19,\"op\":\"execute\",\"sql\":\"INSERT INTO tx_rollback VALUES (1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":19,\"ok\":true,\"affected_rows\":1}},{\"request\":{\"id\":20,\"op\":\"execute\",\"sql\":\"BEGIN;\",\"search_mode\":\"exact\"},\"response\":{\"id\":20,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":21,\"op\":\"execute\",\"sql\":\"INSERT INTO tx_rollback VALUES (2);\",\"search_mode\":\"exact\"},\"response\":{\"id\":21,\"ok\":true,\"affected_rows\":1}},{\"request\":{\"id\":22,\"op\":\"execute\",\"sql\":\"INSERT INTO tx_rollback VALUES (3),(1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":22,\"ok\":false,\"error\":{\"code\":\"DUPLICATE_KEY\",\"message\":\"duplicate primary key 1\"}}},{\"request\":{\"id\":23,\"op\":\"execute\",\"sql\":\"SELECT id FROM tx_rollback ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":23,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[2]]}},{\"request\":{\"id\":24,\"op\":\"execute\",\"sql\":\"ROLLBACK;\",\"search_mode\":\"exact\"},\"response\":{\"id\":24,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":25,\"op\":\"execute\",\"sql\":\"SELECT id FROM tx_rollback ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":25,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1]]}},{\"event\":\"EOF_and_wait\"},{\"event\":\"ready\",\"response\":{\"type\":\"ready\"}},{\"request\":{\"id\":1,\"op\":\"execute\",\"sql\":\"SELECT id FROM batch ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":1,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1]]}},{\"request\":{\"id\":2,\"op\":\"execute\",\"sql\":\"SELECT id FROM split ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":2,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[2]]}},{\"request\":{\"id\":3,\"op\":\"execute\",\"sql\":\"SELECT id FROM tx_commit ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":3,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[2]]}},{\"request\":{\"id\":4,\"op\":\"execute\",\"sql\":\"SELECT id FROM tx_rollback ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":4,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1]]}},{\"event\":\"EOF_and_wait\"}]",
               "summary": "显式事务内先插入 2，再执行 (3),(1) 报错：COMMIT 后及重启后为 [[1], [2]]；ROLLBACK 后及重启后为 [[1]]。"
             },
             {
               "role": "tool",
               "id": "successful_autocommit_before_begin_survives_rollback",
               "recorded_at": "2026-11-14T08:46:10.379938+00:00",
-              "output": "[\n  {\n    \"event\": \"ready\",\n    \"response\": {\n      \"type\": \"ready\"\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 1,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 1,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 2,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO t VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 2,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 3,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO t VALUES (2);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 3,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 4,\n      \"op\": \"execute\",\n      \"sql\": \"BEGIN;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 4,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 5,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO t VALUES (3),(1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 5,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 6,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM t ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 6,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 7,\n      \"op\": \"execute\",\n      \"sql\": \"ROLLBACK;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 7,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 8,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM t ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 8,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"event\": \"EOF_and_wait\"\n  },\n  {\n    \"event\": \"ready\",\n    \"response\": {\n      \"type\": \"ready\"\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 1,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM t ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 1,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"event\": \"EOF_and_wait\"\n  }\n]",
+              "output": "[{\"event\":\"ready\",\"response\":{\"type\":\"ready\"}},{\"request\":{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\"search_mode\":\"exact\"},\"response\":{\"id\":1,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":2,\"ok\":true,\"affected_rows\":1}},{\"request\":{\"id\":3,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (2);\",\"search_mode\":\"exact\"},\"response\":{\"id\":3,\"ok\":true,\"affected_rows\":1}},{\"request\":{\"id\":4,\"op\":\"execute\",\"sql\":\"BEGIN;\",\"search_mode\":\"exact\"},\"response\":{\"id\":4,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":5,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (3),(1);\",\"search_mode\":\"exact\"},\"response\":{\"id\":5,\"ok\":false,\"error\":{\"code\":\"DUPLICATE_KEY\",\"message\":\"duplicate primary key 1\"}}},{\"request\":{\"id\":6,\"op\":\"execute\",\"sql\":\"SELECT id FROM t ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":6,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[2]]}},{\"request\":{\"id\":7,\"op\":\"execute\",\"sql\":\"ROLLBACK;\",\"search_mode\":\"exact\"},\"response\":{\"id\":7,\"ok\":true,\"affected_rows\":0}},{\"request\":{\"id\":8,\"op\":\"execute\",\"sql\":\"SELECT id FROM t ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":8,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[2]]}},{\"event\":\"EOF_and_wait\"},{\"event\":\"ready\",\"response\":{\"type\":\"ready\"}},{\"request\":{\"id\":1,\"op\":\"execute\",\"sql\":\"SELECT id FROM t ORDER BY id;\",\"search_mode\":\"exact\"},\"response\":{\"id\":1,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[2]]}},{\"event\":\"EOF_and_wait\"}]",
               "summary": "插入 2 在 BEGIN 前已自动提交：后续冲突和 ROLLBACK 后为 [[1], [2]]，重启后仍为 [[1], [2]]。"
             }
           ],
@@ -322,9 +252,41 @@
           "attribution": "用户请求详细解释并请 Agent 给出判断；机制解释、预测与实验执行来自 Agent／工具，没有据此推断学生已掌握机制。",
           "deduplication": "属于原子性讨论的后续说明及边界核验，继续沿用同一实例，不新增独立实例。"
         }
-      ]
+      ],
+      "output_representation": "实验 output 为完整 JSON 请求与响应，仅规范化缩进空白；所有字段和值保留。对话 content 按原文保存。"
     }
   ],
+  "submission_context": {
+    "local_revision_date": "2026-11-14",
+    "repository_snapshot_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+    "historical_code_origin": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
+    "current_snapshot_note": "本地材料修订叠加 dccb61e；历史各次版本选择不代表当前性能实现回退。",
+    "imported_material_sha256": "f10cf7e6ed72d5b7f50f59528b58b250e9eb48cae26637e298e1357eb6c369ef",
+    "previous_material_summary": "本材料记录 MiniVectorDB 加赛的实际对话与开发实验。用户在历史记录中发现早先提交的性能原始指标 2758.194681 高于另一版，并选择该版本作为修订基础。用户随后确认 fd9011a 的正式性能原始分为 4368、Agent Prompt 原始分为 1，提出继续优化。以 fd9011a 为对照，Agent 测量无损一字节向量编码和等值过滤，两种公开生成的数据各五轮。精确查询的中位耗时分别下降 9.08% 和 5.18%，逐条核对结果以及重启后的记录。用户原话、工具结果和 Agent 的技术取舍按实际来源记录。",
+    "scope_note": "原始仓库材料字段完整保留；删除的 GitHub 复算附录和技术过程索引是本地 Agent 后加的重复佐证，原有对话、实验及失败结果均未删除。历史等待状态按各次记录时点解读。",
+    "current_grade_source": {
+      "pointer": "/lossless_vector_iteration/conversations/0/content",
+      "quote": "Agent Prompt评测完成；原始分 = 1，需要提高到至少30.性能原始分现在4368，还要继续提高目标是5800"
+    },
+    "participation_record": {
+      "pointer": "/lossless_vector_iteration/conversations/2/content",
+      "quote": "无，全部靠你发挥"
+    },
+    "participation_note": "该回答针对对应会话中是否亲自设计或核对过测试；不据此推断其他成员或阶段。具体机制解释与实验操作保持原记录的 assistant／tool 归属。",
+    "source_contexts": [
+      {
+        "id": "imported-team-material",
+        "source_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+        "participant_note": "仓库历史 user／assistant／tool 记录，未按账号推定用户实名。"
+      },
+      {
+        "id": "current-chat",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded",
+        "participant_note": "current_review 和恢复的原子性交流来自当前会话。"
+      }
+    ],
+    "verification_scope": "本地输入和来源检查；未进行平台三轮评分。"
+  },
   "scope": "2026-11-09 至 2026-11-12 的 MiniVectorDB 开发、自测、官方 JSONL 适配和性能迭代。",
   "synthetic": false,
   "user_prompts": [
@@ -478,69 +440,6 @@
     "optimization_evidence_commit": "6318dd7fdc7a1f7604bc5044d09805d4fda1a7a3",
     "prior_prompt_repair_commit": "2597c624d5399f099144594e0ff5593e09492509",
     "latest_optimization_base_commit": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4"
-  },
-  "current_review": {
-    "scope": "早期提交的结果核对与版本取舍。fd9011a 后续反馈见 lossless_vector_iteration。",
-    "records": [
-      {
-        "id": "01a1ce58-05c7-7f80-a596-bc593fadc31c",
-        "role": "user",
-        "content": "提测一下\n",
-        "source": "当前会话原始消息正文；未改写",
-        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
-      },
-      {
-        "id": "msg_03f4e4a4ac35adde016af55e72e82087d1bc6749c53bffd378",
-        "role": "assistant",
-        "content": "提测完成，任务号 `47251308`，版本 `bb7c32c1`。\n\n- **正式功能准入通过**。\n- 性能评测完成，原始指标 **E = 378.087631**。\n- Prompt 项未计分，平台提示“无效或待复核”等可能原因，未明确具体原因。材料格式检查正常，排名分暂未显示。\n\n[完整提测结果](/Users/ezio/Documents/ChatGPT/OceanBase%20数据库/MiniVectorDB正式提测_2026-11-12.md)",
-        "source": "当前会话原始消息正文；未改写",
-        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
-      },
-      {
-        "id": "01a1ce7a-12bd-70f0-abad-bd62425761c5",
-        "role": "user",
-        "content": "你看看第二个那个指标还高点\n",
-        "source": "当前会话原始消息正文；未改写",
-        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
-      },
-      {
-        "id": "msg_03f4e4a4ac35adde016af55f084bc887d1b0c71a3a1696fa58",
-        "role": "assistant",
-        "content": "是，第二条旧版确实更高：\n\n| 版本 | 性能指标 E |\n|---|---:|\n| 第二条旧版 `c16935a1` | **2758.194681** |\n| 最新版 `bb7c32c1` | **378.087631** |\n\n题面规定 **E 越高排名越好**，按这个规则，旧版更优。我刚才漏了两次对比，新版功能通过不能代表性能提升。\n\n不过两次数值都超出了题面公式的 0–1 范围，平台实际计算口径还需核实，不能直接换算成速度倍数。",
-        "source": "当前会话原始消息正文；未改写",
-        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
-      },
-      {
-        "id": "01a1ce7c-cb65-7212-8f64-84c24554986c",
-        "role": "user",
-        "content": "那你就以旧版为底子，解决一下Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。\n",
-        "source": "当前会话原始消息正文；未改写",
-        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
-      }
-    ],
-    "experiments": [
-      {
-        "id": "platform-task-47251293",
-        "role": "tool",
-        "source": "已登录平台 queryTestPlatformTaskRecordList 回读；只提取本队相应任务字段，Unicode 转义解码，未修改数值。",
-        "output": "{\"id\":47251293,\"commitId\":\"c16935a15dcdd5cc3803ff38746ee774e4b948b1\",\"branch\":\"2026-competition\",\"taskStatus\":2,\"successCount\":1,\"failCount\":0,\"testStartTime\":\"2026-11-12T06:03:03.000+00:00\",\"testEndTime\":\"2026-11-12T06:08:30.000+00:00\",\"testCaseResult\":[{\"testCase\":\"MySQL 正式用例\",\"resultStatus\":1,\"score\":\"0\",\"questionScore\":\"0\",\"message\":\"此项为准入条件，不计排名分\",\"playoffFeedback\":{\"performance\":\"性能评测完成；原始指标 E = 2758.194681\",\"prompt\":\"Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。\"}}]}"
-      },
-      {
-        "id": "platform-task-47251308",
-        "role": "tool",
-        "source": "已登录平台 queryTestPlatformTaskRecordList 回读；只提取本队相应任务字段，Unicode 转义解码，未修改数值。",
-        "output": "{\"id\":47251308,\"commitId\":\"bb7c32c1a9329e0512915d5f162a81531a28e7bc\",\"branch\":\"2026-competition-round2\",\"taskStatus\":2,\"successCount\":1,\"failCount\":0,\"testStartTime\":\"2026-11-12T06:19:48.000+00:00\",\"testEndTime\":\"2026-11-12T06:29:19.000+00:00\",\"testCaseResult\":[{\"testCase\":\"MySQL 正式用例\",\"resultStatus\":1,\"score\":\"0\",\"questionScore\":\"0\",\"message\":\"此项为准入条件，不计排名分\",\"playoffFeedback\":{\"performance\":\"性能评测完成；原始指标 E = 378.087631\",\"prompt\":\"Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。\"}}]}"
-      },
-      {
-        "id": "official-rule-20261111",
-        "role": "tool",
-        "source": "2026-11-12 读取官方语雀题面；文档 updated_at=2026-11-11T10:25:24.000Z，第 3.3.3 节。",
-        "output": "E 仅用于排序，不直接计入总分。三轮 E 取中位数后四舍五入保留六位小数，按从高到低排列"
-      }
-    ],
-    "assistant_retrospective": "初次汇报只列出新版本的功能通过与 E=378.087631，没有对比旧版。用户指出第二条指标更高，重新回读后确认旧版为 2758.194681，题面排序为从高到低。用户据此要求以旧版为基础。两次数值均超出题面归一化公式的 0–1 范围，平台未提供计算明细，因此不把数值比当作速度倍数。此解释属于 Agent，不能代作学生解释。",
-    "student_contribution_boundary": "本段可直接核对的学生贡献是指出旧版指标更高，并要求以旧版为基础处理 Prompt 问题。用户没有自行解释 E 的公式、设计数据库算法或声称亲自执行测试，材料不补写这些内容。多个发言属于同一条结果核对与版本选择链，不因拆分消息而视为多个独立贡献。",
-    "platform_status": "当时两次正式功能准入通过，Prompt 均未返回有效原始分。该阶段只有平台泛化提示，缺少三轮输出、具体错误类型和材料读取摘要。"
   },
   "evidence_navigation": [
     {
@@ -776,568 +675,5 @@
     ],
     "assistant_retrospective": "先用逐条 FP32 位值复原检查决定一字节编码是否可用。表内可共用比例时保留整数缓存，出现普通 FP32 时回到原始精度缓存。保留等值分组是因为两种分布上的过滤查询均有收益。连续 FP32 写入中位耗时增加约 1.4%，物理 I/O 相同。",
     "limitations": "实验和实现由 Agent 完成。本候选的正式性能和 Agent Prompt 原始分需由平台评测。"
-  },
-  "repository_evidence": {
-    "role": "tool",
-    "kind": "repository_history_and_saved_test_report_audit",
-    "audit_date": "2026-11-14 Asia/Shanghai",
-    "repository": "https://github.com/sevenmiles666/psfseekdb",
-    "snapshot_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
-    "attribution": "GitHub API 将下列提交关联到 sevenmiles666 账号；账号资料未提供实名。提交关联能证明仓库存在这些改动，不能单凭提交作者断定某位学生独立完成设计、理解或测试。仓库原对话仍按 user／assistant／tool 原角色保存。本节为 Agent 本次查证整理，不新增学生发言，也不把八个提交（含一次合并）计为八条学习实例。",
-    "commits": [
-      {
-        "sha": "590ff199321bc592cd4f3b0260645a70d995fbb3",
-        "github_author_account": "sevenmiles666",
-        "date_utc": "2026-11-09T04:46:57Z",
-        "subject": "feat: bootstrap MiniVectorDB round-two engine",
-        "url": "https://github.com/sevenmiles666/psfseekdb/commit/590ff199321bc592cd4f3b0260645a70d995fbb3",
-        "changed_files": [
-          ".dockerignore",
-          "Dockerfile",
-          "README.md",
-          "agent/conversation.json",
-          "conversation.json",
-          "src/database.cpp",
-          "src/database.hpp",
-          "src/encoding.hpp",
-          "src/journal.cpp",
-          "src/journal.hpp",
-          "src/main.cpp",
-          "src/sql.cpp",
-          "src/sql.hpp",
-          "tests/check_core.py"
-        ],
-        "parent_count": 1
-      },
-      {
-        "sha": "62967c0d741a09ca01f263cc70059df61bebb2c3",
-        "github_author_account": "sevenmiles666",
-        "date_utc": "2026-11-09T05:56:14Z",
-        "subject": "feat: maintain vector indexes and optimize exact TopK",
-        "url": "https://github.com/sevenmiles666/psfseekdb/commit/62967c0d741a09ca01f263cc70059df61bebb2c3",
-        "changed_files": [
-          "README.md",
-          "agent/conversation.json",
-          "src/database.cpp",
-          "src/database.hpp",
-          "src/encoding.hpp",
-          "src/main.cpp",
-          "src/sql.cpp",
-          "src/sql.hpp",
-          "tests/benchmark_local.py",
-          "tests/benchmark_support.cpp",
-          "tests/check_core.py",
-          "tests/round2-benchmark.json"
-        ],
-        "parent_count": 1
-      },
-      {
-        "sha": "001819de55ae299e0cc74be306bea5f8438cae6b",
-        "github_author_account": "sevenmiles666",
-        "date_utc": "2026-11-12T05:28:03Z",
-        "subject": "fix: support official MiniVectorDB JSONL protocol",
-        "url": "https://github.com/sevenmiles666/psfseekdb/commit/001819de55ae299e0cc74be306bea5f8438cae6b",
-        "changed_files": [
-          "Dockerfile",
-          "README.md",
-          "src/database.cpp",
-          "src/database.hpp",
-          "src/main.cpp",
-          "src/request.cpp",
-          "src/request.hpp",
-          "tests/check_core.py"
-        ],
-        "parent_count": 1
-      },
-      {
-        "sha": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
-        "github_author_account": "sevenmiles666",
-        "date_utc": "2026-11-12T05:34:17Z",
-        "subject": "perf: accelerate float32 loads and cached vector search",
-        "url": "https://github.com/sevenmiles666/psfseekdb/commit/c16935a15dcdd5cc3803ff38746ee774e4b948b1",
-        "changed_files": [
-          "README.md",
-          "agent/conversation.json",
-          "src/database.cpp",
-          "src/sql.cpp",
-          "tests/benchmark_local.py",
-          "tests/round2-jsonl-benchmark.json"
-        ],
-        "parent_count": 1
-      },
-      {
-        "sha": "6318dd7fdc7a1f7604bc5044d09805d4fda1a7a3",
-        "github_author_account": "sevenmiles666",
-        "date_utc": "2026-11-12T06:54:55Z",
-        "subject": "perf: prune exact vector scans with bounded quantization",
-        "url": "https://github.com/sevenmiles666/psfseekdb/commit/6318dd7fdc7a1f7604bc5044d09805d4fda1a7a3",
-        "changed_files": [
-          "README.md",
-          "agent/conversation.json",
-          "src/database.cpp",
-          "src/database.hpp",
-          "src/encoding.hpp",
-          "src/journal.cpp",
-          "src/main.cpp",
-          "src/sql.cpp",
-          "tests/benchmark_local.py",
-          "tests/benchmark_native.py",
-          "tests/benchmark_support.cpp",
-          "tests/check_core.py",
-          "tests/round2-race-benchmark.json",
-          "tests/round2-race-native.json"
-        ],
-        "parent_count": 1
-      },
-      {
-        "sha": "9eb5b15446170c0ca001e3fb0907a963a88923e4",
-        "github_author_account": "sevenmiles666",
-        "date_utc": "2026-11-12T07:00:42Z",
-        "subject": "Merge tested MiniVectorDB optimizations with Prompt material repair",
-        "url": "https://github.com/sevenmiles666/psfseekdb/commit/9eb5b15446170c0ca001e3fb0907a963a88923e4",
-        "changed_files": [
-          ".gitattributes",
-          "README.md",
-          "agent/README.md",
-          "agent/conversation.json",
-          "agent/material-manifest.json",
-          "conversation.json",
-          "src/database.cpp",
-          "src/database.hpp",
-          "src/encoding.hpp",
-          "src/journal.cpp",
-          "src/main.cpp",
-          "src/sql.cpp",
-          "tests/benchmark_local.py",
-          "tests/benchmark_native.py",
-          "tests/benchmark_support.cpp",
-          "tests/check_core.py",
-          "tests/check_prompt_material.py",
-          "tests/round2-race-benchmark.json",
-          "tests/round2-race-native.json",
-          "tests/round2-race-vs-c16935a.json"
-        ],
-        "parent_count": 2
-      },
-      {
-        "sha": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
-        "github_author_account": "sevenmiles666",
-        "date_utc": "2026-11-13T06:37:17Z",
-        "subject": "perf: reduce vector WAL and exact search overhead",
-        "url": "https://github.com/sevenmiles666/psfseekdb/commit/fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
-        "changed_files": [
-          "README.md",
-          "agent/README.md",
-          "agent/conversation.json",
-          "agent/material-manifest.json",
-          "conversation.json",
-          "src/database.cpp",
-          "src/database.hpp",
-          "src/encoding.hpp",
-          "src/main.cpp",
-          "src/request.cpp",
-          "src/request.hpp",
-          "src/sql.cpp",
-          "tests/benchmark_local.py",
-          "tests/benchmark_native.py",
-          "tests/check_core.py",
-          "tests/round2-compact-continuous.json",
-          "tests/round2-compact-grid.json"
-        ],
-        "parent_count": 1
-      },
-      {
-        "sha": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
-        "github_author_account": "sevenmiles666",
-        "date_utc": "2026-11-13T16:39:46Z",
-        "subject": "perf: compact lossless vectors and group filtered top-k scans",
-        "url": "https://github.com/sevenmiles666/psfseekdb/commit/dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
-        "changed_files": [
-          "README.md",
-          "agent/README.md",
-          "agent/conversation.json",
-          "agent/material-manifest.json",
-          "conversation.json",
-          "src/database.cpp",
-          "src/database.hpp",
-          "src/encoding.hpp",
-          "tests/check_core.py",
-          "tests/round2-byte-continuous.json",
-          "tests/round2-byte-grid.json"
-        ],
-        "parent_count": 1
-      }
-    ],
-    "historical_conversation_check": {
-      "snapshots_examined": 6,
-      "unique_older_user_messages": 12,
-      "all_older_user_messages_already_in_latest_material": true,
-      "new_missing_user_messages_found": 0,
-      "pull_requests_found": 0,
-      "issues_found": 0,
-      "commit_comments_found": 0,
-      "scope": "本仓库保存的六版旧材料及 API 返回的 PR、Issue 和提交评论；不涵盖私人聊天或其他仓库。"
-    },
-    "benchmark_audit": {
-      "method": "从仓库保存的原始轮次重新计算中位数并逐轮核对正确性字段；本次没有重新运行数据库工作负载。",
-      "report_count": 6,
-      "paired_rounds": 26,
-      "measurement_limits": "历史报告记录 2 CPU、64 MiB、无 swap、全新数据卷；未清宿主页缓存，io.stat 设备与镜像存储共享，memory.peak 含最终探测进程。不能替代官方评测。",
-      "reports": [
-        {
-          "path": "tests/round2-jsonl-benchmark.json",
-          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-jsonl-benchmark.json",
-          "git_blob_sha1": "e0d116a659a61ecced084d447af0d53b3ed82ae8",
-          "sha256": "ddc59a7ba7ef52b44fc459fdc3ea3b73a25c8fd00577492a5a05c4ddbce8314a",
-          "rounds": 3,
-          "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
-          "distribution": "grid",
-          "rows": 10000,
-          "dimension": 128,
-          "queries": 1000,
-          "top_k": 10,
-          "images": {
-            "baseline": "sha256:511da2a8745c1b91aec191b51da330c9844eda75d72568397d9f312fce97ab44",
-            "candidate": "sha256:55e21129d623797e9f84d5b20c3bb7ebe3d657459bc57163b62d323291cfdd2c"
-          },
-          "medians_recomputed": {
-            "write": {
-              "baseline": {
-                "seconds": 1.2969211999998151,
-                "io_bytes": 5828608,
-                "memory_peak_bytes": 14835712
-              },
-              "candidate": {
-                "seconds": 1.2245911999998498,
-                "io_bytes": 5828608,
-                "memory_peak_bytes": 15327232
-              }
-            },
-            "query": {
-              "baseline": {
-                "seconds": 2.3592173999995794,
-                "io_bytes": 5828608,
-                "memory_peak_bytes": 21102592
-              },
-              "exact": {
-                "seconds": 2.107304600000134,
-                "io_bytes": 5828608,
-                "memory_peak_bytes": 21598208
-              }
-            }
-          },
-          "stored_summaries_match_raw_rounds": true,
-          "all_persisted_content_checks_passed": true,
-          "all_query_content_checks_passed": true,
-          "minimum_recall_at_10": 1.0
-        },
-        {
-          "path": "tests/round2-race-vs-c16935a.json",
-          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-race-vs-c16935a.json",
-          "git_blob_sha1": "cd55582797907ce42adbc91c81fbc4dfd1fa8322",
-          "sha256": "9976fabaad5af3bc63488e22cbdf090c73f889a6cd5072aab90af94aff8d34d9",
-          "rounds": 3,
-          "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
-          "distribution": "grid",
-          "rows": 10000,
-          "dimension": 128,
-          "queries": 1000,
-          "top_k": 10,
-          "images": {
-            "baseline": "sha256:c47963bbcb11f2b83a9f0961156a2b31094824cf8bd51f58d8681cce42260c81",
-            "candidate": "sha256:9e3a769ba053e8b9d78949c07904cc9e0a29b6ba90576d0cea3a2faf2a9fb9e9"
-          },
-          "medians_recomputed": {
-            "write": {
-              "baseline": {
-                "seconds": 0.8788831640003991,
-                "io_bytes": 5828608,
-                "memory_peak_bytes": 14008320
-              },
-              "candidate": {
-                "seconds": 0.798417406000226,
-                "io_bytes": 5828608,
-                "memory_peak_bytes": 13307904
-              }
-            },
-            "query": {
-              "baseline": {
-                "seconds": 1.416001865999533,
-                "io_bytes": 5832704,
-                "memory_peak_bytes": 20303872
-              },
-              "exact": {
-                "seconds": 0.9964962200001537,
-                "io_bytes": 5832704,
-                "memory_peak_bytes": 21147648
-              }
-            }
-          },
-          "stored_summaries_match_raw_rounds": true,
-          "all_persisted_content_checks_passed": true,
-          "all_query_content_checks_passed": true,
-          "minimum_recall_at_10": 1.0
-        },
-        {
-          "path": "tests/round2-compact-grid.json",
-          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-compact-grid.json",
-          "git_blob_sha1": "d71153c09ccee9a05728b9c7503b11cd0e6880ce",
-          "sha256": "83f903a6997791744cb264d8994e3bc67b326acdd7ba661ccfd8bd5cd5fbf520",
-          "rounds": 5,
-          "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
-          "distribution": "grid",
-          "rows": 10000,
-          "dimension": 128,
-          "queries": 1000,
-          "top_k": 10,
-          "images": {
-            "baseline": "sha256:94d0e6357f22491b5e448bed46a256c11bc0a4b930ce301ba7dcf7ba2fd3f98f",
-            "candidate": "sha256:ee9bf6ea589b387649eacfa16f8e58c56896bfdc5540385274b59138cb3ade53"
-          },
-          "medians_recomputed": {
-            "write": {
-              "baseline": {
-                "seconds": 0.793494733999978,
-                "io_bytes": 5828608,
-                "memory_peak_bytes": 13295616
-              },
-              "candidate": {
-                "seconds": 0.7427591880000364,
-                "io_bytes": 3268608,
-                "memory_peak_bytes": 10887168
-              }
-            },
-            "query": {
-              "baseline": {
-                "seconds": 0.9506687690000035,
-                "io_bytes": 5832704,
-                "memory_peak_bytes": 21876736
-              },
-              "exact": {
-                "seconds": 0.927497737000067,
-                "io_bytes": 3272704,
-                "memory_peak_bytes": 17776640
-              }
-            }
-          },
-          "stored_summaries_match_raw_rounds": true,
-          "all_persisted_content_checks_passed": true,
-          "all_query_content_checks_passed": true,
-          "minimum_recall_at_10": 1.0
-        },
-        {
-          "path": "tests/round2-compact-continuous.json",
-          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-compact-continuous.json",
-          "git_blob_sha1": "dda598752f9276a7409cc1e57872d46513edf061",
-          "sha256": "2153ac0a3288b3a29289c36d32ab07dc9fbf70c7b6ec7c74f3cd83b2ce97d592",
-          "rounds": 5,
-          "dataset_sha256": "e877273434950c5977a9cb4aabab9f35da52a3854a6185fa26f8d110b30ad91b",
-          "distribution": "continuous",
-          "rows": 10000,
-          "dimension": 128,
-          "queries": 1000,
-          "top_k": 10,
-          "images": {
-            "baseline": "sha256:94d0e6357f22491b5e448bed46a256c11bc0a4b930ce301ba7dcf7ba2fd3f98f",
-            "candidate": "sha256:ee9bf6ea589b387649eacfa16f8e58c56896bfdc5540385274b59138cb3ade53"
-          },
-          "medians_recomputed": {
-            "write": {
-              "baseline": {
-                "seconds": 0.9644647790000818,
-                "io_bytes": 5828608,
-                "memory_peak_bytes": 13910016
-              },
-              "candidate": {
-                "seconds": 0.8345966860001681,
-                "io_bytes": 5197824,
-                "memory_peak_bytes": 13152256
-              }
-            },
-            "query": {
-              "baseline": {
-                "seconds": 0.9683262260000447,
-                "io_bytes": 5832704,
-                "memory_peak_bytes": 21897216
-              },
-              "exact": {
-                "seconds": 0.9605871599997045,
-                "io_bytes": 5201920,
-                "memory_peak_bytes": 20209664
-              }
-            }
-          },
-          "stored_summaries_match_raw_rounds": true,
-          "all_persisted_content_checks_passed": true,
-          "all_query_content_checks_passed": true,
-          "minimum_recall_at_10": 1.0
-        },
-        {
-          "path": "tests/round2-byte-grid.json",
-          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-byte-grid.json",
-          "git_blob_sha1": "f4001832e81d96b1982ec4545f0da1be72ac5928",
-          "sha256": "2f4982aaa1d226d48cb9124562d3fafd5d2c0761d2cc185d22876fbec5d8511c",
-          "rounds": 5,
-          "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
-          "distribution": "grid",
-          "rows": 10000,
-          "dimension": 128,
-          "queries": 1000,
-          "top_k": 10,
-          "images": {
-            "baseline": "sha256:5b41338988b0af28f30e28953b91861ee89916f0fd9f425fe3b77e2d9adc263e",
-            "candidate": "sha256:bf4308bf22578d95307a7485d8a435d7b84d13b40c322cac7ccac85b969f6327"
-          },
-          "medians_recomputed": {
-            "write": {
-              "baseline": {
-                "seconds": 0.7661099939998621,
-                "io_bytes": 3268608,
-                "memory_peak_bytes": 10653696
-              },
-              "candidate": {
-                "seconds": 0.7457368430000315,
-                "io_bytes": 1994752,
-                "memory_peak_bytes": 9043968
-              }
-            },
-            "query": {
-              "baseline": {
-                "seconds": 0.9976097240000854,
-                "io_bytes": 3272704,
-                "memory_peak_bytes": 17780736
-              },
-              "exact": {
-                "seconds": 0.9069932639999934,
-                "io_bytes": 1998848,
-                "memory_peak_bytes": 11440128
-              }
-            }
-          },
-          "stored_summaries_match_raw_rounds": true,
-          "all_persisted_content_checks_passed": true,
-          "all_query_content_checks_passed": true,
-          "minimum_recall_at_10": 1.0
-        },
-        {
-          "path": "tests/round2-byte-continuous.json",
-          "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/round2-byte-continuous.json",
-          "git_blob_sha1": "c2457102c49390974366ce5b3349523b5d47bdc4",
-          "sha256": "dae7ddc3737d2aaf745b235e5492456b94d55e8ecc9a3d261a4cad5e3c02bc64",
-          "rounds": 5,
-          "dataset_sha256": "e877273434950c5977a9cb4aabab9f35da52a3854a6185fa26f8d110b30ad91b",
-          "distribution": "continuous",
-          "rows": 10000,
-          "dimension": 128,
-          "queries": 1000,
-          "top_k": 10,
-          "images": {
-            "baseline": "sha256:5b41338988b0af28f30e28953b91861ee89916f0fd9f425fe3b77e2d9adc263e",
-            "candidate": "sha256:bf4308bf22578d95307a7485d8a435d7b84d13b40c322cac7ccac85b969f6327"
-          },
-          "medians_recomputed": {
-            "write": {
-              "baseline": {
-                "seconds": 0.8689803029999439,
-                "io_bytes": 5197824,
-                "memory_peak_bytes": 12619776
-              },
-              "candidate": {
-                "seconds": 0.8812175440000374,
-                "io_bytes": 5197824,
-                "memory_peak_bytes": 12664832
-              }
-            },
-            "query": {
-              "baseline": {
-                "seconds": 1.0151046720000068,
-                "io_bytes": 5201920,
-                "memory_peak_bytes": 19996672
-              },
-              "exact": {
-                "seconds": 0.9624765639998714,
-                "io_bytes": 5201920,
-                "memory_peak_bytes": 19918848
-              }
-            }
-          },
-          "stored_summaries_match_raw_rounds": true,
-          "all_persisted_content_checks_passed": true,
-          "all_query_content_checks_passed": true,
-          "minimum_recall_at_10": 1.0
-        }
-      ],
-      "tradeoff": "字节编码版 grid 五轮的查询中位数从 0.997609724 秒降至 0.906993264 秒，查询峰值内存中位数从 17780736 降至 11440128 字节。continuous 五轮查询从 1.015104672 降至 0.962476564 秒，但写入从 0.868980303 升至 0.881217544 秒，约慢 1.4%。这些是各报告内基线与候选的本地对照，没有换算成官方 E 或 Prompt 分数。"
-    },
-    "code_and_test_corroboration": [
-      {
-        "path": "src/encoding.hpp",
-        "start_line": 76,
-        "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/src/encoding.hpp#L76",
-        "purpose": "字节编码仅接受可精确缩放的值；不满足条件时由其他编码路径保存。",
-        "excerpt": "inline bool exact_scaled_byte(float value, float inverse, int &code) {\n  const double scaled = static_cast<double>(value) * inverse;\n  if (!(scaled >= -127.0 && scaled <= 127.0)) return false;\n  code = static_cast<int>(scaled);\n  return scaled == static_cast<double>(code);\n}\n\ninline bool put_scaled_bytes(Bytes &out, const float *values, std::size_t count, std::uint32_t maximum) {\n  // Choose a power-of-two step that puts the largest magnitude in [64, 128).\n  const int exponent = scaled_byte_exponent(maximum);\n  if (exponent < -126 || exponent > 121) return false;\n  const float inverse = float_from_bits(std::uint32_t(127 - exponent) << 23);\n  const auto start = out.size();\n  out.resize(start + vector_bytes(VectorEncoding::ScaledByte, count));\n  out[start] = static_cast<std::uint8_t>(127 + exponent);\n  for (std::size_t i = 0; i < count; ++i) {"
-      },
-      {
-        "path": "tests/check_core.py",
-        "start_line": 388,
-        "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/check_core.py#L388",
-        "purpose": "L2 距离经输出舍入后相等的排序回归；核对默认主键次序与显式降序。",
-        "excerpt": "        db.ok(\"CREATE TABLE rounded (id BIGINT PRIMARY KEY, v VECTOR(2));\")\n        db.ok(\"INSERT INTO rounded VALUES (2,[1,0]),(1,[1,0.00000001490116119384765625]);\", 2)\n        rounded = \"SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM rounded ORDER BY d\"\n        db.query(rounded + \" LIMIT 1;\", [[1, 1.0]])\n        db.query(rounded + \";\", [[1, 1.0], [2, 1.0]])\n        db.query(rounded + \" DESC;\", [[1, 1.0], [2, 1.0]])\n        db.query(rounded + \", id ASC LIMIT 1;\", [[1, 1.0]])\n        db.query(rounded + \", id DESC LIMIT 1;\", [[2, 1.0]])"
-      },
-      {
-        "path": "tests/benchmark_local.py",
-        "start_line": 121,
-        "url": "https://github.com/sevenmiles666/psfseekdb/blob/dccb61eb98b9f6a98cee30d59aca5684d9fedc15/tests/benchmark_local.py#L121",
-        "purpose": "独立检查重启后的持久化向量 float32 位模式，而不只检查行数。",
-        "excerpt": "            rows, count, error = db.sql(\"SELECT id,bucket,v FROM vectors ORDER BY id;\")\n            assert count == len(rows) == ROWS and error is None\n            for i, row in enumerate(rows):\n                key, bucket, vector = row\n                assert key == i and bucket == buckets[i]\n                assert struct.pack(f\"<{DIMENSION}f\", *vector) == struct.pack(f\"<{DIMENSION}f\", *vectors[i])\n    return {\"seconds\": seconds, \"durability_and_content_passed\": True, **measured}"
-      }
-    ],
-    "source_files": [
-      {
-        "path": "tests/round2-jsonl-benchmark.json",
-        "git_blob_sha1": "e0d116a659a61ecced084d447af0d53b3ed82ae8",
-        "sha256": "ddc59a7ba7ef52b44fc459fdc3ea3b73a25c8fd00577492a5a05c4ddbce8314a"
-      },
-      {
-        "path": "tests/round2-race-vs-c16935a.json",
-        "git_blob_sha1": "cd55582797907ce42adbc91c81fbc4dfd1fa8322",
-        "sha256": "9976fabaad5af3bc63488e22cbdf090c73f889a6cd5072aab90af94aff8d34d9"
-      },
-      {
-        "path": "tests/round2-compact-grid.json",
-        "git_blob_sha1": "d71153c09ccee9a05728b9c7503b11cd0e6880ce",
-        "sha256": "83f903a6997791744cb264d8994e3bc67b326acdd7ba661ccfd8bd5cd5fbf520"
-      },
-      {
-        "path": "tests/round2-compact-continuous.json",
-        "git_blob_sha1": "dda598752f9276a7409cc1e57872d46513edf061",
-        "sha256": "2153ac0a3288b3a29289c36d32ab07dc9fbf70c7b6ec7c74f3cd83b2ce97d592"
-      },
-      {
-        "path": "tests/round2-byte-grid.json",
-        "git_blob_sha1": "f4001832e81d96b1982ec4545f0da1be72ac5928",
-        "sha256": "2f4982aaa1d226d48cb9124562d3fafd5d2c0761d2cc185d22876fbec5d8511c"
-      },
-      {
-        "path": "tests/round2-byte-continuous.json",
-        "git_blob_sha1": "c2457102c49390974366ce5b3349523b5d47bdc4",
-        "sha256": "dae7ddc3737d2aaf745b235e5492456b94d55e8ecc9a3d261a4cad5e3c02bc64"
-      },
-      {
-        "path": "src/encoding.hpp",
-        "git_blob_sha1": "e4470961ff2e13bb136c815ed5f3b572edadaf94",
-        "sha256": "6171b796b5a5e00b4255f0dcf0d5ad6a299ed89079a67c3eae1366aef90ebc3c"
-      },
-      {
-        "path": "tests/check_core.py",
-        "git_blob_sha1": "39c3b5aa4f300c18847bb73bb1cd112c19b0e29d",
-        "sha256": "37dcf7c50b750b5d364796d0feb97251c95dec10e67ae160d2af3d965b064e92"
-      },
-      {
-        "path": "tests/benchmark_local.py",
-        "git_blob_sha1": "6ee0e83e9f868f1541656f13d2d2238703bc6444",
-        "sha256": "333008f73471b677b056c6f89d5b096e1fbf0b47f2626e21d703ec5ff0877916"
-      }
-    ]
   }
 }
