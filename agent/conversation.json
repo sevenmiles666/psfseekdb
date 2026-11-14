@@ -1,5 +1,5 @@
 {
-  "material_summary": "MiniVectorDB 实际交互及实验材料，代码快照 dccb61e。用户发现旧版正式性能指标更高，促使 Agent 回查两条正式记录和排序规则、更正比较结论，并据此选择旧版基础；learning_episodes 将这条实际交互与结果组织在一起。development_trace_index 另按“发现问题—采取改动—实际结果—取舍”串联五组历史技术过程：JSONL 协议修复、L2 舍入并列、CRC 方案淘汰、直接解码回退、无损编码与过滤优化。每处引用均定位到本文件的原始字符串，技术过程保持 Agent／工具归属。所有导入记录完整保留，GitHub 提交和六份报告共 26 轮的复算放在末尾 repository_evidence。历史成绩及参与范围见 submission_context，本次是本地材料修订，未进行正式评审。",
+  "material_summary": "MiniVectorDB 实际交互及实验材料，代码快照 dccb61e。用户发现旧版正式性能指标更高，促使 Agent 回查两条正式记录和排序规则、更正比较结论，并据此选择旧版基础；learning_episodes 将这条实际交互与结果组织在一起。development_trace_index 另按“发现问题—采取改动—实际结果—取舍”串联五组历史技术过程：JSONL 协议修复、L2 舍入并列、CRC 方案淘汰、直接解码回退、无损编码与过滤优化。每处引用均定位到本文件的原始字符串，技术过程保持 Agent／工具归属。recovered_sessions 恢复早期当前会话中“拿不准，两种都试”的原话和两组实际 SQL 响应；这段来自另一实现，保留来源与不确定性，不将实验设计或正确解释改归给学生。所有导入记录完整保留，GitHub 提交和六份报告共 26 轮的复算放在末尾 repository_evidence。历史成绩及参与范围见 submission_context，本次是本地材料修订，未进行正式评审。",
   "learning_episodes": [
     {
       "id": "metric-comparison-and-version-choice",
@@ -41,6 +41,32 @@
       "sequence": "Agent 初次汇报新版本正式结果时没有比较旧版；用户指出第二条指标更高。Agent 核对两条正式记录和题面排序方向，承认遗漏比较并更正结论。用户接着要求以旧版为基础处理 Prompt 问题。实际结果数据在 result_records 所指字符串内，用户本人没有声称执行性能测量或独立推导指标公式。",
       "attribution": "用户贡献是发现比较遗漏并提出版本选择；公式解释和接口回读属于 Agent／工具来源。",
       "deduplication": "质疑、核对后的选择和相关正式结果属于同一条链，仅在这里组织一次。"
+    },
+    {
+      "id": "uncertain-atomicity-request-and-measurement",
+      "topic": "用户拿不准多行插入冲突后状态，允许比较；Agent 具体化并执行两种插入方式。",
+      "student_records": [
+        {
+          "pointer": "/recovered_sessions/0/records/1/content",
+          "quote": "都试一下吧，我拿不准，或者你选"
+        }
+      ],
+      "assistant_records": [
+        {
+          "pointer": "/recovered_sessions/0/records/0/content",
+          "quote": "你认为这次执行后应该留下哪些行？"
+        }
+      ],
+      "result_records": [
+        {
+          "pointer": "/recovered_sessions/0/experiments/0/summary",
+          "quote": "one_multirow_statement: rows=[[1]]; two_autocommit_statements: rows=[[1], [2]]"
+        }
+      ],
+      "sequence": "Agent 提出问题，用户表明不确定并允许试验。Agent 比较批量语句和拆开的自动提交语句，记录每条 SQL 的响应，并向用户解释两者结果。",
+      "attribution": "问题、实验的具体设计与解释来自 Agent；用户原话只有不确定和测试请求。不能据此补写学生正确预测或学生复盘。",
+      "deduplication": "两种 SQL 形式属于这次原子性比较的同一条链，不按每条 SQL 或每次运行拆分。",
+      "eligibility_note": "互动和实际结果存在，但学生技术贡献较弱；保留完整上下文供评审判断，不预先指定分数或计为已完成的高档实例。"
     }
   ],
   "development_trace_index": {
@@ -167,8 +193,68 @@
       "quote": "无，全部靠你发挥"
     },
     "participation_note": "上述回答针对是否亲自设计或核对过测试。不能把其后新增的 Agent 实验当成学生本人完成的验证，也不能把性能提升目标改写为已经发生的技术理解。",
-    "verification_scope": "本次校验输入格式、证据引用、角色归属、重复实例、原材料保留及运行文件一致性；没有运行平台评审。"
+    "verification_scope": "本次校验输入格式、证据引用、角色归属、重复实例、原材料保留及运行文件一致性；没有运行平台评审。",
+    "source_contexts": [
+      {
+        "id": "imported-team-material",
+        "source_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+        "participant_note": "仓库保存的历史 user／assistant／tool 记录。未核实其用户实名，不将其中一次“无，全部靠你发挥”的回答泛化为全体队员从未参与。"
+      },
+      {
+        "id": "current-chat",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded",
+        "participant_note": "current_review 与新恢复的早期原子性交流来自当前会话；角色和原话按实际记录保存。"
+      }
+    ]
   },
+  "recovered_sessions": [
+    {
+      "id": "current-chat-historical-atomicity",
+      "source_context": {
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded",
+        "source_repository_commit": "456c13ae2a34220281cf25eba1865fd64abefb06",
+        "source_files": [
+          {
+            "path": "agent/conversation.json",
+            "sha256": "3a07fc2b40178b77d6bff89f3b4d50cbea2f8eea67c99488299632790c935371"
+          },
+          {
+            "path": "tests/evidence/learning-atomicity.json",
+            "sha256": "c25bb31c63ce745c92d7d9173a5a26bd6869c05ed9b38309bda79cd626a33f51"
+          }
+        ],
+        "participant_scope": "本地当前会话的用户；与队友仓库其他 user 发言不根据账号推定为同一人。",
+        "historical_implementation_note": "以下是早期另一实现的实际对话和测试，不宣称它们当时在 dccb61e 上执行。本次对 dccb61e 的补充复测另行保存。"
+      },
+      "records": [
+        {
+          "role": "assistant",
+          "source": "actual input question shown to the user",
+          "content": "先留一条真实学习记录：表里已有主键 1，执行 INSERT 一次插入主键 2 和主键 1，后者冲突报错。你认为这次执行后应该留下哪些行？可以顺便说一句理由；我会用实际测试核对你的判断。"
+        },
+        {
+          "role": "user",
+          "source": "actual answer to the preceding question, exact text",
+          "content": "都试一下吧，我拿不准，或者你选"
+        },
+        {
+          "role": "assistant",
+          "source": "current chat commentary, exact text",
+          "content": "按你说的，继续在本地完成。刚才两种插入方式都已实测：一条批量语句遇到冲突会整条回滚；拆成两条执行，先成功的那条会保留。我接着完成容器验收、资源测试和交付文档。"
+        }
+      ],
+      "experiments": [
+        {
+          "id": "historical-atomicity-comparison",
+          "role": "tool",
+          "source": "固定提交保存的 tests/evidence/learning-atomicity.json；已核对与历史 conversation.json 嵌入输出一致。",
+          "output": "[\n  {\n    \"scenario\": \"one_multirow_statement\",\n    \"records\": [\n      {\n        \"sql\": \"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\n        \"response\": {\n          \"id\": 1,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (1);\",\n        \"response\": {\n          \"affected_rows\": 1,\n          \"id\": 2,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (2),(1);\",\n        \"response\": {\n          \"error\": {\n            \"code\": \"duplicate_key\",\n            \"message\": \"Duplicate primary key\"\n          },\n          \"id\": 3,\n          \"ok\": false\n        }\n      },\n      {\n        \"sql\": \"SELECT id FROM t ORDER BY id;\",\n        \"response\": {\n          \"columns\": [\n            \"id\"\n          ],\n          \"id\": 4,\n          \"ok\": true,\n          \"rows\": [\n            [\n              1\n            ]\n          ]\n        }\n      }\n    ]\n  },\n  {\n    \"scenario\": \"two_autocommit_statements\",\n    \"records\": [\n      {\n        \"sql\": \"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\n        \"response\": {\n          \"id\": 1,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (1);\",\n        \"response\": {\n          \"affected_rows\": 1,\n          \"id\": 2,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (2);\",\n        \"response\": {\n          \"affected_rows\": 1,\n          \"id\": 3,\n          \"ok\": true\n        }\n      },\n      {\n        \"sql\": \"INSERT INTO t VALUES (1);\",\n        \"response\": {\n          \"error\": {\n            \"code\": \"duplicate_key\",\n            \"message\": \"Duplicate primary key\"\n          },\n          \"id\": 4,\n          \"ok\": false\n        }\n      },\n      {\n        \"sql\": \"SELECT id FROM t ORDER BY id;\",\n        \"response\": {\n          \"columns\": [\n            \"id\"\n          ],\n          \"id\": 5,\n          \"ok\": true,\n          \"rows\": [\n            [\n              1\n            ],\n            [\n              2\n            ]\n          ]\n        }\n      }\n    ]\n  }\n]\n",
+          "summary": "one_multirow_statement: rows=[[1]]; two_autocommit_statements: rows=[[1], [2]]"
+        }
+      ],
+      "contribution_boundary": "用户明确表示拿不准并说“都试一下吧”，没有给出正确预测、理由或技术解释。将比较具体化为一条多行 INSERT 与两条自动提交 INSERT，以及设计、运行和解释结果，均由 Agent 完成。保留这次真实互动供评审判断，不把它写成学生自主设计或完整反思，也不预先指定其档位。"
+    }
+  ],
   "scope": "2026-11-09 至 2026-11-12 的 MiniVectorDB 开发、自测、官方 JSONL 适配和性能迭代。",
   "synthetic": false,
   "user_prompts": [

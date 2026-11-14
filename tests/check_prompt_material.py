@@ -191,6 +191,11 @@ def check(repo):
             raise ValueError('source commit differs from the manifest')
         for key in ['current_grade_source', 'participation_record']:
             check_reference(material, material['submission_context'][key], 'user')
+    if 'recovered_session_payload_sha256' in manifest:
+        payload = json.dumps(material['recovered_sessions'], ensure_ascii=False, sort_keys=True,
+                             separators=(',', ':'), allow_nan=False).encode('utf-8')
+        if hashlib.sha256(payload).hexdigest() != manifest['recovered_session_payload_sha256']:
+            raise ValueError('recovered historical session was changed')
     for entry in manifest['runtime_files']:
         body = (repo / entry['path']).read_bytes()
         git_sha = hashlib.sha1(b'blob ' + str(len(body)).encode() + b'\0' + body).hexdigest()
