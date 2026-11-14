@@ -16,7 +16,7 @@ struct RecordRef {
 
 class Journal {
 public:
-  explicit Journal(const std::filesystem::path &directory);
+  explicit Journal(const std::filesystem::path &directory, const char *filename = "store.wal");
 
   static constexpr std::uint64_t records_begin = 8;
   std::uint64_t size() const { return size_; }
@@ -25,6 +25,7 @@ public:
   bool read_frame(std::uint64_t offset, RecordRef &record, Bytes &out);
   void truncate(std::uint64_t size);
   void sync();
+  void replace_with(Journal &replacement, const std::filesystem::path &directory);
 
 private:
   enum class Access { None, Read, Write };
@@ -33,7 +34,9 @@ private:
   void append_bytes(const void *source, std::size_t size);
 
   // Declared before the stream so it remains alive until fclose finishes.
-  std::array<char, 64 * 1024> buffer_{};
+  std::unique_ptr<std::FILE, int (*)(std::FILE *)> directory_lock_{nullptr, std::fclose};
+  std::unique_ptr<std::array<char, 64 * 1024>> buffer_ =
+      std::make_unique<std::array<char, 64 * 1024>>();
   std::unique_ptr<std::FILE, int (*)(std::FILE *)> stream_{nullptr, std::fclose};
   std::uint64_t size_ = 0;
   std::uint64_t position_ = 0;

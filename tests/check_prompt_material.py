@@ -10,6 +10,12 @@ from pathlib import Path
 import re
 
 
+DIMENSIONS = {
+    '问题理解与自主拆解', '技术理解与迁移', '独立验证与质疑',
+    '实验与反馈迭代', '取舍与反思',
+}
+
+
 def unique_object(pairs):
     result = {}
     for key, value in pairs:
@@ -88,6 +94,15 @@ def check_learning_episodes(material):
         ids.add(identity)
         if not episode.get('student_records') or not episode.get('result_records'):
             raise ValueError('learning episode needs actual student and result records')
+        if material.get('evidence_organization_version') == 3:
+            kind = episode.get('grouping_type')
+            dimension = episode.get('primary_dimension')
+            if kind not in ('candidate_unit', 'dialogue_context'):
+                raise ValueError('invalid evidence grouping type')
+            if kind == 'candidate_unit' and (not isinstance(dimension, str) or dimension not in DIMENSIONS):
+                raise ValueError('candidate unit needs exactly one valid primary dimension')
+            if kind == 'dialogue_context' and dimension is not None:
+                raise ValueError('dialogue context must not claim a scoring dimension')
         for field, role, used in [
             ('student_records', 'user', used_student),
             ('result_records', 'tool', used_result),
@@ -95,6 +110,9 @@ def check_learning_episodes(material):
         ]:
             for ref in episode.get(field, []):
                 check_reference(material, ref, role)
+                if (material.get('evidence_organization_version') == 3 and field == 'result_records'
+                        and not ref['pointer'].endswith('/output')):
+                    raise ValueError('result reference must point to actual output')
                 if used is not None:
                     if ref['pointer'] in used:
                         raise ValueError(f'duplicate {field} source across learning episodes')
@@ -172,15 +190,38 @@ def check(repo):
     summary = resolve_pointer(material, manifest['summary_pointer'])
     if not isinstance(summary, str) or not summary.strip():
         raise ValueError('material summary must be a nonempty string')
-    for ref in material['evidence_navigation']:
+    for ref in material.get('evidence_navigation', []):
         check_reference(material, ref)
     episodes, episode_references = check_learning_episodes(material)
     if manifest.get('format') == 'minivectordb-material-manifest-v2' and not episodes:
         raise ValueError('v2 material needs at least one navigable learning episode')
-    history = {key: material[key] for key in manifest['historical_top_level_keys']}
-    canonical = json.dumps(history, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
-    if hashlib.sha256(canonical).hexdigest() != manifest['historical_payload_sha256']:
-        raise ValueError('imported historical fields were changed')
+    if manifest.get('evidence_scope') == 'agent_and_tool_only':
+        attribution = material.get('attribution', {})
+        if (attribution.get('student_evidence_status') != 'not_available'
+                or attribution.get('operator_dialogue_included') is not False):
+            raise ValueError('agent/tool material must declare its actual evidence scope')
+
+        def check_attribution(value):
+            if isinstance(value, dict):
+                role = value.get('role', value.get('speaker'))
+                if role in ('user', 'student', '用户', '学生'):
+                    raise ValueError('operator/student dialogue is excluded from this material')
+                if value.get('student_records') or value.get('student_evidence'):
+                    raise ValueError('this material has no verified student evidence')
+                for child in value.values():
+                    check_attribution(child)
+            elif isinstance(value, list):
+                for child in value:
+                    check_attribution(child)
+
+        check_attribution(material)
+        if material.get('learning_episodes'):
+            raise ValueError('agent/tool material must not claim student learning units')
+    if 'historical_top_level_keys' in manifest:
+        history = {key: material[key] for key in manifest['historical_top_level_keys']}
+        canonical = json.dumps(history, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()
+        if hashlib.sha256(canonical).hexdigest() != manifest['historical_payload_sha256']:
+            raise ValueError('imported historical fields were changed')
     if 'imported_source' in manifest:
         source = manifest['imported_source']
         restored = {entry['key']: resolve_pointer(material, entry['preserved_at']) for entry in source['fields']}
@@ -202,6 +243,59 @@ def check(repo):
                                separators=(',', ':'), allow_nan=False).encode('utf-8')
         if hashlib.sha256(canonical).hexdigest() != entry['canonical_json_payload_sha256']:
             raise ValueError('normalized SQL payload differs from its source')
+    if 'local_verification_payload_sha256' in manifest:
+        local = material['local_verification']
+        payload = json.dumps(local, ensure_ascii=False, sort_keys=True,
+                             separators=(',', ':'), allow_nan=False).encode('utf-8')
+        if hashlib.sha256(payload).hexdigest() != manifest['local_verification_payload_sha256']:
+            raise ValueError('executed verification records differ from the manifest')
+        if local['role'] != 'tool' or local['code_commit'] != manifest['code_base_commit']:
+            raise ValueError('executed verification attribution or source commit differs')
+        for group in ('basic', 'extended', 'benchmark'):
+            for record in local[group]:
+                if record['role'] != 'tool' or record['status'] != 'PASS':
+                    raise ValueError('verification output must retain tool attribution and actual status')
+                load_json(record['output'].encode('utf-8'))
+        if 'linux_vm' in local:
+            linux=local['linux_vm']
+            if linux['role']!='tool' or linux['status']!='PASS':
+                raise ValueError('Linux resource output attribution or status differs')
+            result=load_json(linux['output'].encode('utf-8'))
+            if result['memory_limit_bytes']!=33554432 or result['swap_limit_bytes']!=0:
+                raise ValueError('Linux resource limit differs')
+            if result['persisted_file_bytes']<=result['memory_limit_bytes'] or len(result['resource_samples'])!=3:
+                raise ValueError('Linux large-storage coverage differs')
+            for sample in result['resource_samples']:
+                if (sample['memory_limit_bytes']!=33554432 or sample['swap_limit_bytes']!=0
+                        or not 0<sample['memory_peak_bytes']<=33554432
+                        or 'oom_kill 0' not in sample['memory_events']):
+                    raise ValueError('Linux resource sample differs')
+        for entry in manifest.get('verification_tools', []):
+            if hashlib.sha256((repo / entry['path']).read_bytes()).hexdigest() != entry['sha256']:
+                raise ValueError('verification tool differs from the manifest')
+    if 'local_engine_optimization_payload_sha256' in manifest:
+        revision = material['local_engine_optimization']
+        payload = json.dumps(revision, ensure_ascii=False, sort_keys=True,
+                             separators=(',', ':'), allow_nan=False).encode('utf-8')
+        if hashlib.sha256(payload).hexdigest() != manifest['local_engine_optimization_payload_sha256']:
+            raise ValueError('local engine optimization records differ from the manifest')
+        if revision['role'] != 'tool' or revision['status'] != 'PASS':
+            raise ValueError('local engine optimization requires actual tool results')
+        for name, expected in revision['changed_source_sha256'].items():
+            if hashlib.sha256((repo / name).read_bytes()).hexdigest() != expected:
+                raise ValueError('local engine optimization source differs')
+    for entry in manifest.get('preserved_tool_payloads', []):
+        value = resolve_pointer(material, entry['pointer'])
+        payload = json.dumps(value, ensure_ascii=False, sort_keys=True,
+                             separators=(',', ':'), allow_nan=False).encode('utf-8')
+        if hashlib.sha256(payload).hexdigest() != entry['sha256']:
+            raise ValueError('preserved tool output differs from the manifest')
+    if 'development_prompt' in manifest:
+        entry = manifest['development_prompt']
+        content = (repo / entry['path']).read_bytes()
+        if (hashlib.sha256(content).hexdigest() != entry['sha256']
+                or resolve_pointer(material, entry['pointer']).encode('utf-8') != content):
+            raise ValueError('development prompt file and embedded content differ')
     for entry in manifest['runtime_files']:
         body = (repo / entry['path']).read_bytes()
         git_sha = hashlib.sha1(b'blob ' + str(len(body)).encode() + b'\0' + body).hexdigest()
@@ -216,10 +310,16 @@ def check(repo):
     return {
         'status': 'PASS', 'bytes': len(data), 'sha256': digest,
         'both_material_paths_identical': True,
-        'references_checked': len(material['evidence_navigation']),
+        'references_checked': len(material.get('evidence_navigation', [])),
         'learning_episodes_checked': episodes,
+        'candidate_units_indexed': sum(e.get('grouping_type') == 'candidate_unit'
+                                       for e in material.get('learning_episodes', [])),
+        'dialogue_contexts_indexed': sum(e.get('grouping_type') == 'dialogue_context'
+                                        for e in material.get('learning_episodes', [])),
         'episode_references_checked': episode_references,
-        'historical_fields_preserved': True,
+        'historical_fields_preserved': 'historical_top_level_keys' in manifest,
+        'evidence_scope': manifest.get('evidence_scope', 'historical_material'),
+        'student_evidence_status': material.get('attribution', {}).get('student_evidence_status'),
         'runtime_files_checked': len(manifest['runtime_files']),
         'repository_evidence_sources_checked': repository_sources,
         'development_traces_checked': development_traces,

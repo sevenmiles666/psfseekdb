@@ -79,10 +79,14 @@ std::uint32_t checksum(const Bytes &bytes) {
 
 }  // namespace
 
-Journal::Journal(const std::filesystem::path &directory) {
+Journal::Journal(const std::filesystem::path &directory, const char *filename) {
   std::filesystem::create_directories(directory);
-  stream_.reset(open_journal(directory / "store.wal"));
-  if (std::setvbuf(stream_.get(), buffer_.data(), _IOFBF, buffer_.size()) != 0) {
+  if (std::string_view(filename) == "store.wal") {
+    directory_lock_.reset(open_journal(directory / "store.lock"));
+    std::filesystem::remove(directory / "store.wal.next");
+  }
+  stream_.reset(open_journal(directory / filename));
+  if (std::setvbuf(stream_.get(), buffer_->data(), _IOFBF, buffer_->size()) != 0) {
     io_failure("set journal buffer");
   }
   seek_file(stream_.get(), 0, SEEK_END);
@@ -193,6 +197,25 @@ void Journal::sync() {
   if (result != 0) {
     io_failure("sync journal");
   }
+}
+
+void Journal::replace_with(Journal &replacement, const std::filesystem::path &directory) {
+  replacement.sync();
+  std::filesystem::rename(directory / "store.wal.next", directory / "store.wal");
+  const int descriptor = ::open(directory.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+  if (descriptor < 0) io_failure("open journal directory");
+  int result;
+  do { result = ::fsync(descriptor); } while (result != 0 && errno == EINTR);
+  const int saved_errno = errno;
+  ::close(descriptor);
+  if (result != 0) { errno = saved_errno; io_failure("sync journal directory"); }
+  // The new WAL is already locked. Keep the directory lock throughout the
+  // replacement, and move each stdio stream together with its backing buffer.
+  stream_.swap(replacement.stream_);
+  buffer_.swap(replacement.buffer_);
+  std::swap(size_, replacement.size_);
+  std::swap(position_, replacement.position_);
+  std::swap(access_, replacement.access_);
 }
 
 }  // namespace minivector
