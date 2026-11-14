@@ -3,8 +3,8 @@
   "code_base_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
   "canonical_path": "agent/conversation.json",
   "compatibility_path": "conversation.json",
-  "material_sha256": "ff1d84781dab7d69b8ae6cc98b88906cf46d915c54cb8231c5a1b579d7535287",
-  "material_bytes": 130762,
+  "material_sha256": "15d8ff8ac8b4bfaa937f6b4681a4a3c3ac390bb14e57cd37fcb67b57e5d86027",
+  "material_bytes": 130397,
   "summary_pointer": "/material_summary",
   "note": "原有 Agent/工具对象完整保留；追加实际来源的 AI 技术交流及工具输入输出。正式评分与提测状态由平台决定。",
   "runtime_files": [
@@ -82,7 +82,7 @@
     }
   ],
   "local_validation_only": true,
-  "local_verification_payload_sha256": "5e78b17319425729d327456092d25cfad13b54be7530b41353f55970e956674b",
+  "local_verification_payload_sha256": "0f2331b3b215756878049a10c10da9bdf7e5809ede9e4fd6aecff214846dca1e",
   "verification_tools": [
     {
       "path": "tests/run_learning_experiments.py",
@@ -153,9 +153,16 @@
   "ai_discussion": {
     "pointer": "/ai_technical_discussion",
     "source_thread_id": "01a1da75-1a21-74a3-b9ce-2ad7dd4af14d",
-    "payload_sha256": "8e35ddff05f62ee2bf40236bd5f90ddbd9c24eadcbe4b23851d87665b8ed35c1",
-    "incoming_prompt_count": 15,
+    "payload_sha256": "3e13a5dffe5016cd2dec610bc74576bce14040ad5a948acd8845883adeedcc3a",
+    "incoming_prompt_count": 14,
     "actual_tool_experiments": 10,
+    "student_evidence": false
+  },
+  "continuation_discussion": {
+    "pointer": "/continuation_technical_discussion",
+    "payload_sha256": "ebd2b01f453401db92ca2dc0b8739404f2f93fda96944245d5c7504cd98a4fe1",
+    "incoming_excerpt_count": 10,
+    "actual_experiment_groups": 3,
     "student_evidence": false
   }
 }
