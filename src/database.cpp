@@ -467,6 +467,7 @@ private:
 Database::Database(const std::filesystem::path &directory)
     : directory_(directory), journal_(directory_) {
   recover();
+  maybe_checkpoint();
 }
 
 Database::Savepoint Database::savepoint() const { return {journal_.size(), undo_.size()}; }
@@ -517,6 +518,70 @@ void Database::recover() {
   for (const auto &target : tables_) {
     if (target->index) {
       rebuild_index(*target);
+    }
+  }
+}
+
+void Database::maybe_checkpoint() {
+  if (transaction_ || journal_.size() < checkpoint_check_at_) return;
+  std::uint64_t live = Journal::records_begin;
+  for (const auto &table : tables_) {
+    live += 4096;  // Conservative catalog and commit-frame allowance.
+    for (const auto &entry : table->rows) live += entry.second.reference.size + 8;
+  }
+  checkpoint_check_at_ = journal_.size() + std::max<std::uint64_t>(journal_.size() / 2, 4 * 1024 * 1024);
+  if (live <= journal_.size() / 3) {
+    checkpoint();
+    checkpoint_check_at_ = std::max<std::uint64_t>(4 * 1024 * 1024, journal_.size() * 2);
+  }
+}
+
+void Database::checkpoint() {
+  // No active transaction or outstanding undo references cross this boundary.
+  std::filesystem::remove(directory_ / "store.wal.next");
+  Journal replacement(directory_, "store.wal.next");
+  std::vector<std::uint64_t> starts;
+  starts.reserve(tables_.size());
+  Bytes payload;
+  for (const auto &table : tables_) {
+    payload.assign(1, static_cast<std::uint8_t>(RecordKind::Create));
+    put_u32(payload, table->id);
+    put_string(payload, table->name);
+    put_u32(payload, static_cast<std::uint32_t>(table->primary_key));
+    put_u32(payload, static_cast<std::uint32_t>(table->columns.size()));
+    for (const auto &column : table->columns) {
+      put_string(payload, column.name);
+      payload.push_back(static_cast<std::uint8_t>(column.type));
+      put_u32(payload, column.width);
+    }
+    replacement.append(payload);
+    if (table->index) {
+      payload.assign(1, static_cast<std::uint8_t>(RecordKind::Index));
+      put_u32(payload, table->id);
+      put_string(payload, table->index->name);
+      put_u32(payload, static_cast<std::uint32_t>(table->index->column));
+      replacement.append(payload);
+    }
+    replacement.append(Bytes{static_cast<std::uint8_t>(RecordKind::Commit)});
+    starts.push_back(replacement.size());
+    std::size_t count = 0;
+    for (const auto &entry : table->rows) {
+      journal_.read(entry.second.reference, payload);
+      replacement.append(payload);  // Preserve the original lossless row bytes.
+      if (++count % 256 == 0)
+        replacement.append(Bytes{static_cast<std::uint8_t>(RecordKind::Commit)});
+    }
+    if (count % 256 != 0) replacement.append(Bytes{static_cast<std::uint8_t>(RecordKind::Commit)});
+  }
+  // All old references remain valid until the durable atomic replacement.
+  journal_.replace_with(replacement, directory_);
+  for (std::size_t table = 0; table < tables_.size(); ++table) {
+    auto offset = starts[table];
+    std::size_t count = 0;
+    for (auto &entry : tables_[table]->rows) {
+      entry.second.reference.offset = offset + 8;
+      offset += entry.second.reference.size + 8;
+      if (++count % 256 == 0) offset += 9;
     }
   }
 }
@@ -619,6 +684,7 @@ void Database::transaction(Transaction command) {
     rollback(*transaction_);
   }
   transaction_.reset();
+  maybe_checkpoint();
 }
 
 void Database::close() {
@@ -626,6 +692,7 @@ void Database::close() {
     rollback(*transaction_);
     transaction_.reset();
   }
+  maybe_checkpoint();
 }
 
 Database::Table &Database::table(const std::string &name) {
@@ -689,61 +756,123 @@ void Database::set_row(Table &table, std::int64_t key, std::optional<StoredRow> 
   }
 }
 
-void Database::invalidate_cache(std::uint32_t table) {
-  if (search_cache_ && search_cache_->table == table) {
-    search_cache_.reset();
-  }
-  if (oversized_cache_ && *oversized_cache_ == table) {
-    oversized_cache_.reset();
-  }
+std::uint64_t Database::cache_bytes() const {
+  std::uint64_t bytes = 0;
+  for (const auto &cache : search_caches_) bytes += cache.used_bytes;
+  return bytes;
 }
 
-Database::SearchCache *Database::search_cache(const Table &table, std::size_t vector_column) {
-  if (search_cache_ && search_cache_->table == table.id) {
-    return &*search_cache_;
-  }
-  if (oversized_cache_ && *oversized_cache_ == table.id) {
-    return nullptr;
-  }
-  constexpr std::uint64_t budget = 8 * 1024 * 1024;
-  const std::uint64_t dimension = table.columns[vector_column].width;
-  std::uint64_t fixed_per_row = sizeof(std::uint32_t) + dimension * sizeof(float);
-  for (const auto &column : table.columns) {
-    if (column.type == Type::Bigint) fixed_per_row += sizeof(std::int64_t);
-    if (column.type == Type::Varchar) fixed_per_row += sizeof(std::string);
-  }
-  const auto count = table.rows.size();
-  const std::uint64_t column_bytes = table.columns.size() * sizeof(CachedColumn);
-  if (column_bytes > budget || count > (budget - column_bytes) / fixed_per_row) {
-    oversized_cache_ = table.id;
-    return nullptr;
-  }
+void Database::invalidate_cache(std::uint32_t table) {
+  auto &target = *tables_[table];
+  if (target.cache_reads != 0) target.delay_cache = target.cache_reads <= 1;
+  target.cache_reads = 0;
+  target.cache_unfit = false;
+  search_caches_.remove_if([&](const SearchCache &cache) { return cache.table == table; });
+}
 
-  search_cache_.reset();
-  SearchCache cache{};
-  cache.table = table.id;
-  cache.keys.reserve(count);
-  const std::size_t components = count * dimension;
+void Database::cache_columns(SearchCache &cache, const Table &table,
+                             const std::vector<std::size_t> &columns) {
+  constexpr std::uint64_t budget = 8 * 1024 * 1024;
+  std::vector<std::size_t> missing;
+  std::uint64_t extra = 0;
+  for (const auto column : columns) {
+    if (column == table.primary_key || column == cache.vector_column ||
+        !std::holds_alternative<std::monostate>(cache.scalars[column]) ||
+        cache.unavailable_columns[column] ||
+        std::find(missing.begin(), missing.end(), column) != missing.end()) continue;
+    const auto bytes = table.rows.size() * (table.columns[column].type == Type::Bigint
+        ? sizeof(std::int64_t) : sizeof(std::string));
+    if (bytes > budget - cache_bytes() - extra) {
+      cache.unavailable_columns[column] = true;
+      continue;
+    }
+    extra += bytes;
+    missing.push_back(column);
+  }
+  if (missing.empty()) return;
+  std::vector<CachedColumn> additions(missing.size());
+  for (std::size_t j = 0; j < missing.size(); ++j) {
+    if (table.columns[missing[j]].type == Type::Bigint)
+      additions[j].emplace<std::vector<std::int64_t>>().reserve(table.rows.size());
+    else additions[j].emplace<std::vector<std::string>>().reserve(table.rows.size());
+  }
+  Bytes buffer;
+  Row row;
+  for (const auto &entry : table.rows) {
+    load_row(table, entry.second.reference, buffer, row);
+    for (std::size_t j = 0; j < missing.size(); ++j) {
+      const auto column = missing[j];
+      if (auto *text = std::get_if<std::string>(&row[column])) {
+        if (text->size() + 1 > budget - cache_bytes() - extra) {
+          for (const auto failed : missing) cache.unavailable_columns[failed] = true;
+          return;
+        }
+        extra += text->size() + 1;
+        std::get<std::vector<std::string>>(additions[j]).push_back(std::move(*text));
+      } else std::get<std::vector<std::int64_t>>(additions[j]).push_back(std::get<std::int64_t>(row[column]));
+    }
+  }
+  for (std::size_t j = 0; j < missing.size(); ++j)
+    cache.scalars[missing[j]] = std::move(additions[j]);
+  cache.used_bytes += extra;
+}
+
+Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_column,
+                                             const std::vector<std::size_t> &columns) {
+  ++table.cache_reads;
+  for (auto it = search_caches_.begin(); it != search_caches_.end(); ++it) {
+    if (it->table == table.id && it->vector_column == vector_column) {
+      search_caches_.splice(search_caches_.begin(), search_caches_, it);
+      cache_columns(search_caches_.front(), table, columns);
+      return &search_caches_.front();
+    }
+  }
+  if (table.cache_unfit || (table.delay_cache && table.cache_reads == 1)) return nullptr;
+  constexpr std::uint64_t total_budget = 8 * 1024 * 1024;
+  const std::uint64_t dimension = table.columns[vector_column].width;
+  const auto count = table.rows.size();
+  const std::uint64_t components = count * dimension;
+  const std::uint64_t column_bytes = table.columns.size() * (sizeof(CachedColumn) + 1);
+  const std::uint64_t fixed = column_bytes + count * (sizeof(std::int64_t) + sizeof(std::uint32_t));
   const auto quantized_bytes = components + count * sizeof(std::int32_t);
   const auto sign_bytes = (components + 7) / 8;
   const bool quantize = dimension >= 32 && dimension <= 4096 && components >= 256 * 1024 &&
                         integer_distance_kernel();
-  // Try an exact byte representation first. If a row cannot share the common
-  // scale, expand the preceding rows into the normal float cache once.
-  cache.exact_codes = quantize && quantized_bytes + sign_bytes <=
-      budget - column_bytes - count * (fixed_per_row - dimension * sizeof(float));
+  const auto minimum = fixed + (quantize ? quantized_bytes + sign_bytes : components * sizeof(float));
+  if (minimum > total_budget) { table.cache_unfit = true; return nullptr; }
+  while (!search_caches_.empty() && minimum > total_budget - cache_bytes()) search_caches_.pop_back();
+  auto budget = total_budget - cache_bytes();
+  SearchCache cache{};
+  cache.table = table.id;
+  cache.vector_column = vector_column;
+  cache.keys.reserve(count);
+  cache.exact_codes = quantize;
   if (!cache.exact_codes) cache.vectors.reserve(components);
   cache.scalars.resize(table.columns.size());
+  cache.unavailable_columns.resize(table.columns.size());
+  std::uint64_t used = minimum;
+  std::vector<std::uint64_t> column_used(table.columns.size());
+  auto initial_columns = columns;
+  std::uint64_t eager_bytes = 0;
   for (std::size_t column = 0; column < table.columns.size(); ++column) {
-    if (column == table.primary_key || column == vector_column) continue;
-    if (table.columns[column].type == Type::Bigint) {
-      cache.scalars[column].emplace<std::vector<std::int64_t>>().reserve(count);
-    } else {
-      cache.scalars[column].emplace<std::vector<std::string>>().reserve(count);
+    const auto bytes = count * sizeof(std::int64_t);
+    if (column != table.primary_key && table.columns[column].type == Type::Bigint &&
+        bytes <= 256 * 1024 - eager_bytes) {
+      initial_columns.push_back(column);
+      eager_bytes += bytes;
     }
   }
-  std::uint64_t used = column_bytes + count * fixed_per_row;
-  if (cache.exact_codes) used = used - components * sizeof(float) + quantized_bytes + sign_bytes;
+  for (const auto column : initial_columns) {
+    if (column == table.primary_key || column == vector_column || column_used[column] != 0) continue;
+    const auto bytes = count * (table.columns[column].type == Type::Bigint
+        ? sizeof(std::int64_t) : sizeof(std::string));
+    if (bytes > budget - used) { cache.unavailable_columns[column] = true; continue; }
+    used += bytes;
+    column_used[column] = bytes;
+    if (table.columns[column].type == Type::Bigint)
+      cache.scalars[column].emplace<std::vector<std::int64_t>>().reserve(count);
+    else cache.scalars[column].emplace<std::vector<std::string>>().reserve(count);
+  }
   Bytes buffer;
   Row row;
   std::vector<std::int8_t> codes;
@@ -791,36 +920,47 @@ Database::SearchCache *Database::search_cache(const Table &table, std::size_t ve
         cache.quantized_norms[row_index] = norm;
       } else {
         used = used - quantized_bytes - sign_bytes + components * sizeof(float);
+        while (!search_caches_.empty() && used > total_budget - cache_bytes()) search_caches_.pop_back();
+        budget = total_budget - cache_bytes();
         if (used > budget) {
-          oversized_cache_ = table.id;
+          table.cache_unfit = true;
           return nullptr;
         }
+        // Avoid holding both full representations during an FP32 fallback.
+        std::vector<std::int8_t>{}.swap(cache.quantized);
+        std::vector<std::int32_t>{}.swap(cache.quantized_norms);
+        std::vector<std::uint8_t>{}.swap(cache.negative_zeros);
         cache.vectors.reserve(components);
-        for (std::size_t previous = 0; previous < row_index; ++previous) {
-          for (std::size_t i = 0; i < dimension; ++i) {
-            const auto index = previous * dimension + i;
-            const auto code = cache.quantized[quantized_offset(previous, i, dimension, cache.block_rows)];
-            const bool negative_zero = code == 0 && (cache.negative_zeros[index / 8] & (1U << (index % 8)));
-            cache.vectors.push_back(negative_zero ? -0.0f : code * static_cast<float>(cache.quantization_step));
-          }
+        Bytes previous_buffer;
+        Row previous_row;
+        auto previous_entry = table.rows.begin();
+        for (std::size_t previous = 0; previous < row_index; ++previous, ++previous_entry) {
+          load_row(table, previous_entry->second.reference, previous_buffer, previous_row);
+          const auto &previous_vector = std::get<Vector>(previous_row[vector_column]);
+          cache.vectors.insert(cache.vectors.end(), previous_vector.begin(), previous_vector.end());
         }
         cache.exact_codes = false;
         std::vector<std::uint8_t>{}.swap(cache.negative_zeros);
       }
     }
     if (!cache.exact_codes) cache.vectors.insert(cache.vectors.end(), vector.begin(), vector.end());
-    for (std::size_t column = 0; column < row.size(); ++column) {
-      if (column == vector_column || column == table.primary_key) continue;
-      if (const auto *text = std::get_if<std::string>(&row[column])) {
-        const std::uint64_t bytes = text->size() + 1;
+    for (std::size_t column = 0; column < cache.scalars.size(); ++column) {
+      auto &values = cache.scalars[column];
+      if (auto *integers = std::get_if<std::vector<std::int64_t>>(&values)) {
+        integers->push_back(std::get<std::int64_t>(row[column]));
+      } else if (auto *strings = std::get_if<std::vector<std::string>>(&values)) {
+        const auto &text = std::get<std::string>(row[column]);
+        const auto bytes = text.size() + 1;
         if (bytes > budget - used) {
-          oversized_cache_ = table.id;
-          return nullptr;
+          used -= column_used[column];
+          column_used[column] = 0;
+          values.emplace<std::monostate>();
+          cache.unavailable_columns[column] = true;
+        } else {
+          used += bytes;
+          column_used[column] += bytes;
+          strings->push_back(text);
         }
-        used += bytes;
-        std::get<std::vector<std::string>>(cache.scalars[column]).push_back(*text);
-      } else {
-        std::get<std::vector<std::int64_t>>(cache.scalars[column]).push_back(std::get<std::int64_t>(row[column]));
       }
     }
     cache.keys.push_back(entry.first);
@@ -863,9 +1003,38 @@ Database::SearchCache *Database::search_cache(const Table &table, std::size_t ve
       std::vector<std::int32_t>{}.swap(cache.quantized_norms);
     }
   }
-  cache.can_group_quantized = cache.block_rows != 0 && count * sizeof(std::uint32_t) <= budget - used;
-  search_cache_ = std::move(cache);
-  return &*search_cache_;
+  cache.used_bytes = used;
+  cache.can_group_quantized = false;
+  search_caches_.push_front(std::move(cache));
+  cache_columns(search_caches_.front(), table, columns);
+  return &search_caches_.front();
+}
+
+void Database::reorder_quantized(SearchCache &cache,
+                                  const std::vector<std::uint32_t> &permutation,
+                                  std::size_t dimension) {
+  std::vector<bool> visited(permutation.size());
+  std::vector<std::int8_t> saved(dimension);
+  const auto offset = [&](std::size_t position, std::size_t coordinate) {
+    return quantized_offset(position, coordinate, dimension, cache.block_rows);
+  };
+  for (std::size_t start = 0; start < permutation.size(); ++start) {
+    if (visited[start] || permutation[start] == start) continue;
+    const auto norm = cache.quantized_norms[start];
+    for (std::size_t i = 0; i < dimension; ++i) saved[i] = cache.quantized[offset(start, i)];
+    auto destination = start;
+    while (permutation[destination] != start) {
+      const auto source = permutation[destination];
+      for (std::size_t i = 0; i < dimension; ++i)
+        cache.quantized[offset(destination, i)] = cache.quantized[offset(source, i)];
+      cache.quantized_norms[destination] = cache.quantized_norms[source];
+      visited[destination] = true;
+      destination = source;
+    }
+    for (std::size_t i = 0; i < dimension; ++i) cache.quantized[offset(destination, i)] = saved[i];
+    cache.quantized_norms[destination] = norm;
+    visited[destination] = true;
+  }
 }
 
 void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row) {
@@ -1165,7 +1334,9 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       }
       return descending_ties ? left.key > right.key : left.key < right.key;
     };
-    auto *cache = search_cache(target, vector_column);
+    std::vector<std::size_t> filter_columns;
+    for (const auto &predicate : predicates) filter_columns.push_back(predicate.column);
+    auto *cache = search_cache(target, vector_column, filter_columns);
     const auto estimate = distance_estimator(query.size());
     QuantizedKernel dot = nullptr;
     std::vector<std::int8_t> query_quantized;
@@ -1288,9 +1459,19 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
           estimate.kernel(vector, query.data(), query.size()) > cutoff) return;
       consider_distance(cache->keys[index], {}, squared_distance(vector, query), index);
     };
+    std::optional<std::size_t> scalar_row;
     const auto compare_scalar = [&](std::size_t index, std::size_t column, const Value &value) {
       if (column == target.primary_key) return compare(cache->keys[index], std::get<std::int64_t>(value));
       const auto &values = cache->scalars[column];
+      if (std::holds_alternative<std::monostate>(values)) {
+        if (!scalar_row || *scalar_row != index) {
+          load_row(target, target.rows.at(cache->keys[index]).reference, buffer, row);
+          scalar_row = index;
+        }
+        if (const auto *integer = std::get_if<std::int64_t>(&row[column]))
+          return compare(*integer, std::get<std::int64_t>(value));
+        return std::get<std::string>(row[column]).compare(std::get<std::string>(value));
+      }
       if (const auto *integers = std::get_if<std::vector<std::int64_t>>(&values)) {
         return compare((*integers)[index], std::get<std::int64_t>(value));
       }
@@ -1327,7 +1508,33 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       for (; begin < end; ++begin) visit(begin);
     };
 
-    if (mode == SearchMode::Ann && target.index && !primary_tiebreak) {
+    bool use_ann = mode == SearchMode::Ann && target.index &&
+                   target.index->column == vector_column && !primary_tiebreak;
+    if (use_ann && cache && query.size() >= 32) {
+      // Estimate the useful first-coordinate pruning window with a bounded
+      // sample. A sequential exact scan also satisfies ANN's result contract.
+      const auto samples = std::min<std::size_t>(64, cache->keys.size());
+      use_ann = samples != 0 && limit <= samples;
+      if (use_ann) {
+        for (std::size_t i = 0; i < samples; ++i) {
+          const auto index = i * cache->keys.size() / samples;
+          if (matches_cached(index)) consider_cached(index);
+        }
+        std::size_t inside = 0;
+        if (nearest.size() == limit) {
+          for (std::size_t i = 0; i < samples; ++i) {
+            const auto index = i * cache->keys.size() / samples;
+            const double difference = static_cast<double>(target.rows.at(cache->keys[index]).projection) - query.front();
+            if (difference * difference <= worst_squared) ++inside;
+          }
+        }
+        use_ann = nearest.size() == limit && inside * 5 < samples;
+        nearest.clear();
+        cutoff = worst_squared = std::numeric_limits<double>::infinity();
+        scalar_row.reset();
+      }
+    }
+    if (use_ann) {
       const auto &entries = target.index->ordered;
       auto right = entries.lower_bound({query.front(), std::numeric_limits<std::int64_t>::min()});
       auto left = std::make_reverse_iterator(right);
@@ -1358,10 +1565,60 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         }
       }
     } else if (cache) {
-      const auto filter = std::find_if(predicates.begin(), predicates.end(), [&](const BoundPredicate &p) {
-        return p.comparison == Comparison::Eq &&
-               (!cache->equality || cache->equality->column == p.column);
-      });
+      auto filter = predicates.end();
+      auto existing = predicates.end();
+      std::size_t best_estimate = cache->keys.size() + 1;
+      const auto samples = std::min<std::size_t>(256, cache->keys.size());
+      for (auto it = predicates.begin(); it != predicates.end(); ++it) {
+        if (it->comparison != Comparison::Eq || it->column == target.primary_key ||
+            std::holds_alternative<std::monostate>(cache->scalars[it->column])) continue;
+        if (cache->equality && cache->equality->column == it->column) existing = it;
+        std::size_t estimate = 0;
+        if (cache->equality && cache->equality->column == it->column) {
+          const auto &indices = cache->equality->rows;
+          const auto first = std::lower_bound(indices.begin(), indices.end(), it->value,
+              [&](auto index, const Value &value) { return compare_scalar(index, it->column, value) < 0; });
+          const auto end = std::upper_bound(first, indices.end(), it->value,
+              [&](const Value &value, auto index) { return compare_scalar(index, it->column, value) > 0; });
+          estimate = end - first;
+        } else {
+          std::size_t hits = 0;
+          for (std::size_t i = 0; i < samples; ++i)
+            hits += compare_scalar(i * cache->keys.size() / samples, it->column, it->value) == 0;
+          estimate = samples == 0 ? 0 : hits * cache->keys.size() / samples;
+        }
+        if (estimate < best_estimate || (estimate == best_estimate &&
+            (filter == predicates.end() || it->column < filter->column))) {
+          best_estimate = estimate;
+          filter = it;
+        }
+      }
+      if (filter != predicates.end() && cache->equality && filter->column != cache->equality->column &&
+          existing != predicates.end()) {
+        const auto &indices = cache->equality->rows;
+        const auto first = std::lower_bound(indices.begin(), indices.end(), existing->value,
+            [&](auto index, const Value &value) { return compare_scalar(index, existing->column, value) < 0; });
+        const auto end = std::upper_bound(first, indices.end(), existing->value,
+            [&](const Value &value, auto index) { return compare_scalar(index, existing->column, value) > 0; });
+        const auto old_count = static_cast<std::size_t>(end - first);
+        if (cache->switch_column != filter->column) cache->switch_credit = 0;
+        cache->switch_column = filter->column;
+        const auto visit_cost = cache->block_rows != 0 ? query.size() : std::size_t{1};
+        if (old_count > best_estimate) cache->switch_credit += (old_count - best_estimate) * visit_cost;
+        const auto rebuild = cache->keys.size() * ((cache->equality->positions.empty() ? 0 : 2 * query.size()) +
+            static_cast<std::size_t>(std::ceil(std::log2(cache->keys.size() + 1))));
+        if (old_count <= best_estimate || cache->switch_credit < rebuild) filter = existing;
+      }
+      if (filter != predicates.end() && !cache->equality &&
+          (target.cache_reads == 1 || best_estimate * 4 >= cache->keys.size() * 3)) filter = predicates.end();
+      if (filter != predicates.end() && cache->equality && filter->column != cache->equality->column) {
+        if (!cache->equality->positions.empty()) {
+          reorder_quantized(*cache, cache->equality->positions, query.size());
+          cache->used_bytes -= cache->equality->positions.size() * sizeof(std::uint32_t);
+        }
+        cache->equality.reset();
+        cache->switch_credit = 0;
+      }
       if (filter == predicates.end()) {
         if (predicates.empty() && blocks.block) {
           scan_blocks(0, cache->keys.size(), nullptr);
@@ -1391,36 +1648,16 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
             [&](auto index, const Value &value) { return compare_scalar(index, filter->column, value) < 0; });
         const auto end = std::upper_bound(first, indices.end(), filter->value,
             [&](const Value &value, auto index) { return compare_scalar(index, filter->column, value) > 0; });
-        if (blocks.block && cache->can_group_quantized && cache->equality->positions.empty() &&
+        const auto grouping_bytes = cache->keys.size() * sizeof(std::uint32_t);
+        const auto grouping_scratch = (cache->keys.size() + 7) / 8 + query.size();
+        if (blocks.block && cache->equality->positions.empty() &&
+            grouping_bytes + grouping_scratch <= 8 * 1024 * 1024 - cache_bytes() &&
             end - first >= 4 * static_cast<std::ptrdiff_t>(quantized_block_rows)) {
-          // Reorder the byte cache in place by the scalar key. Keep row identity
-          // and the original vectors in primary-key order.
           auto &positions = cache->equality->positions;
-          std::vector<bool> visited(indices.size());
-          std::vector<std::int8_t> saved(query.size());
           positions.resize(indices.size());
           for (std::size_t i = 0; i < indices.size(); ++i) positions[indices[i]] = i;
-          const auto offset = [&](std::size_t position, std::size_t coordinate) {
-            return quantized_offset(position, coordinate, query.size(), cache->block_rows);
-          };
-          for (std::size_t start = 0; start < indices.size(); ++start) {
-            if (visited[start] || indices[start] == start) continue;
-            const auto norm = cache->quantized_norms[start];
-            for (std::size_t i = 0; i < query.size(); ++i) saved[i] = cache->quantized[offset(start, i)];
-            auto destination = start;
-            while (indices[destination] != start) {
-              const auto source = indices[destination];
-              for (std::size_t i = 0; i < query.size(); ++i) {
-                cache->quantized[offset(destination, i)] = cache->quantized[offset(source, i)];
-              }
-              cache->quantized_norms[destination] = cache->quantized_norms[source];
-              visited[destination] = true;
-              destination = source;
-            }
-            for (std::size_t i = 0; i < query.size(); ++i) cache->quantized[offset(destination, i)] = saved[i];
-            cache->quantized_norms[destination] = norm;
-            visited[destination] = true;
-          }
+          reorder_quantized(*cache, indices, query.size());
+          cache->used_bytes += grouping_bytes;
         }
         if (blocks.block && !cache->equality->positions.empty()) {
           scan_blocks(first - indices.begin(), end - indices.begin(), &*filter);
@@ -1443,6 +1680,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         continue;
       }
       if (sink) {
+        bool loaded = false;
         const float *vector = nullptr;
         projected.clear();
         for (const auto &expression : projection) {
@@ -1462,8 +1700,14 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
             const auto &values = cache->scalars[expression.column];
             if (const auto *integers = std::get_if<std::vector<std::int64_t>>(&values)) {
               projected.emplace_back((*integers)[entry.index]);
+            } else if (const auto *strings = std::get_if<std::vector<std::string>>(&values)) {
+              projected.emplace_back((*strings)[entry.index]);
             } else {
-              projected.emplace_back(std::get<std::vector<std::string>>(values)[entry.index]);
+              if (!loaded) {
+                load_row(target, target.rows.at(entry.key).reference, buffer, row);
+                loaded = true;
+              }
+              projected.push_back(row[expression.column]);
             }
           }
         }
@@ -1654,6 +1898,7 @@ Execution Database::execute(std::string_view sql, const RowSink &sink, SearchMod
   }
   if (!transaction_) {
     commit(before);
+    maybe_checkpoint();
   }
   return result;
 }
