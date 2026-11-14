@@ -170,6 +170,19 @@ def unicode_length(r):
     r.sql('SELECT id,text FROM u ORDER BY id;', rows=[[1, '你🙂'], [2, '你a']])
 
 
+def autocommit_before_begin(r):
+    r.sql('CREATE TABLE b (id BIGINT PRIMARY KEY);')
+    r.sql('INSERT INTO b VALUES (1);', affected=1)
+    r.sql('INSERT INTO b VALUES (2);', affected=1)
+    r.sql('BEGIN;')
+    r.sql('INSERT INTO b VALUES (3),(1);', error=True)
+    r.sql('SELECT id FROM b ORDER BY id;', rows=[[1], [2]])
+    r.sql('ROLLBACK;')
+    r.sql('SELECT id FROM b ORDER BY id;', rows=[[1], [2]])
+    r.reopen()
+    r.sql('SELECT id FROM b ORDER BY id;', rows=[[1], [2]])
+
+
 CASES = [
     ('statement-and-transaction-atomicity', atomicity),
     ('filtered-topk', filtered_topk), ('rounded-l2-ties', rounded_ties),
@@ -177,6 +190,7 @@ CASES = [
     ('confirmed-commit-and-crash', crash_recovery),
     ('float32-roundtrip-and-rejection', float32_roundtrip),
     ('unicode-character-length', unicode_length),
+    ('autocommit-before-begin', autocommit_before_begin),
 ]
 
 

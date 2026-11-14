@@ -1,5 +1,5 @@
 {
-  "material_summary": "MiniVectorDB 实际交互及实验材料，代码快照 dccb61e。用户发现旧版正式性能指标更高，促使 Agent 回查两条正式记录和排序规则、更正比较结论，并据此选择旧版基础；learning_episodes 将这条实际交互与结果组织在一起。development_trace_index 另按“发现问题—采取改动—实际结果—取舍”串联五组历史技术过程：JSONL 协议修复、L2 舍入并列、CRC 方案淘汰、直接解码回退、无损编码与过滤优化。每处引用均定位到本文件的原始字符串，技术过程保持 Agent／工具归属。recovered_sessions 恢复早期当前会话中“拿不准，两种都试”的原话和两组实际 SQL 响应；这段来自另一实现，保留来源与不确定性，不将实验设计或正确解释改归给学生。所有导入记录完整保留，GitHub 提交和六份报告共 26 轮的复算放在末尾 repository_evidence。历史成绩及参与范围见 submission_context，本次是本地材料修订，未进行正式评审。",
+  "material_summary": "MiniVectorDB 实际交互及实验材料，代码快照 dccb61e。用户发现旧版正式性能指标更高，促使 Agent 回查两条正式记录和排序规则、更正比较结论，并据此选择旧版基础；learning_episodes 将这条实际交互与结果组织在一起。development_trace_index 另按“发现问题—采取改动—实际结果—取舍”串联五组历史技术过程：JSONL 协议修复、L2 舍入并列、CRC 方案淘汰、直接解码回退、无损编码与过滤优化。每处引用均定位到本文件的原始字符串，技术过程保持 Agent／工具归属。recovered_sessions 恢复早期当前会话中“拿不准，两种都试”的原话和两组实际 SQL 响应；这段来自另一实现，保留来源与不确定性，不将实验设计或正确解释改归给学生。该原子性链还附有当前会话的详细解释请求、Agent 实际回复和队友版本的事务边界核验，仍按同一条链组织。所有导入记录完整保留，GitHub 提交和六份报告共 26 轮的复算放在末尾 repository_evidence。历史成绩及参与范围见 submission_context，本次是本地材料修订，未进行正式评审。",
   "learning_episodes": [
     {
       "id": "metric-comparison-and-version-choice",
@@ -55,15 +55,27 @@
         {
           "pointer": "/recovered_sessions/0/records/0/content",
           "quote": "你认为这次执行后应该留下哪些行？"
+        },
+        {
+          "pointer": "/recovered_sessions/0/continuations/0/records/2/content",
+          "quote": "失败语句会撤销自己的修改；事务中此前成功的语句仍然有效，可以继续提交或回滚。"
         }
       ],
       "result_records": [
         {
           "pointer": "/recovered_sessions/0/experiments/0/summary",
           "quote": "one_multirow_statement: rows=[[1]]; two_autocommit_statements: rows=[[1], [2]]"
+        },
+        {
+          "pointer": "/recovered_sessions/0/continuations/0/experiments/0/summary",
+          "quote": "COMMIT 后及重启后为 [[1], [2]]；ROLLBACK 后及重启后为 [[1]]。"
+        },
+        {
+          "pointer": "/recovered_sessions/0/continuations/0/experiments/1/summary",
+          "quote": "插入 2 在 BEGIN 前已自动提交：后续冲突和 ROLLBACK 后为 [[1], [2]]，重启后仍为 [[1], [2]]。"
         }
       ],
-      "sequence": "Agent 提出问题，用户表明不确定并允许试验。Agent 比较批量语句和拆开的自动提交语句，记录每条 SQL 的响应，并向用户解释两者结果。",
+      "sequence": "Agent 提出问题，用户表明不确定并允许试验。Agent 比较批量语句和拆开的自动提交语句，记录每条 SQL 的响应，并向用户解释两者结果。后续用户请求详细说明并请 Agent 判断；Agent 结合队友版本的实测解释语句与事务边界，并核验插入移到 BEGIN 前的变体。",
       "attribution": "问题、实验的具体设计与解释来自 Agent；用户原话只有不确定和测试请求。不能据此补写学生正确预测或学生复盘。",
       "deduplication": "两种 SQL 形式属于这次原子性比较的同一条链，不按每条 SQL 或每次运行拆分。",
       "eligibility_note": "互动和实际结果存在，但学生技术贡献较弱；保留完整上下文供评审判断，不预先指定分数或计为已完成的高档实例。"
@@ -252,7 +264,65 @@
           "summary": "one_multirow_statement: rows=[[1]]; two_autocommit_statements: rows=[[1], [2]]"
         }
       ],
-      "contribution_boundary": "用户明确表示拿不准并说“都试一下吧”，没有给出正确预测、理由或技术解释。将比较具体化为一条多行 INSERT 与两条自动提交 INSERT，以及设计、运行和解释结果，均由 Agent 完成。保留这次真实互动供评审判断，不把它写成学生自主设计或完整反思，也不预先指定其档位。"
+      "contribution_boundary": "用户明确表示拿不准并说“都试一下吧”，没有给出正确预测、理由或技术解释。将比较具体化为一条多行 INSERT 与两条自动提交 INSERT，以及设计、运行和解释结果，均由 Agent 完成。保留这次真实互动供评审判断，不把它写成学生自主设计或完整反思，也不预先指定其档位。",
+      "continuations": [
+        {
+          "id": "current-explanation-and-transaction-boundary",
+          "source_thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded",
+          "source_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+          "build_note": "macOS arm64 semantic check; unmodified source compiled with -Dfdatasync=fsync and explicit macOS SDK. This is not the Linux competition environment or a performance measurement.",
+          "records": [
+            {
+              "role": "assistant",
+              "id": "call_c158a05f9f524502b086bb492095d075",
+              "content": "要新增一条真实验证记录，先请你判断这个场景：已有主键 1；BEGIN 后成功插入 2；随后一条 INSERT 同时插入 3 和重复的 1，报错。你认为这时再 COMMIT 应留下哪些主键？如果改为 ROLLBACK 呢？说一句理由即可；我会在他的版本上实际验证。"
+            },
+            {
+              "role": "user",
+              "id": "01a1d938-fc28-7d93-8baf-45b85e5e7ec7",
+              "content": "详细说说",
+              "source": "Exact answer extracted from the actual question reply."
+            },
+            {
+              "turn_id": "01a1d938-fc19-7041-9739-73d4ca2d8147",
+              "id": "msg_0538cf09d44bfb44016af81f538c9c87d1bba02e56686886e7",
+              "role": "assistant",
+              "content": "按这道题的规定，**失败语句会撤销自己的修改；事务中此前成功的语句仍然有效，可以继续提交或回滚。**\n\n假设开始时，主键 `1` 已经提交保存。接下来执行：\n\n```sql\nBEGIN;\n\nINSERT INTO t VALUES (2);       -- 成功\nINSERT INTO t VALUES (3), (1);  -- 主键 1 重复，整条语句失败\n```\n\n逐步看数据状态：\n\n| 执行阶段 | 当前事务能看到的主键 | 原因 |\n|---|---|---|\n| 开始时 | `1` | 原先已经保存的数据 |\n| 插入 `2` 成功后 | `1、2` | `2` 属于当前事务，尚未提交 |\n| 插入 `(3)、(1)` 失败后 | `1、2` | 这条语句的修改全部撤销，`3` 也不能留下 |\n\n这里最容易混淆的是：**插入 `2` 和插入 `(3)、(1)` 是两条不同的语句。** 后一条失败，只撤销后一条所做的修改。\n\n此时有两种选择：\n\n- 执行 **`COMMIT`**：保存当前事务中成功的修改，所以最终留下 **`1、2`**。\n- 执行 **`ROLLBACK`**：撤销从 `BEGIN` 开始的所有修改，成功插入的 `2` 也会撤销，所以最终只剩 **`1`**。原来的 `1` 在事务开始前就已提交，因此保留。\n\n这也解释了之前两个实验为什么结果不同：\n\n```sql\n-- 一条语句：整体成功或整体撤销\nINSERT INTO t VALUES (2), (1);\n-- 遇到重复主键，最终只剩 1\n```\n\n```sql\n-- 没有 BEGIN：两条语句分别自动提交\nINSERT INTO t VALUES (2);  -- 成功，并已经提交\nINSERT INTO t VALUES (1);  -- 失败\n-- 最终留下 1、2\n```\n\n以上结果已经在他的版本上本地实测，重启后的数据也一致。\n\n你可以再想一个变化：**如果把插入 `2` 放到 `BEGIN` 之前，后面执行 `ROLLBACK`，`2` 还会被撤销吗？为什么？**"
+            },
+            {
+              "turn_id": "01a1d93b-7289-75f2-8d7b-088cd4a46526",
+              "id": "01a1d93b-7290-7422-bd00-0ece2ae4db63",
+              "role": "user",
+              "content": "那你觉得呢\n"
+            },
+            {
+              "turn_id": "01a1d93b-7289-75f2-8d7b-088cd4a46526",
+              "id": "msg_0538cf09d44bfb44016af81fdfafe887d187dd406ef7a700fe",
+              "role": "assistant",
+              "content": "**主键 2 会保留，最终留下 1、2。**\n\n因为插入 `2` 在 `BEGIN` 之前，已自动提交。后面的 `ROLLBACK` 只能撤销当前事务里的修改，不能撤销先前已提交的数据。\n\n刚才已在他的版本上实测：**回滚后是 1、2，重启后仍是 1、2。**"
+            }
+          ],
+          "experiments": [
+            {
+              "role": "tool",
+              "id": "statement-and-transaction-atomicity",
+              "recorded_at": "2026-11-14T08:02:27.137917+00:00",
+              "output": "[\n  {\n    \"event\": \"ready\",\n    \"response\": {\n      \"type\": \"ready\"\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 1,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE batch (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 1,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 2,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO batch VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 2,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 3,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO batch VALUES (2),(1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 3,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 4,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM batch ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 4,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 5,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE split (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 5,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 6,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO split VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 6,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 7,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO split VALUES (2);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 7,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 8,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO split VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 8,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 9,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM split ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 9,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 10,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE tx_commit (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 10,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 11,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_commit VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 11,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 12,\n      \"op\": \"execute\",\n      \"sql\": \"BEGIN;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 12,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 13,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_commit VALUES (2);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 13,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 14,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_commit VALUES (3),(1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 14,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 15,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_commit ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 15,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 16,\n      \"op\": \"execute\",\n      \"sql\": \"COMMIT;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 16,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 17,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_commit ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 17,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 18,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE tx_rollback (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 18,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 19,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_rollback VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 19,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 20,\n      \"op\": \"execute\",\n      \"sql\": \"BEGIN;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 20,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 21,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_rollback VALUES (2);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 21,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 22,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO tx_rollback VALUES (3),(1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 22,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 23,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_rollback ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 23,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 24,\n      \"op\": \"execute\",\n      \"sql\": \"ROLLBACK;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 24,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 25,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_rollback ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 25,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ]\n      ]\n    }\n  },\n  {\n    \"event\": \"EOF_and_wait\"\n  },\n  {\n    \"event\": \"ready\",\n    \"response\": {\n      \"type\": \"ready\"\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 1,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM batch ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 1,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 2,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM split ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 2,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 3,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_commit ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 3,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 4,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM tx_rollback ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 4,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ]\n      ]\n    }\n  },\n  {\n    \"event\": \"EOF_and_wait\"\n  }\n]",
+              "summary": "显式事务内先插入 2，再执行 (3),(1) 报错：COMMIT 后及重启后为 [[1], [2]]；ROLLBACK 后及重启后为 [[1]]。"
+            },
+            {
+              "role": "tool",
+              "id": "successful_autocommit_before_begin_survives_rollback",
+              "recorded_at": "2026-11-14T08:46:10.379938+00:00",
+              "output": "[\n  {\n    \"event\": \"ready\",\n    \"response\": {\n      \"type\": \"ready\"\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 1,\n      \"op\": \"execute\",\n      \"sql\": \"CREATE TABLE t (id BIGINT PRIMARY KEY);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 1,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 2,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO t VALUES (1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 2,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 3,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO t VALUES (2);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 3,\n      \"ok\": true,\n      \"affected_rows\": 1\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 4,\n      \"op\": \"execute\",\n      \"sql\": \"BEGIN;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 4,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 5,\n      \"op\": \"execute\",\n      \"sql\": \"INSERT INTO t VALUES (3),(1);\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 5,\n      \"ok\": false,\n      \"error\": {\n        \"code\": \"DUPLICATE_KEY\",\n        \"message\": \"duplicate primary key 1\"\n      }\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 6,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM t ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 6,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 7,\n      \"op\": \"execute\",\n      \"sql\": \"ROLLBACK;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 7,\n      \"ok\": true,\n      \"affected_rows\": 0\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 8,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM t ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 8,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"event\": \"EOF_and_wait\"\n  },\n  {\n    \"event\": \"ready\",\n    \"response\": {\n      \"type\": \"ready\"\n    }\n  },\n  {\n    \"request\": {\n      \"id\": 1,\n      \"op\": \"execute\",\n      \"sql\": \"SELECT id FROM t ORDER BY id;\",\n      \"search_mode\": \"exact\"\n    },\n    \"response\": {\n      \"id\": 1,\n      \"ok\": true,\n      \"columns\": [\n        \"id\"\n      ],\n      \"rows\": [\n        [\n          1\n        ],\n        [\n          2\n        ]\n      ]\n    }\n  },\n  {\n    \"event\": \"EOF_and_wait\"\n  }\n]",
+              "summary": "插入 2 在 BEGIN 前已自动提交：后续冲突和 ROLLBACK 后为 [[1], [2]]，重启后仍为 [[1], [2]]。"
+            }
+          ],
+          "chronology_note": "首组实测在用户请求详细解释前已完成；BEGIN 前自动提交的变体在用户请 Agent 给判断后执行。两个完整回复为实际已发送内容，不能倒填成学生预测。",
+          "attribution": "用户请求详细解释并请 Agent 给出判断；机制解释、预测与实验执行来自 Agent／工具，没有据此推断学生已掌握机制。",
+          "deduplication": "属于原子性讨论的后续说明及边界核验，继续沿用同一实例，不新增独立实例。"
+        }
+      ]
     }
   ],
   "scope": "2026-11-09 至 2026-11-12 的 MiniVectorDB 开发、自测、官方 JSONL 适配和性能迭代。",
