@@ -1,0 +1,19 @@
+.gitattributes export-ignore
+.gitignore export-ignore
+
+# Keep the bytes used by the contest material and runtime manifests stable.
+/.dockerignore text eol=lf
+/Dockerfile text eol=lf
+/src/** text eol=lf
+/agent/conversation.json text eol=lf
+/conversation.json text eol=lf
+
+# All OceanBase code is auto-formatted using clang-format.
+*.c filter=codeformat
+*.cc filter=codeformat
+*.cpp filter=codeformat
+*.h filter=codeformat
+*.hpp filter=codeformat
+*.i filter=codeformat
+*.ic filter=codeformat
+*.js filter=codeformat

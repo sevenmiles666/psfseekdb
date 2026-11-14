@@ -1,0 +1,455 @@
+{
+  "scope": "2026-11-09 至 2026-11-12 的 MiniVectorDB 开发、自测、官方 JSONL 适配和性能迭代。",
+  "synthetic": false,
+  "user_prompts": [
+    {
+      "id": "round2-user-1",
+      "role": "user",
+      "content": "现在增加了新的题目，这是新的比赛规则和比赛题目",
+      "context": "用户同时提供了 MiniVectorDB 赛题说明及原有赛题 620 分、加赛双榜各 40 分的计分表。"
+    },
+    {
+      "id": "round2-user-2",
+      "role": "user",
+      "content": "直接帮我先做你能做的"
+    },
+    {
+      "id": "round2-user-3",
+      "role": "user",
+      "content": "那你现在除了这个其他的都先完成，自测",
+      "context": "本轮先完成可在本地开发和验证的部分，官方题包与驱动适配留待后续。"
+    },
+    {
+      "id": "round2-user-4",
+      "role": "user",
+      "content": "你直接自己检测",
+      "context": "用户要求检查已上传版本。Agent 从 GitHub 重新拉取并执行了本地 Docker 检查。"
+    },
+    {
+      "id": "round2-user-5",
+      "role": "user",
+      "content": "第一次失败了",
+      "context": "用户报告首次平台尝试失败，当时尚未收到平台任务日志。"
+    },
+    {
+      "id": "round2-user-6",
+      "role": "user",
+      "content": "继续做",
+      "context": "用户同时提供加赛性能榜和 Agent Prompt 榜的截图，继续处理提交及优化。截图中的榜首指标分别为 E 5536.788323 和 Prompt 原始分 39.5。"
+    }
+  ],
+  "conversations": [
+    {
+      "id": "round2-agent-1",
+      "role": "assistant",
+      "content": "我会从官方加赛分支建一个独立开发目录，先实现能验证的数据库核心，包括 SQL、精确 TopK、事务和崩溃恢复。评测协议单独做适配，等官方驱动公布后再接入。"
+    },
+    {
+      "id": "round2-agent-2",
+      "role": "assistant",
+      "content": "分段排序也通过了 32 MiB 容器测试。约 50 MiB 的数据重启后完成了精确 TopK 和全表排序，强杀与不完整提交帧的恢复检查也通过了。我会把运行说明和真实测试输出整理进首个本地提交。"
+    },
+    {
+      "id": "round2-agent-3",
+      "role": "assistant",
+      "content": "我会继续用本地测试协议，补齐向量索引、ANN、索引的事务维护和重启重建，再用同一批数据对比首版的耗时、I/O、内存和召回。通过自测后会整理学习记录并推送加赛分支。"
+    },
+    {
+      "id": "round2-agent-4",
+      "role": "assistant",
+      "content": "前两轮中，精确模式的 1,000 条查询都与暴力计算结果一致，首轮耗时从 7.64 秒降到 2.28 秒。ANN 的召回也达标，但这批 128 维数据很少能靠首坐标提前停止。我会保留精确模式作为默认选项，等第三轮结束后汇总耗时、I/O 和内存。"
+    },
+    {
+      "id": "round2-agent-5",
+      "role": "assistant",
+      "content": "官方已经发布了完整的 JSONL 协议和交互式检查器。旧版启动时输出 READY，而检查器要求 {\"type\":\"ready\"}，这个差异会让旧版在执行 SQL 前就失败。我会先用官方工具复现，再把 Docker 默认入口接到现有数据库引擎上。",
+      "context": "引用 Agent 进度消息，省略 Markdown 格式及链接。官方题包提交 f4d4e26653af823a7601668802f80e374ad6643c。"
+    },
+    {
+      "id": "round2-agent-6",
+      "role": "assistant",
+      "content": "新版已通过官方检查器的 20 组公开用例，旧版也已复现握手失败。接下来我会测向量解析和 Top-K 扫描的优化，用同样采用 JSONL 的版本作对照，并核对优化后的每条查询结果。"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "round2-tool-1",
+      "role": "tool",
+      "command": "python tests/check_core.py --image minivectordb-round2:dev --large",
+      "environment": "首版 590ff199321bc592cd4f3b0260645a70d995fbb3。Docker Linux amd64，运行容器禁用网络。大数据场景使用 33554432 字节的内存与内存交换总上限。",
+      "output": "SQL, Unicode, L2, scalar order and persisted schema passed\nTransaction visibility, statement rollback, commit and EOF rollback passed\nSIGKILL after commit, uncommitted tail over 64 KiB, and repeatable torn-frame recovery passed\n24 independent exact TopK queries passed, including 12 filtered queries in 128 dimensions\n52482580 bytes of persisted rows reopened, searched and sorted under a 33554432-byte container limit\nLocal integration checks passed"
+    },
+    {
+      "id": "round2-tool-2",
+      "role": "tool",
+      "command": "python tests/check_core.py --image minivectordb-round2:dev --large",
+      "environment": "索引与缓存版镜像 sha256:555a1e0b688a98f4f123597093c8f2d0722a79ac31a902d422f8ab31ed5ae7e8，Docker Linux amd64，运行容器禁用网络。",
+      "output": "SQL, Unicode, L2, scalar order and persisted schema passed\nTransaction visibility, statement rollback, commit and EOF rollback passed\nSIGKILL after commit, uncommitted tail over 64 KiB, and repeatable torn-frame recovery passed\n24 independent exact TopK queries passed, including 12 filtered queries in 128 dimensions\nExact/ANN distinction, index DDL rollback, index changes, cache invalidation and restart passed\n52482621 bytes of rows reopened, indexed, searched and sorted under a 33554432-byte container limit\nLocal integration checks passed"
+    },
+    {
+      "id": "round2-tool-3",
+      "role": "tool",
+      "command": "python -u tests/benchmark_local.py --probe build/benchmark_support --rounds 3 --output build/round2-benchmark.json",
+      "environment": "首版作为本地对照。两版分别用 2 CPU、64 MiB 内存、禁用 swap 的断网容器和独立数据卷。100 个批次各提交 100 条，写入后重启核对所有数据。查询装载预热后计时。独立暴力计算核对 1,000 条 Top-10，其中 500 条带等值过滤。数据 SHA-256 为 ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6。",
+      "output": "三轮全部通过。每轮各模式的有过滤和无过滤 Recall@10 均为 1.0。首版写入中位数 1.241904 s，I/O 5828608 字节，峰值内存 14290944 字节。新版写入中位数 1.227099 s，I/O 5828608 字节，峰值内存 15032320 字节。首版查询中位数 7.638390 s，I/O 5828608 字节，峰值内存 14585856 字节。新版 exact 查询中位数 2.277706 s，I/O 5828608 字节，峰值内存 21106688 字节。新版 ann 查询中位数 30.519206 s，I/O 5832704 字节，峰值内存 15376384 字节。本地 E 中位数分别为 0.497615、0.595402、0.377570。"
+    },
+    {
+      "id": "round2-tool-4",
+      "role": "tool",
+      "procedure": "首版容器写入三行。新版用原数据卷读取旧 WAL 并建立索引，再用 ann 模式启动并核对过滤查询、拒绝重复建索引。",
+      "output": "Baseline 590ff19 WAL reopened by the candidate; committed vector index rebuilt on restart and ANN query matched."
+    },
+    {
+      "id": "round2-tool-5",
+      "role": "tool",
+      "command": "python3 protocol_check/run.py --command '[\"./build/minivectordb\",\"--data-dir\",\"{data_dir}\"]' --handshake-only",
+      "environment": "旧版二进制，官方 f4d4e26 检查器，Ubuntu WSL。",
+      "output": "invalid JSON response: Expecting value: line 1 column 1 (char 0); stdout line (first 240 bytes)=b'READY\\tminivectordb-local-v1'"
+    },
+    {
+      "id": "round2-tool-6",
+      "role": "tool",
+      "command": "python3 build/official-f4d4e26/protocol_check/run.py --image minivectordb-round2:jsonl-perf --output build/official-jsonl-perf",
+      "environment": "官方 f4d4e26 公开检查器。断网容器、只读根文件系统、可写 /data、2 CPU、2 GiB 内存和 128 PID。",
+      "output": "全部 20 组公开用例、95 条 SQL 通过。用例状态为 sql_crud PASS, sql_comparisons PASS, sql_ordering PASS, sql_empty PASS, sql_primary_key PASS, sql_unicode PASS, sql_bigint PASS, sql_unsupported PASS, storage_restart PASS, vector_euclidean PASS, transaction_commit PASS, transaction_rollback PASS, storage_mutations PASS, storage_multiple_tables PASS, vector_ties_and_filter PASS, vector_float32 PASS, vector_index_maintenance PASS, transaction_failed_insert PASS, transaction_autocommit_atomic PASS, transaction_shutdown_rollback PASS"
+    },
+    {
+      "id": "round2-tool-7",
+      "role": "tool",
+      "command": "python tests/check_core.py --image minivectordb-round2:jsonl-perf --large",
+      "output": "请求 ID 类型、Unicode 转义、空结果列名、SQL 错误后的继续执行、正常关闭均通过。提交后强杀、断帧恢复、索引维护和 exact/ann 路径均通过。32 MiB 容器从 52482621 字节持久化数据重建索引并完成检索和排序。"
+    },
+    {
+      "id": "round2-tool-8",
+      "role": "tool",
+      "procedure": "两份 Linux 可执行程序分别加载相同的十进制向量数据，在 31、32、33、128 和 129 维执行每组 40 条 exact 查询。输入包含重复向量、不同数量级和等值过滤。",
+      "output": "200 exact comparisons matched the JSONL reference across dimensions 31, 32, 33, 128 and 129"
+    },
+    {
+      "id": "round2-tool-9",
+      "role": "tool",
+      "command": "python tests/benchmark_local.py --baseline-image minivectordb-round2:jsonl-base --candidate-image minivectordb-round2:jsonl-perf --probe build/benchmark_support --rounds 3 --output build/round2-jsonl-benchmark.json",
+      "environment": "对照提交 001819de55ae299e0cc74be306bea5f8438cae6b。两版采用 JSONL，2 CPU、64 MiB 内存、关闭 swap，独立 Docker 数据卷。",
+      "dataset_sha256": "ade6079d7c9189e08cef76c929cbaccbfd305d33c88d0fe312c3df11ab3342a6",
+      "images": {
+        "baseline": "sha256:511da2a8745c1b91aec191b51da330c9844eda75d72568397d9f312fce97ab44",
+        "candidate": "sha256:55e21129d623797e9f84d5b20c3bb7ebe3d657459bc57163b62d323291cfdd2c"
+      },
+      "output": "三轮均通过重启后的 10,000 条写入核对，以及每模式 1,000 条查询的独立暴力对照。有过滤和无过滤的 Recall@10 均为 1.0。写入中位数由 1.296921 秒降至 1.224591 秒，exact 查询由 2.359217 秒降至 2.107305 秒，优化版 ann 查询中位数为 4.163761 秒。exact 查询设备 I/O 均为 5828608 字节，峰值内存从 21102592 字节增至 21598208 字节。"
+    }
+  ],
+  "limitations": "用户贡献记录包括赛题材料、失败反馈和榜单截图。实现、测试设计和实验执行由 Agent 完成，独立自测或结果解读需按用户实际参与补充。性能数据来自本地 Docker 对照，数据卷与镜像共用底层设备，峰值内存含页缓存与最终探针，宿主缓存未重置。正式隐藏用例、性能榜指标和 Agent Prompt 分数待平台评测。",
+  "material_summary": "本材料记录 MiniVectorDB 加赛的实际对话与开发实验。用户在历史记录中发现早先提交的性能原始指标 2758.194681 高于另一版，并选择该版本作为修订基础。用户随后确认 fd9011a 的正式性能原始分为 4368、Agent Prompt 原始分为 1，提出继续优化。以 fd9011a 为对照，Agent 测量无损一字节向量编码和等值过滤，两种公开生成的数据各五轮。精确查询的中位耗时分别下降 9.08% 和 5.18%，逐条核对结果以及重启后的记录。用户原话、工具结果和 Agent 的技术取舍按实际来源记录。",
+  "provenance": {
+    "summary_author": "assistant",
+    "code_base_commit": "c16935a15dcdd5cc3803ff38746ee774e4b948b1",
+    "code_base_tree": "68b09b1691cfb281a4e527627d060ee5a9b26658",
+    "history_source_path": "agent/conversation.json",
+    "history_source_git_blob": "3c92b8294dc94a3c53b88b86306def315c1b9a52",
+    "history_source_sha256": "a6107e0b7faa0211cd3cb9aae2aae4b767a350f99f25ea4785529ee242c15c4b",
+    "history_note": "原有顶层字段及其内容保持原样，来源是上述 Git 提交中的材料文件。当前会话未重新执行其中的历史实验，也未取得该历史会话的完整原始聊天导出；本次新增聊天片段已通过当前会话记录核对，新增正式结果已通过平台接口与页面核对。旧 limitations 中“待平台评测”描述历史写作时点，当前正式反馈见 current_review。",
+    "added_scope": "完整保留本次结果核对与版本选择片段；不声称覆盖其他会话的全部开发历史。",
+    "recorded_at": "2026-11-12T06:50:24.712447+00:00",
+    "optimization_evidence_commit": "6318dd7fdc7a1f7604bc5044d09805d4fda1a7a3",
+    "prior_prompt_repair_commit": "2597c624d5399f099144594e0ff5593e09492509",
+    "latest_optimization_base_commit": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4"
+  },
+  "current_review": {
+    "scope": "早期提交的结果核对与版本取舍。fd9011a 后续反馈见 lossless_vector_iteration。",
+    "records": [
+      {
+        "id": "01a1ce58-05c7-7f80-a596-bc593fadc31c",
+        "role": "user",
+        "content": "提测一下\n",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      },
+      {
+        "id": "msg_03f4e4a4ac35adde016af55e72e82087d1bc6749c53bffd378",
+        "role": "assistant",
+        "content": "提测完成，任务号 `47251308`，版本 `bb7c32c1`。\n\n- **正式功能准入通过**。\n- 性能评测完成，原始指标 **E = 378.087631**。\n- Prompt 项未计分，平台提示“无效或待复核”等可能原因，未明确具体原因。材料格式检查正常，排名分暂未显示。\n\n[完整提测结果](/Users/ezio/Documents/ChatGPT/OceanBase%20数据库/MiniVectorDB正式提测_2026-11-12.md)",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      },
+      {
+        "id": "01a1ce7a-12bd-70f0-abad-bd62425761c5",
+        "role": "user",
+        "content": "你看看第二个那个指标还高点\n",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      },
+      {
+        "id": "msg_03f4e4a4ac35adde016af55f084bc887d1b0c71a3a1696fa58",
+        "role": "assistant",
+        "content": "是，第二条旧版确实更高：\n\n| 版本 | 性能指标 E |\n|---|---:|\n| 第二条旧版 `c16935a1` | **2758.194681** |\n| 最新版 `bb7c32c1` | **378.087631** |\n\n题面规定 **E 越高排名越好**，按这个规则，旧版更优。我刚才漏了两次对比，新版功能通过不能代表性能提升。\n\n不过两次数值都超出了题面公式的 0–1 范围，平台实际计算口径还需核实，不能直接换算成速度倍数。",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      },
+      {
+        "id": "01a1ce7c-cb65-7212-8f64-84c24554986c",
+        "role": "user",
+        "content": "那你就以旧版为底子，解决一下Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。\n",
+        "source": "当前会话原始消息正文；未改写",
+        "thread_id": "01a1bf21-3e42-7b43-88a0-55dc38811ded"
+      }
+    ],
+    "experiments": [
+      {
+        "id": "platform-task-47251293",
+        "role": "tool",
+        "source": "已登录平台 queryTestPlatformTaskRecordList 回读；只提取本队相应任务字段，Unicode 转义解码，未修改数值。",
+        "output": "{\"id\":47251293,\"commitId\":\"c16935a15dcdd5cc3803ff38746ee774e4b948b1\",\"branch\":\"2026-competition\",\"taskStatus\":2,\"successCount\":1,\"failCount\":0,\"testStartTime\":\"2026-11-12T06:03:03.000+00:00\",\"testEndTime\":\"2026-11-12T06:08:30.000+00:00\",\"testCaseResult\":[{\"testCase\":\"MySQL 正式用例\",\"resultStatus\":1,\"score\":\"0\",\"questionScore\":\"0\",\"message\":\"此项为准入条件，不计排名分\",\"playoffFeedback\":{\"performance\":\"性能评测完成；原始指标 E = 2758.194681\",\"prompt\":\"Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。\"}}]}"
+      },
+      {
+        "id": "platform-task-47251308",
+        "role": "tool",
+        "source": "已登录平台 queryTestPlatformTaskRecordList 回读；只提取本队相应任务字段，Unicode 转义解码，未修改数值。",
+        "output": "{\"id\":47251308,\"commitId\":\"bb7c32c1a9329e0512915d5f162a81531a28e7bc\",\"branch\":\"2026-competition-round2\",\"taskStatus\":2,\"successCount\":1,\"failCount\":0,\"testStartTime\":\"2026-11-12T06:19:48.000+00:00\",\"testEndTime\":\"2026-11-12T06:29:19.000+00:00\",\"testCaseResult\":[{\"testCase\":\"MySQL 正式用例\",\"resultStatus\":1,\"score\":\"0\",\"questionScore\":\"0\",\"message\":\"此项为准入条件，不计排名分\",\"playoffFeedback\":{\"performance\":\"性能评测完成；原始指标 E = 378.087631\",\"prompt\":\"Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。\"}}]}"
+      },
+      {
+        "id": "official-rule-20261111",
+        "role": "tool",
+        "source": "2026-11-12 读取官方语雀题面；文档 updated_at=2026-11-11T10:25:24.000Z，第 3.3.3 节。",
+        "output": "E 仅用于排序，不直接计入总分。三轮 E 取中位数后四舍五入保留六位小数，按从高到低排列"
+      }
+    ],
+    "assistant_retrospective": "初次汇报只列出新版本的功能通过与 E=378.087631，没有对比旧版。用户指出第二条指标更高，重新回读后确认旧版为 2758.194681，题面排序为从高到低。用户据此要求以旧版为基础。两次数值均超出题面归一化公式的 0–1 范围，平台未提供计算明细，因此不把数值比当作速度倍数。此解释属于 Agent，不能代作学生解释。",
+    "student_contribution_boundary": "本段可直接核对的学生贡献是指出旧版指标更高，并要求以旧版为基础处理 Prompt 问题。用户没有自行解释 E 的公式、设计数据库算法或声称亲自执行测试，材料不补写这些内容。多个发言属于同一条结果核对与版本选择链，不因拆分消息而视为多个独立贡献。",
+    "platform_status": "当时两次正式功能准入通过，Prompt 均未返回有效原始分。该阶段只有平台泛化提示，缺少三轮输出、具体错误类型和材料读取摘要。"
+  },
+  "evidence_navigation": [
+    {
+      "purpose": "用户对结果的质疑",
+      "pointer": "/current_review/records/2/content",
+      "quote": "你看看第二个那个指标还高点"
+    },
+    {
+      "purpose": "核对后用户的版本选择",
+      "pointer": "/current_review/records/4/content",
+      "quote": "那你就以旧版为底子"
+    },
+    {
+      "purpose": "旧版正式性能结果",
+      "pointer": "/current_review/experiments/0/output",
+      "quote": "性能评测完成；原始指标 E = 2758.194681"
+    },
+    {
+      "purpose": "新版正式性能结果",
+      "pointer": "/current_review/experiments/1/output",
+      "quote": "性能评测完成；原始指标 E = 378.087631"
+    },
+    {
+      "purpose": "实际核对的官方排序方向",
+      "pointer": "/current_review/experiments/2/output",
+      "quote": "按从高到低排列"
+    },
+    {
+      "purpose": "舍入并列反例与修复结果",
+      "pointer": "/performance_iteration/experiments/3/output",
+      "quote": "修正后两个 L2 距离均舍入为 1.0，Top-1 返回 [[1,1.0]]"
+    },
+    {
+      "purpose": "本次正式原始分和改进目标",
+      "pointer": "/lossless_vector_iteration/conversations/0/content",
+      "quote": "Agent Prompt评测完成；原始分 = 1，需要提高到至少30.性能原始分现在4368，还要继续提高目标是5800"
+    },
+    {
+      "purpose": "选手说明亲自测试的情况",
+      "pointer": "/lossless_vector_iteration/conversations/2/content",
+      "quote": "无，全部靠你发挥"
+    },
+    {
+      "purpose": "离散向量五轮容器对照",
+      "pointer": "/lossless_vector_iteration/experiments/2/output",
+      "quote": "离散向量写入 0.766110 → 0.745737 秒，查询 0.997610 → 0.906993 秒，写入物理 I/O 3268608 → 1994752 字节，查询峰值内存 17780736 → 11440128 字节。"
+    }
+  ],
+  "performance_iteration": {
+    "user_prompts": [
+      {
+        "id": "round2-user-7",
+        "role": "user",
+        "content": "我想做到比第一名还好",
+        "context": "用户比较加赛性能和 Agent Prompt 两个榜单后提出迭代目标。"
+      },
+      {
+        "id": "round2-user-8",
+        "role": "user",
+        "content": "Prompt结果无效、待复核、超出平台0–100范围或缺少材料摘要，本项不参与排名；未截断或换算本地分数。",
+        "context": "Agent 请求用户复制平台 Agent Prompt 项的完整详情，用户返回上述原文。平台记录还显示 MySQL 正式用例通过，性能 E = 2758.194681，Prompt 原始分为空。截图未显示完整 commit SHA，无法将该结果归到具体提交。"
+      }
+    ],
+    "conversations": [
+      {
+        "id": "round2-agent-7",
+        "role": "assistant",
+        "content": "五轮 Linux 对照中，1,000 条查询的中位耗时从 0.629 秒降到 0.390 秒，每条结果都和上一版一致。我会再试用评测允许的两个 CPU 并行扫描，测清收益后再决定是否保留。",
+        "context": "此处是等值查找、缓存投影和浮点筛选的中间版本测量。"
+      },
+      {
+        "id": "round2-agent-8",
+        "role": "assistant",
+        "content": "8 位筛选在五轮对照中把查询时间从 0.394 秒降到 0.291 秒，全部查询输出逐项一致。我会保留这个方案，并用专门的用例验证距离并列、量化后很接近的向量，以及超出量化范围时的回退路径。",
+        "context": "0.394 秒来自当轮未使用量化的同机对照。最终候选与 c16935a 的对照见 round2-tool-13。"
+      }
+    ],
+    "experiments": [
+      {
+        "id": "round2-tool-10",
+        "role": "tool",
+        "procedure": "用 tests/benchmark_native.py 比较 c16935a15dcdd5cc3803ff38746ee774e4b948b1 与修正 L2 舍入并列前的量化候选。相同的 10000 条 128 维向量与 1000 条 Top-10 查询，半数带等值过滤，Linux 进程使用独立数据目录，交替顺序执行五轮。",
+        "output": "查询总耗时中位数为 0.571136 秒和 0.290910 秒。带过滤组为 0.237744 秒和 0.121963 秒，无过滤组为 0.329649 秒和 0.166273 秒。逐条核对的结果 SHA-256 均为 f79f848bbcd9feacdf975afdf01a6c9d0510c9fd4c0060385f61e9b73c827fe4。写入耗时中位数为 0.539344 秒和 0.532064 秒。"
+      },
+      {
+        "id": "round2-tool-11",
+        "role": "tool",
+        "command": "python3 tests/benchmark_local.py --baseline-image minivectordb-round2:release-c16935a --candidate-image minivectordb-round2:race-candidate --probe build/benchmark_support --rounds 3 --output build/top-final-docker.json",
+        "environment": "Linux amd64，断网 Docker，2 CPU，64 MiB 内存，零 swap，独立数据卷。对照 c16935a，候选为修正 L2 舍入并列前的版本。",
+        "output": "三轮重启后的写入核对通过。exact 的有过滤及无过滤 Recall@10 均为 1.0，逐条验证 ID、过滤、距离和排序。exact 查询耗时中位数由 1.460676 秒降至 0.996904 秒，写入从 0.791743 秒到 0.801330 秒。查询物理 I/O 两版均为 5828608 字节，查询内存峰值从 19828736 字节到 20865024 字节。候选 ann 查询中位数 3.038631 秒。"
+      },
+      {
+        "id": "round2-tool-12",
+        "role": "tool",
+        "procedure": "用实际候选 Docker 镜像执行官方 f4d4e26 公开检查器和 tests/check_core.py --large。独立真值覆盖并列、接近的向量、两条过滤条件、量化范围外查询与极端 float32 数值。用旧版和候选分别写入同样的 INSERT、UPDATE、建索引和回滚序列，再交叉重开。",
+        "output": "官方公开检查器 20/20 通过。独立回归通过。52482621 字节的持久化数据在 33554432 字节内存上限下重启、建索引、检索及排序。旧版与候选的 WAL 文件逐字节一致，互相重开得到相同结果。"
+      },
+      {
+        "id": "round2-tool-13",
+        "role": "tool",
+        "procedure": "对照同队 GitHub 提交 bb7c32c 的 tests/test_engine.py 边界，插入主键 1 对应 [1,0.00000001490116119384765625]、主键 2 对应 [1,0]，用零向量检索。修正后复跑不带 LIMIT、DESC、Top-1 和五轮 Linux 性能对照。",
+        "output": "修正前 Top-1 返回 [[2,1]]。修正后两个 L2 距离均舍入为 1.0，Top-1 返回 [[1,1.0]]，全排序与降序距离并列时均按主键 1、2 输出。五轮查询中位数 c16935a 0.585545 秒、候选 0.311842 秒，同批 1000 条查询逐项一致。"
+      },
+      {
+        "id": "round2-tool-14",
+        "role": "tool",
+        "procedure": "用相同引号内向量语法和 CREATE VECTOR INDEX 对比 bb7c32c 与已修正舍入并列的候选。bb7c32c 使用其 Dockerfile 和已有 GCC 13.4.0 基础镜像构建。断网 Docker，2 CPU，64 MiB，零 swap。独立暴力真值校验 1000 条 Top-10。",
+        "output": "三轮写入中位数为 1.735667 秒与 0.854394 秒，精确查询为 2.165545 秒与 1.161568 秒。两版每轮有过滤、无过滤 Recall@10 均为 1.0，重启后完整数据核对通过。查询 I/O 为 7655424 与 5832704 字节，查询峰值内存为 21483520 与 21667840 字节。候选另通过 20/20 组官方公开检查。"
+      },
+      {
+        "id": "round2-tool-15",
+        "role": "tool",
+        "procedure": "用同一 Docker 检查工具、种子、引号内向量和索引准备，对照正式 E=2758.194681 的 c16935a 及修正版。独立数据卷、2 CPU、64 MiB、零 swap、三轮。",
+        "output": "写入中位数 0.878883 秒与 0.798417 秒，精确查询中位数 1.416002 秒与 0.996496 秒。两版 1000 条查询逐条检查，带过滤和无过滤 Recall@10 都是 1.0。查询物理 I/O 均为 5832704 字节，峰值内存为 20303872 和 21147648 字节。所有重启写入核对通过。"
+      }
+    ],
+    "assistant_retrospective": "等值过滤先缩小候选范围，再核对所有条件。两线程实验的额外收益约 2.5%，与波动接近，因此保留单线程。8 位整数筛选采用误差上界，边界附近用原始向量重新计算。舍入反例促使最终排序以返回的 L2 距离处理并列。与同队另一候选相比，精确查询提速且 I/O 减少，峰值内存小幅增长。",
+    "limitations": "用户贡献包括赛题材料、目标、失败反馈、榜单截图和正式结果原文。实现、测试设计和实验执行由 Agent 完成。用户独立执行及解释实验的记录需按实际参与补充。Docker 数据卷与镜像共用底层设备，峰值内存含页缓存与最终探针，宿主缓存未重置。本次候选的隐藏用例、正式性能和 Agent Prompt 结果待平台评测。材料去除了含访问凭据的地址。"
+  },
+  "compact_storage_iteration": {
+    "scope": "2026-11-13 的 MiniVectorDB 实现和实验，以 9eb5b15446170c0ca001e3fb0907a963a88923e4 为对照。",
+    "conversations": [
+      {
+        "id": "round2-compact-user-1",
+        "role": "user",
+        "content": "继续优化到最好",
+        "context": "用户要求继续优化加赛实现。"
+      },
+      {
+        "id": "round2-compact-agent-1",
+        "role": "assistant",
+        "content": "采样显示，写入端的热点是逐个解析向量分量，查询端则是量化距离扫描。我会分别优化这两条路径，用相同输入核对 WAL、查询结果和恢复行为。"
+      },
+      {
+        "id": "round2-compact-agent-2",
+        "role": "assistant",
+        "content": "CRC32 改动通过了独立校验，但七轮写入中位耗时只改善约 1%，我会保留原实现。查询还有一处值得试：一次筛八个候选，看看能否减少逐行判断的开销。"
+      }
+    ],
+    "experiments": [
+      {
+        "id": "round2-compact-tool-1",
+        "role": "tool",
+        "procedure": "Linux 进程 gprof 对 100 个写入批次与 8,000 条查询采样，再逐项切换改动。",
+        "output": "查询采样中 INT8 距离核占 45.08%，谓词核占 20.49%。五轮解析对照的写入 CPU 中位时间从 0.14 秒降到 0.09 秒。加入整数点积和跳过已由等值查找验证的谓词后，另五轮查询总耗时从 0.292649 秒降到 0.269998 秒，结果摘要逐项相同。"
+      },
+      {
+        "id": "round2-compact-tool-2",
+        "role": "tool",
+        "procedure": "单独比较查表 CRC32 与八字节 CRC32，然后比较紧凑行排列与同一内存内交错的八行批量筛选。",
+        "output": "CRC32 七轮写入中位数 0.622116 到 0.614195 秒，约 1.27% 的差异，保留原实现。八行筛选七轮无过滤查询从 0.142370 降到 0.114944 秒，带过滤从 0.100852 到 0.103962 秒，总查询从 0.242579 降到 0.216909 秒，结果摘要相同。"
+      },
+      {
+        "id": "round2-compact-tool-3",
+        "role": "tool",
+        "procedure": "两种 10,000×128 向量分布各五轮，同机独立 Docker 数据卷，2 CPU、64 MiB、零 swap。各做 1,000 条 Top-10 查询，半数带等值过滤。以独立暴力计算核对所有查询，重启后按 float32 位值核对写入。",
+        "output": "离散向量写入 0.793495→0.742759 秒，查询 0.950669→0.927498 秒，写入 I/O 5828608→3268608 字节，查询内存 21876736→17776640 字节。连续 FP32 写入 0.964465→0.834597 秒，查询 0.968326→0.960587 秒，写入 I/O 5828608→5197824 字节，查询内存 21897216→20209664 字节。各轮有过滤、无过滤 Recall@10 均为 1.0。"
+      },
+      {
+        "id": "round2-compact-tool-4",
+        "role": "tool",
+        "procedure": "使用旧提交二进制创建 WAL，在候选中追加 binary16、窄指数压缩和原始 float32 记录，分别检查重新打开、回滚、崩溃恢复以及独立 CRC 校验。对照两个二进制的数字与 JSON 解析响应。",
+        "output": "混合编码通过逐值核对、独立 CRC32、回滚和强制终止恢复。2,025 条解析响应逐项一致。官方公开用例 20/20 通过。32 MiB 容器重启并对 52,476,221 字节的数据建索引、检索及排序。"
+      }
+    ],
+    "assistant_retrospective": "在写入和 I/O 都实测改善后保留无损编码。对外仍按原始 float32 向量返回，精确查询用 double 累加并保留主键并列规则。运行容器的查询端到端收益较小，与 Linux 进程的无过滤查询收益属于不同测量口径。",
+    "limitations": "实现、实验和解释由 Agent 完成，用户提出迭代目标。新版可打开原 WAL，新编码的数据卷需用支持该编码的版本打开。正式任务尚未执行，不能将本地效率或召回换算成正式名次。"
+  },
+  "lossless_vector_iteration": {
+    "scope": "2026-11-13 至 2026-11-14。MiniVectorDB 的无损向量编码与等值过滤优化，以用户确认的正式测评版本为对照。",
+    "baseline_commit": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
+    "baseline_reported_by_user": {
+      "performance_raw": 4368,
+      "prompt_raw": 1,
+      "details": "用户提供两项原始分和完整提交 SHA。"
+    },
+    "conversations": [
+      {
+        "id": "round2-lossless-user-1",
+        "role": "user",
+        "content": "Agent Prompt评测完成；原始分 = 1，需要提高到至少30.性能原始分现在4368，还要继续提高目标是5800"
+      },
+      {
+        "id": "round2-lossless-user-2",
+        "role": "user",
+        "content": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
+        "context": "回答上述两项正式成绩对应的 Commit。"
+      },
+      {
+        "id": "round2-lossless-user-3",
+        "role": "user",
+        "content": "无，全部靠你发挥",
+        "context": "回答是否亲自设计或核对过加赛测试。"
+      },
+      {
+        "id": "round2-lossless-user-4",
+        "role": "user",
+        "content": "继续",
+        "context": "继续此前的性能和材料工作。"
+      }
+    ],
+    "experiments": [
+      {
+        "id": "round2-lossless-tool-1",
+        "role": "tool",
+        "procedure": "用相同公开生成数据对照原实现和从 WAL 直接解码的候选。两种数据各 10,000 行，每行 128 维。",
+        "output": "直接解码将离散向量查询的峰值内存从 17,702,912 降至 11,718,656 字节，查询中位耗时从 1.385096 增至 1.738948 秒。连续 FP32 峰值从 19,980,288 降至 15,319,040 字节，查询从 1.306301 增至 1.443248 秒。Agent 因两组查询回退撤销了该方案。"
+      },
+      {
+        "id": "round2-lossless-tool-2",
+        "role": "tool",
+        "procedure": "同一台 Linux 机器交替执行两版，比较量化向量按等值列原地分组前后。每种分布七轮，每轮有过滤、无过滤各 500 条 Top-10。",
+        "output": "离散向量有过滤查询的中位耗时从 0.090696 降到 0.082030 秒。连续 FP32 从 0.110909 降到 0.094993 秒。两种分布的查询结果分别逐项相同。"
+      },
+      {
+        "id": "round2-lossless-tool-3",
+        "role": "tool",
+        "procedure": "相同基线与候选各使用隔离 Docker 数据卷、2 CPU、64 MiB、零 swap。两种分布各五轮。每轮写入 10,000 条 128 维向量，重启后比较记录的 FP32 位值。建索引预热后运行 1,000 条精确 Top-10，半数带等值过滤。独立参考计算核对 ID、距离与排序。",
+        "output": "离散向量写入 0.766110 → 0.745737 秒，查询 0.997610 → 0.906993 秒，写入物理 I/O 3268608 → 1994752 字节，查询峰值内存 17780736 → 11440128 字节。连续 FP32 写入 0.868980 → 0.881218 秒，查询 1.015105 → 0.962477 秒，写入物理 I/O 5197824 → 5197824 字节，查询峰值内存 19996672 → 19918848 字节。每轮两组 Recall@10 的平均值和最小值都是 1.0。"
+      },
+      {
+        "id": "round2-lossless-tool-4",
+        "role": "tool",
+        "procedure": "用公开生成的连续 FP32 数据，在 Linux 上对照使用 ORDER BY d,id LIMIT 10 的 1,000 条查询。运行三轮并比较完整结果的 SHA-256。",
+        "output": "查询总耗时中位数为 6.075824 → 0.209659 秒。结果 SHA-256 均为 c83999ac730fae6983c6c4c9bba56a078572d5a6d2c615f556daefaec16744cf。正式查询写法待平台反馈。"
+      },
+      {
+        "id": "round2-lossless-tool-5",
+        "role": "tool",
+        "procedure": "运行官方公开协议检查、Linux ASan/UBSan 回归和 32 MiB 容器资源用例。用 fd9011a 生成旧 WAL，追加其他编码并核对事务回滚和强杀恢复。",
+        "output": "官方 20/20 通过。ASan/UBSan 无报错。四种 WAL 编码在 CRC 校验、回滚、重启和强杀恢复中通过。32 MiB 限额下对 52,476,221 字节的数据完成重启、建索引、检索和排序。"
+      }
+    ],
+    "assistant_retrospective": "先用逐条 FP32 位值复原检查决定一字节编码是否可用。表内可共用比例时保留整数缓存，出现普通 FP32 时回到原始精度缓存。保留等值分组是因为两种分布上的过滤查询均有收益。连续 FP32 写入中位耗时增加约 1.4%，物理 I/O 相同。",
+    "limitations": "实验和实现由 Agent 完成。本候选的正式性能和 Agent Prompt 原始分需由平台评测。"
+  }
+}

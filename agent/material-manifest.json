@@ -1,0 +1,93 @@
+{
+  "format": "minivectordb-material-manifest-v1",
+  "code_base_commit": "fd9011a30d53c625ff67f19eb6838fbf407bf8b4",
+  "canonical_path": "agent/conversation.json",
+  "compatibility_path": "conversation.json",
+  "material_sha256": "f10cf7e6ed72d5b7f50f59528b58b250e9eb48cae26637e298e1357eb6c369ef",
+  "material_bytes": 35985,
+  "summary_pointer": "/material_summary",
+  "historical_top_level_keys": [
+    "scope",
+    "synthetic",
+    "user_prompts",
+    "conversations",
+    "experiments",
+    "limitations"
+  ],
+  "historical_payload_sha256": "3454e921250d0cf46adcd81d52887fd89fee65d44f9d7286b5f3a7e5e1551598",
+  "note": "这是输入完整性清单，不是平台评审输出，不提供或换算选手自评分数。",
+  "runtime_files": [
+    {
+      "path": ".dockerignore",
+      "git_blob_sha1": "a007de43eb7f4a655ec7cc8758705fd0f38fe6f4",
+      "sha256": "917c0f4299d179d8242358a9344606868147ed9c7a10cfb23938b0e80c05bfcd",
+      "mode": "100644"
+    },
+    {
+      "path": "Dockerfile",
+      "git_blob_sha1": "7761ff97bbf78b47b972a912e1f43e7d3d3866da",
+      "sha256": "9a6676965e2eeb741db3d524f82de44922c6bbd98dec6d8844909892b4363953",
+      "mode": "100644"
+    },
+    {
+      "path": "src/database.cpp",
+      "git_blob_sha1": "ee855883390147b3bf13722fc822b14902d0ff3f",
+      "sha256": "0de4ee0e0bc2ba197a3938657b0d0b0da1250ccc781c1693e79919400ce406c3",
+      "mode": "100644"
+    },
+    {
+      "path": "src/database.hpp",
+      "git_blob_sha1": "a9cc3842ed6f5386e03a818a0e7724249cee0253",
+      "sha256": "469b61ebcc29d7e1275e7a77b27160a68aae4d065cfc304c7a314c68c89d37f1",
+      "mode": "100644"
+    },
+    {
+      "path": "src/encoding.hpp",
+      "git_blob_sha1": "e4470961ff2e13bb136c815ed5f3b572edadaf94",
+      "sha256": "6171b796b5a5e00b4255f0dcf0d5ad6a299ed89079a67c3eae1366aef90ebc3c",
+      "mode": "100644"
+    },
+    {
+      "path": "src/journal.cpp",
+      "git_blob_sha1": "afedcffb37bb668877fb0cce27a3a1698e774c96",
+      "sha256": "95fdc9d384342f98a8a9a0c3028d1325c757cbf7f2fa96ec77a105b286c0dd09",
+      "mode": "100644"
+    },
+    {
+      "path": "src/journal.hpp",
+      "git_blob_sha1": "be89c7801779d97de31d67bb1190618b3313fc06",
+      "sha256": "323bf731acbeb9cead87accbe272d7ffdce40ad3485188331c648407a595dcdc",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main.cpp",
+      "git_blob_sha1": "29ab44a0b10cb92c1d7faf13fb40a6ebce231787",
+      "sha256": "d916546793c839842b566cd331d56b7fd7aec963a51b1a7651b34d864b102e30",
+      "mode": "100644"
+    },
+    {
+      "path": "src/request.cpp",
+      "git_blob_sha1": "96efb73809538c6d6c4714b6568d4485d62a8e99",
+      "sha256": "35901d01c6397e3e35978e2a5c834ffce8a6833ddfc3cb521560f6d6109b53c2",
+      "mode": "100644"
+    },
+    {
+      "path": "src/request.hpp",
+      "git_blob_sha1": "46ce211b3f5100e6fa1649cc95bcbe65e2970c0e",
+      "sha256": "cb43806e4457fcef8cd645680ce7c30e6cdf1cb4d5805a189f6ba446184959dc",
+      "mode": "100644"
+    },
+    {
+      "path": "src/sql.cpp",
+      "git_blob_sha1": "7ed5e45f6ec34ffc65753bcc147540f96785afb0",
+      "sha256": "f3e61850d5d9f6afb49279f38e969ec0cbbfb1865e6252b8b4917a77395a644f",
+      "mode": "100644"
+    },
+    {
+      "path": "src/sql.hpp",
+      "git_blob_sha1": "a6c2f061ad3b14f63272a8964802918733f38ca0",
+      "sha256": "864f1df835817a3ef659898b604850a72627446adb815121271dcc78be8c928a",
+      "mode": "100644"
+    }
+  ]
+}
