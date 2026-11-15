@@ -7,6 +7,13 @@
 /src/** text eol=lf
 /agent/conversation.json text eol=lf
 /conversation.json text eol=lf
+/agent/learning_prompt.md text eol=lf
+/tests/check_optimization_resources.py text eol=lf
+/tests/check_optimizations.py text eol=lf
+/tests/prompt_oracle.cpp text eol=lf
+/tests/run_learning_experiments.py text eol=lf
+/tests/run_linux_resource_validation.py text eol=lf
+/tests/run_prompt_verification.py text eol=lf
 
 # All OceanBase code is auto-formatted using clang-format.
 *.c filter=codeformat
