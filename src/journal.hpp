@@ -14,17 +14,34 @@ struct RecordRef {
   std::uint32_t size;
 };
 
+class JournalView {
+public:
+  JournalView() = default;
+  JournalView(const void *address, std::size_t length);
+  explicit operator bool() const { return static_cast<bool>(data_); }
+  Reader read(RecordRef record) const;
+
+private:
+  struct Unmap {
+    std::size_t length;
+    void operator()(const std::uint8_t *address) const noexcept;
+  };
+  std::unique_ptr<const std::uint8_t, Unmap> data_{nullptr, Unmap{0}};
+};
+
 class Journal {
 public:
   explicit Journal(const std::filesystem::path &directory, const char *filename = "store.wal");
 
   static constexpr std::uint64_t records_begin = 8;
+  static constexpr std::uint64_t frame_header_size = 8;
   std::uint64_t size() const { return size_; }
   RecordRef append(const Bytes &payload);
   void read(RecordRef record, Bytes &out);
   bool read_frame(std::uint64_t offset, RecordRef &record, Bytes &out);
   void truncate(std::uint64_t size);
   void sync();
+  JournalView view();
   void replace_with(Journal &replacement, const std::filesystem::path &directory);
 
 private:

@@ -48,9 +48,11 @@ def dataset(seed, vector_distribution="grid"):
 
     def continuous():
         values = [rng.uniform(-4, 4) for _ in range(DIMENSION)]
+        if vector_distribution == "decimal":
+            values = [round(value, 5) or 0.0 for value in values]
         return list(struct.unpack(f"<{DIMENSION}f", struct.pack(f"<{DIMENSION}f", *values)))
 
-    vector = continuous if vector_distribution == "continuous" else grid
+    vector = grid if vector_distribution == "grid" else continuous
     vectors = [vector() for _ in range(ROWS)]
     queries = [(rng.randrange(16) if i % 2 else -1, vector()) for i in range(QUERIES)]
     return buckets, vectors, queries
@@ -217,7 +219,7 @@ def main():
     parser.add_argument("--probe", type=Path, required=True)
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--seed", type=int, default=20261109)
-    parser.add_argument("--vector-distribution", choices=("grid", "continuous"), default="grid")
+    parser.add_argument("--vector-distribution", choices=("grid", "continuous", "decimal"), default="grid")
     parser.add_argument("--index-exact", action="store_true", help="Create the same SQL index in all query modes")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()

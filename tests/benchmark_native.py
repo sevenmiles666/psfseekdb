@@ -56,7 +56,7 @@ def main():
     parser.add_argument("--candidate", type=Path)
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--seed", type=int, default=20261109)
-    parser.add_argument("--vector-distribution", choices=("grid", "continuous"), default="grid")
+    parser.add_argument("--vector-distribution", choices=("grid", "continuous", "decimal"), default="grid")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.rounds < 1:

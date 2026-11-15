@@ -77,6 +77,12 @@ private:
 
   using CachedColumn = std::variant<std::monostate, std::vector<std::int64_t>, std::vector<std::string>>;
 
+  struct EncodedVector {
+    std::uint64_t offset;
+    std::uint32_t length;
+    VectorEncoding encoding;
+  };
+
   struct SearchCache {
     std::uint32_t table;
     std::size_t vector_column = 0;
@@ -86,6 +92,8 @@ private:
     std::uint64_t switch_credit = 0;
     std::vector<std::int64_t> keys;
     Vector vectors;
+    JournalView journal_view;
+    std::vector<EncodedVector> encoded_vectors;
     std::vector<CachedColumn> scalars;
     std::optional<CachedEquality> equality;
     double quantization_step;
@@ -120,7 +128,8 @@ private:
   void reorder_quantized(SearchCache &cache, const std::vector<std::uint32_t> &permutation,
                          std::size_t dimension);
   std::uint64_t cache_bytes() const;
-  void load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row);
+  void load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row,
+                EncodedVector *encoded_vector = nullptr, const JournalView *view = nullptr);
   void put_row(Table &table, std::int64_t key, const Row &row, Bytes &payload);
   std::uint64_t create_table(const CreateTable &statement);
   std::uint64_t create_index(const CreateVectorIndex &statement);

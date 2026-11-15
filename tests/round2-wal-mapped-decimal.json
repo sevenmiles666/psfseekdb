@@ -1,0 +1,512 @@
+{
+  "scope": "Local paired development run using the specified reference image.",
+  "measurement": "Two CPUs, 64 MiB, no swap, disconnected containers with fresh Docker volumes. io.stat is for the volume backing device shared with image storage. memory.peak includes one final probe process. No host cache reset.",
+  "seed": 20261115,
+  "vector_distribution": "decimal",
+  "dataset_sha256": "d86e752153097de4fef13fe588f59e6c5b0cdc1ce36aa1816400db28f563554a",
+  "rows": 10000,
+  "dimension": 128,
+  "queries": 1000,
+  "top_k": 10,
+  "index_exact": true,
+  "rounds": [
+    {
+      "number": 1,
+      "write": {
+        "baseline": {
+          "seconds": 0.8829137339998852,
+          "durability_and_content_passed": true,
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 5042176,
+              "rios": 0,
+              "wios": 208,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 5042176,
+          "memory_peak_bytes": 12644352,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 4625627
+        },
+        "candidate": {
+          "seconds": 0.8332553680002093,
+          "durability_and_content_passed": true,
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 3694592,
+              "rios": 0,
+              "wios": 188,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 3694592,
+          "memory_peak_bytes": 11227136,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 3358720
+        }
+      },
+      "query": {
+        "baseline": {
+          "seconds": 1.045790761999342,
+          "index_and_warmup_seconds": 0.05561421599941241,
+          "valid_unique_ids_filters_distances_passed": true,
+          "recall": {
+            "filtered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            },
+            "unfiltered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            }
+          },
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 5046272,
+              "rios": 0,
+              "wios": 209,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 5046272,
+          "memory_peak_bytes": 19660800,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 4625660
+        },
+        "exact": {
+          "seconds": 1.0546886069996617,
+          "index_and_warmup_seconds": 0.041101359999629494,
+          "valid_unique_ids_filters_distances_passed": true,
+          "recall": {
+            "filtered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            },
+            "unfiltered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            }
+          },
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 3698688,
+              "rios": 0,
+              "wios": 189,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 3698688,
+          "memory_peak_bytes": 13705216,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 3358753
+        },
+        "ann": {
+          "seconds": 1.079666568999528,
+          "index_and_warmup_seconds": 0.04243121899980906,
+          "valid_unique_ids_filters_distances_passed": true,
+          "recall": {
+            "filtered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            },
+            "unfiltered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            }
+          },
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 3698688,
+              "rios": 0,
+              "wios": 189,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 3698688,
+          "memory_peak_bytes": 13377536,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 3358753
+        }
+      }
+    },
+    {
+      "number": 2,
+      "write": {
+        "candidate": {
+          "seconds": 0.8944675549992098,
+          "durability_and_content_passed": true,
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 3694592,
+              "rios": 0,
+              "wios": 188,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 3694592,
+          "memory_peak_bytes": 11292672,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 3358720
+        },
+        "baseline": {
+          "seconds": 0.8869533309998587,
+          "durability_and_content_passed": true,
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 5042176,
+              "rios": 0,
+              "wios": 208,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 5042176,
+          "memory_peak_bytes": 13152256,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 4625627
+        }
+      },
+      "query": {
+        "exact": {
+          "seconds": 1.1774834260004354,
+          "index_and_warmup_seconds": 0.045356843000263325,
+          "valid_unique_ids_filters_distances_passed": true,
+          "recall": {
+            "filtered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            },
+            "unfiltered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            }
+          },
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 3698688,
+              "rios": 0,
+              "wios": 189,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 3698688,
+          "memory_peak_bytes": 12890112,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 3358753
+        },
+        "ann": {
+          "seconds": 1.204172300999744,
+          "index_and_warmup_seconds": 0.04359111699977802,
+          "valid_unique_ids_filters_distances_passed": true,
+          "recall": {
+            "filtered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            },
+            "unfiltered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            }
+          },
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 3698688,
+              "rios": 0,
+              "wios": 189,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 3698688,
+          "memory_peak_bytes": 13619200,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 3358753
+        },
+        "baseline": {
+          "seconds": 1.4325237729999571,
+          "index_and_warmup_seconds": 0.04751278599997022,
+          "valid_unique_ids_filters_distances_passed": true,
+          "recall": {
+            "filtered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            },
+            "unfiltered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            }
+          },
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 5046272,
+              "rios": 0,
+              "wios": 209,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 5046272,
+          "memory_peak_bytes": 19701760,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 4625660
+        }
+      }
+    },
+    {
+      "number": 3,
+      "write": {
+        "baseline": {
+          "seconds": 0.9693697230004545,
+          "durability_and_content_passed": true,
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 5042176,
+              "rios": 0,
+              "wios": 208,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 5042176,
+          "memory_peak_bytes": 12849152,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 4625627
+        },
+        "candidate": {
+          "seconds": 0.9364127920007377,
+          "durability_and_content_passed": true,
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 3694592,
+              "rios": 0,
+              "wios": 188,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 3694592,
+          "memory_peak_bytes": 11292672,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 3358720
+        }
+      },
+      "query": {
+        "ann": {
+          "seconds": 1.1483009490002587,
+          "index_and_warmup_seconds": 0.04341045499950269,
+          "valid_unique_ids_filters_distances_passed": true,
+          "recall": {
+            "filtered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            },
+            "unfiltered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            }
+          },
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 3698688,
+              "rios": 0,
+              "wios": 189,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 3698688,
+          "memory_peak_bytes": 13893632,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 3358753
+        },
+        "baseline": {
+          "seconds": 0.9538624409997283,
+          "index_and_warmup_seconds": 0.044682316000034916,
+          "valid_unique_ids_filters_distances_passed": true,
+          "recall": {
+            "filtered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            },
+            "unfiltered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            }
+          },
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 5046272,
+              "rios": 0,
+              "wios": 209,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 5046272,
+          "memory_peak_bytes": 19144704,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 4625660
+        },
+        "exact": {
+          "seconds": 1.014991435000411,
+          "index_and_warmup_seconds": 0.0409990319994904,
+          "valid_unique_ids_filters_distances_passed": true,
+          "recall": {
+            "filtered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            },
+            "unfiltered": {
+              "count": 500,
+              "mean_recall_at_10": 1.0,
+              "minimum_recall_at_10": 1.0
+            }
+          },
+          "data_device": "8:64",
+          "io_stat": {
+            "8:64": {
+              "rbytes": 0,
+              "wbytes": 3698688,
+              "rios": 0,
+              "wios": 189,
+              "dbytes": 0,
+              "dios": 0
+            }
+          },
+          "io_bytes": 3698688,
+          "memory_peak_bytes": 13070336,
+          "memory_limit_bytes": 67108864,
+          "swap_limit_bytes": 0,
+          "data_file_bytes": 3358753
+        }
+      }
+    }
+  ],
+  "images": {
+    "baseline": "sha256:4505ce9089814cca3fbfe616547b2c47366a1df74a0db222bc569dd92c6cb109",
+    "candidate": "sha256:5779513ec2ac2bfd32265857d269b7b54fff54033eb4344b2a78ce229702325e"
+  },
+  "summary": {
+    "baseline": {
+      "write_median": {
+        "seconds": 0.8869533309998587,
+        "io_bytes": 5042176,
+        "memory_peak_bytes": 12849152
+      },
+      "query_median": {
+        "seconds": 1.045790761999342,
+        "io_bytes": 5046272,
+        "memory_peak_bytes": 19660800
+      },
+      "local_efficiency_rounds": [
+        0.500475412093071,
+        0.46839037346295526,
+        0.5055914298855892
+      ],
+      "local_efficiency_median": 0.500475
+    },
+    "exact": {
+      "write_median": {
+        "seconds": 0.8944675549992098,
+        "io_bytes": 3694592,
+        "memory_peak_bytes": 11292672
+      },
+      "query_median": {
+        "seconds": 1.0546886069996617,
+        "io_bytes": 3698688,
+        "memory_peak_bytes": 13070336
+      },
+      "local_efficiency_rounds": [
+        0.5279653929656466,
+        0.5151797334663987,
+        0.5273013951632199
+      ],
+      "local_efficiency_median": 0.527301
+    },
+    "ann": {
+      "write_median": {
+        "seconds": 0.8944675549992098,
+        "io_bytes": 3694592,
+        "memory_peak_bytes": 11292672
+      },
+      "query_median": {
+        "seconds": 1.1483009490002587,
+        "io_bytes": 3698688,
+        "memory_peak_bytes": 13619200
+      },
+      "local_efficiency_rounds": [
+        0.5263533386208344,
+        0.5113073123627062,
+        0.5131486679060284
+      ],
+      "local_efficiency_median": 0.513149
+    }
+  }
+}

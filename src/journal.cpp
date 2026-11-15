@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <limits>
 #include <sys/file.h>
+#include <sys/mman.h>
 #include <system_error>
 #include <unistd.h>
 
@@ -13,7 +14,6 @@ namespace {
 
 constexpr std::array<std::uint8_t, Journal::records_begin> magic{
     'M', 'V', 'D', 'B', 'L', 'O', 'G', '1'};
-constexpr std::uint64_t frame_header_size = 8;
 
 [[noreturn]] void io_failure(const char *description) {
   throw std::system_error(errno ? errno : EIO, std::generic_category(), description);
@@ -78,6 +78,21 @@ std::uint32_t checksum(const Bytes &bytes) {
 }
 
 }  // namespace
+
+JournalView::JournalView(const void *address, std::size_t length)
+    : data_(static_cast<const std::uint8_t *>(address), Unmap{length}) {}
+
+void JournalView::Unmap::operator()(const std::uint8_t *address) const noexcept {
+  ::munmap(const_cast<std::uint8_t *>(address), length);
+}
+
+Reader JournalView::read(RecordRef record) const {
+  const auto length = data_.get_deleter().length;
+  if (record.offset > length || record.size > length - record.offset) {
+    throw std::runtime_error("read outside mapped journal bounds");
+  }
+  return Reader(data_.get() + record.offset, record.size);
+}
 
 Journal::Journal(const std::filesystem::path &directory, const char *filename) {
   std::filesystem::create_directories(directory);
@@ -197,6 +212,15 @@ void Journal::sync() {
   if (result != 0) {
     io_failure("sync journal");
   }
+}
+
+JournalView Journal::view() {
+  if (size_ == 0 || size_ > std::numeric_limits<std::size_t>::max()) return {};
+  if (access_ == Access::Write && std::fflush(stream_.get()) != 0) io_failure("flush journal for mapping");
+  const auto length = static_cast<std::size_t>(size_);
+  const auto *address = ::mmap(nullptr, length, PROT_READ, MAP_SHARED, ::fileno(stream_.get()), 0);
+  if (address == MAP_FAILED) return {};
+  return JournalView(address, length);
 }
 
 void Journal::replace_with(Journal &replacement, const std::filesystem::path &directory) {

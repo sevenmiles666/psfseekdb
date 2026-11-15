@@ -399,16 +399,18 @@ def check_topk_rounding(args, directory):
 def check_wal_vector_formats(args, directory, reference=None):
     schema = "CREATE TABLE storage (label VARCHAR(16), bucket BIGINT, v VECTOR(17), id BIGINT PRIMARY KEY);"
     half = [-0.0, 65504.0, 2**-14, *([0.125, -3.5] * 7)]
-    packed = [(-1)**i * (0.1 + i * 0.03125) for i in range(17)]
+    packed = [(-1)**i * (math.pi / 32 + i * 0.03125) for i in range(17)]
     full = [1e-39, 3e38, *([0.2] * 15)]
     scaled = [-0.0, -15.875, 0.125, *([0.75, -2.25] * 7)]
-    scaled_bits = [-0.0, 4.0, -3.875, *([0.75, -2.25] * 7)]
-    rows = [half, packed, full, scaled, scaled_bits]
+    scaled_bits = [-0.0, 4.0, -3.875, *([4.0, 3.875] * 7)]
+    scaled_range = [-0.0, 4.0, -3.875, *([0.75, -2.25] * 7)]
+    decimals = [-0.0, *[(-1)**i * (0.1327 + i * 0.0003) for i in range(16)]]
+    rows = [half, packed, full, scaled, scaled_bits, scaled_range, decimals]
     packed_bits = lambda values: struct.pack("<17f", *values)
     query = "SELECT v FROM storage ORDER BY id;"
 
     def insert(db, key):
-        bucket = {1: -9223372036854775808, 4: 2}.get(key, key % 2)
+        bucket = {1: -9223372036854775808, 4: 2, 6: 3}.get(key, key % 2)
         db.ok(f"INSERT INTO storage VALUES ('记录😀',{bucket},{json.dumps(rows[key])},{key});", 1)
 
     def check(db):
@@ -431,6 +433,8 @@ def check_wal_vector_formats(args, directory, reference=None):
         insert(db, 1)
         insert(db, 3)
         insert(db, 4)
+        insert(db, 5)
+        insert(db, 6)
         check(db)
         db.ok("BEGIN;")
         db.ok(f"UPDATE storage SET v={json.dumps(full)} WHERE id=1;", 1)
@@ -468,10 +472,97 @@ def check_wal_vector_formats(args, directory, reference=None):
             text_size = struct.unpack_from("<I", journal, frame + 3)[0]
             width, first_byte = journal[frame + 9 + text_size:frame + 11 + text_size]
             assert width == 7 and first_byte & 127 == 64
+        elif kind == 10:
+            text_size = struct.unpack_from("<I", journal, frame + 3)[0]
+            assert journal[frame + 11 + text_size] & 63 == 0
+        elif kind == 12:
+            text_size = struct.unpack_from("<I", journal, frame + 3)[0]
+            width = journal[frame + 8 + text_size] & 31
+            code = int.from_bytes(journal[frame + 9 + text_size:frame + 13 + text_size], "little")
+            assert code & ((1 << width) - 1) == 1 << (width - 1)
         offset += 8 + size
-    assert offset == len(journal) and {2, 6, 7, 8, 9} <= kinds
-    assert {6, 8, 9} <= compact_kinds and 7 not in compact_kinds
+    assert offset == len(journal) and {2, 6, 7, 8, 9, 10, 12} <= kinds
+    assert {6, 8, 9, 10, 12} <= compact_kinds and 7 not in compact_kinds
     print("Mixed vector and BIGINT WAL encodings survived round-trip, rollback and crash recovery", flush=True)
+
+
+def check_aligned_commits(args, directory):
+    vector = json.dumps([-4, 4, *([0] * 126)])
+    note = "v" * 70
+    with Server(args, directory) as db:
+        db.ok("CREATE TABLE ledger (id BIGINT PRIMARY KEY, note VARCHAR(80), v VECTOR(128));")
+        for start in (0, 100):
+            db.ok("BEGIN;")
+            db.ok("INSERT INTO ledger VALUES " + ",".join(
+                f"({key},'{note}',{vector})" for key in range(start, start + 100)), 100)
+            db.ok("COMMIT;")
+        db.stop(crash=True)
+
+    path = directory / "store.wal"
+    journal = path.read_bytes()
+    offset = 8
+    aligned = []
+    while offset < len(journal):
+        size, crc = struct.unpack_from("<II", journal, offset)
+        frame = journal[offset + 8:offset + 8 + size]
+        assert zlib.crc32(frame) == crc
+        offset += 8 + size
+        if frame[0] == 11:
+            assert offset % 4096 == 0 and frame[1:] == bytes(size - 1)
+            aligned.append(offset)
+    assert len(aligned) == 2 and aligned[-1] == len(journal)
+    query = "SELECT id FROM ledger ORDER BY id;"
+    with Server(args, directory) as db:
+        db.query(query, [[key] for key in range(200)])
+    path.write_bytes(journal[:-4])
+    with Server(args, directory) as db:
+        db.query(query, [[key] for key in range(100)])
+        assert path.stat().st_size == aligned[0]
+    print("Aligned commits survived SIGKILL and recovered to the previous complete commit after truncation",
+          flush=True)
+
+
+def check_mapped_vectors(args, directory):
+    rows, dimension = 2070, 128
+    rng = random.Random(20261115)
+
+    def packed(values):
+        return struct.pack(f"<{dimension}f", *values)
+
+    vectors = [struct.unpack(f"<{dimension}f", packed([rng.uniform(-1, 1) for _ in range(dimension)]))
+               for _ in range(rows)]
+    query_vector = json.dumps(vectors[1])
+    query = f"SELECT id,v,L2_DISTANCE(v,{query_vector}) AS d FROM mapped WHERE bucket=1 ORDER BY d LIMIT 1;"
+
+    def check(db, key):
+        actual, count, error = db.sql(query)
+        assert error is None and count == 1
+        assert actual[0][0] == key and actual[0][2] == 0
+        assert packed(actual[0][1]) == packed(vectors[1])
+
+    with Server(args, directory) as db:
+        db.ok("CREATE TABLE mapped (id BIGINT PRIMARY KEY, bucket BIGINT, v VECTOR(128));")
+        for start in range(0, rows, 100):
+            values = [f"({key},1,{json.dumps(vectors[key])})"
+                      for key in range(start, min(start + 100, rows))]
+            db.ok("INSERT INTO mapped VALUES " + ",".join(values), len(values))
+        db.ok("CREATE VECTOR INDEX positions ON mapped(v);")
+        db.ok("CREATE TABLE scratch (id BIGINT PRIMARY KEY);")
+        check(db, 1)
+        db.ok("BEGIN;")
+        db.ok("INSERT INTO scratch VALUES (1);", 1)
+        check(db, 1)
+        db.ok("ROLLBACK;")
+        check(db, 1)
+        db.ok("BEGIN;")
+        db.ok(f"UPDATE mapped SET v={query_vector} WHERE id=0;", 1)
+        check(db, 0)
+        db.ok("ROLLBACK;")
+        check(db, 1)
+        db.stop(crash=True)
+    with Server(args, directory) as db:
+        check(db, 1)
+    print("Mapped FP32 queries returned exact projected values across writes, rollback and restart", flush=True)
 
 
 def check_index(args, directory):
@@ -580,6 +671,8 @@ def main():
         check_exact_oracle(args, root / "oracle")
         check_topk_rounding(args, root / "topk_rounding")
         check_wal_vector_formats(args, root / "wal_vector_formats", reference)
+        check_aligned_commits(args, root / "aligned_commits")
+        check_mapped_vectors(args, root / "mapped_vectors")
         check_index(args, root / "index")
         if args.large:
             check_disk_budget(args, root / "large")

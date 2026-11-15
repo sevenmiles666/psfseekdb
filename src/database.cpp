@@ -23,10 +23,12 @@ namespace {
 
 enum class RecordKind : std::uint8_t {
   Create = 1, Put = 2, Delete = 3, Commit = 4, Index = 5, PutHalf = 6, PutPacked = 7,
-  PutScaledByte = 8, PutScaledBits = 9
+  PutScaledByte = 8, PutScaledBits = 9, PutScaledRange = 10, AlignedCommit = 11, PutFixedDecimal = 12
 };
 
 constexpr std::uint8_t compact_row = 0x80;
+constexpr std::uint64_t commit_alignment = 4096;
+constexpr std::uint64_t max_commit_padding = 1024;
 
 std::optional<VectorEncoding> row_encoding(RecordKind kind) {
   switch (kind) {
@@ -35,6 +37,8 @@ std::optional<VectorEncoding> row_encoding(RecordKind kind) {
     case RecordKind::PutPacked: return VectorEncoding::Packed;
     case RecordKind::PutScaledByte: return VectorEncoding::ScaledByte;
     case RecordKind::PutScaledBits: return VectorEncoding::ScaledBits;
+    case RecordKind::PutScaledRange: return VectorEncoding::ScaledRange;
+    case RecordKind::PutFixedDecimal: return VectorEncoding::FixedDecimal;
     default: return std::nullopt;
   }
 }
@@ -289,8 +293,8 @@ std::int32_t quantized_dot(const std::int8_t *left, const std::int8_t *right, st
   return result;
 }
 
-__attribute__((target("avx2")))
-__m256i quantized_block_dots(const std::int8_t *vectors, const std::int8_t *query, std::size_t size) {
+__attribute__((target("avx2"), always_inline))
+inline __m256i quantized_block_dots(const std::int8_t *vectors, const std::int8_t *query, std::size_t size) {
   const auto ones = _mm256_set1_epi16(1);
   auto sum = _mm256_setzero_si256();
   for (std::size_t i = 0; i < size; i += quantized_row_bytes) {
@@ -304,17 +308,36 @@ __m256i quantized_block_dots(const std::int8_t *vectors, const std::int8_t *quer
   return sum;
 }
 
+template <std::size_t Dimension = 0>
+__attribute__((target("avx2"), always_inline))
+inline std::size_t next_quantized_block(const std::int8_t *vectors, const std::int32_t *norms,
+                                        const std::int8_t *query, std::size_t size, std::int32_t cutoff,
+                                        std::size_t begin, std::size_t end,
+                                        std::int32_t *distances, unsigned &mask) {
+  if constexpr (Dimension != 0) size = Dimension;
+  const auto bound = _mm256_set1_epi32(cutoff);
+  for (; begin < end; begin += quantized_block_rows) {
+    const auto sum = quantized_block_dots(vectors + begin * size, query, size);
+    const auto row_norms = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(norms + begin));
+    const auto distance = _mm256_sub_epi32(row_norms, _mm256_add_epi32(sum, sum));
+    const auto excluded = _mm256_cmpgt_epi32(distance, bound);
+    mask = static_cast<unsigned>(~_mm256_movemask_ps(_mm256_castsi256_ps(excluded))) & 255;
+    if (mask != 0) {
+      _mm256_storeu_si256(reinterpret_cast<__m256i *>(distances), distance);
+      break;
+    }
+  }
+  return begin;
+}
+
 __attribute__((target("avx2")))
-unsigned quantized_block_mask(const std::int8_t *vectors, const std::int32_t *norms,
-                              const std::int8_t *query, std::size_t size, std::int32_t cutoff,
-                              std::int32_t *distances) {
-  const auto sum = quantized_block_dots(vectors, query, size);
-  const auto distance = _mm256_sub_epi32(_mm256_loadu_si256(reinterpret_cast<const __m256i *>(norms)),
-                                        _mm256_add_epi32(sum, sum));
-  const auto excluded = _mm256_cmpgt_epi32(distance, _mm256_set1_epi32(cutoff));
-  const auto mask = static_cast<unsigned>(~_mm256_movemask_ps(_mm256_castsi256_ps(excluded))) & 255;
-  if (mask != 0) _mm256_storeu_si256(reinterpret_cast<__m256i *>(distances), distance);
-  return mask;
+std::size_t find_quantized_block(const std::int8_t *vectors, const std::int32_t *norms,
+                                 const std::int8_t *query, std::size_t size, std::int32_t cutoff,
+                                 std::size_t begin, std::size_t end, std::int32_t *distances, unsigned &mask) {
+  if (size == 128) {
+    return next_quantized_block<128>(vectors, norms, query, size, cutoff, begin, end, distances, mask);
+  }
+  return next_quantized_block(vectors, norms, query, size, cutoff, begin, end, distances, mask);
 }
 
 __attribute__((target("avx2")))
@@ -344,8 +367,9 @@ std::int32_t quantized_block_row_dot(const std::int8_t *block, std::size_t row,
 
 using QuantizedKernel = std::int32_t (*)(const std::int8_t *, const std::int8_t *, std::size_t);
 
-using BlockKernel = unsigned (*)(const std::int8_t *, const std::int32_t *, const std::int8_t *,
-                                  std::size_t, std::int32_t, std::int32_t *);
+using BlockKernel = std::size_t (*)(const std::int8_t *, const std::int32_t *, const std::int8_t *,
+                                     std::size_t, std::int32_t, std::size_t, std::size_t,
+                                     std::int32_t *, unsigned &);
 using BlockRowKernel = std::int32_t (*)(const std::int8_t *, std::size_t, const std::int8_t *, std::size_t);
 
 struct QuantizedBlockKernels {
@@ -355,7 +379,7 @@ struct QuantizedBlockKernels {
 
 QuantizedBlockKernels block_kernels() {
 #if defined(__x86_64__) && defined(__GNUC__)
-  if (__builtin_cpu_supports("avx2")) return {quantized_block_mask, quantized_block_row_dot};
+  if (__builtin_cpu_supports("avx2")) return {find_quantized_block, quantized_block_row_dot};
 #endif
   return {};
 }
@@ -507,7 +531,16 @@ void Database::rollback(Savepoint point, bool replay) {
 
 void Database::commit(Savepoint point) {
   if (journal_.size() != point.offset) {
-    journal_.append(Bytes{static_cast<std::uint8_t>(RecordKind::Commit)});
+    const auto end = journal_.size() + Journal::frame_header_size + 1;
+    const auto padding = (commit_alignment - end % commit_alignment) % commit_alignment;
+    if (journal_.size() - point.offset >= 2 * commit_alignment && padding > 0 && padding <= max_commit_padding) {
+      // Fill the last part of this block once, so the next sync need not rewrite it.
+      Bytes marker(1 + padding);
+      marker.front() = static_cast<std::uint8_t>(RecordKind::AlignedCommit);
+      journal_.append(marker);
+    } else {
+      journal_.append(Bytes{static_cast<std::uint8_t>(RecordKind::Commit)});
+    }
     journal_.sync();
   }
   undo_.resize(point.undo_count);
@@ -587,6 +620,7 @@ void Database::checkpoint() {
     if (count % 256 != 0) replacement.append(Bytes{static_cast<std::uint8_t>(RecordKind::Commit)});
   }
   // All old references remain valid until the durable atomic replacement.
+  search_caches_.remove_if([](const SearchCache &cache) { return static_cast<bool>(cache.journal_view); });
   journal_.replace_with(replacement, directory_);
   for (std::size_t table = 0; table < tables_.size(); ++table) {
     auto offset = starts[table];
@@ -606,7 +640,15 @@ bool Database::apply_record(const Bytes &payload, RecordRef record, bool replay)
   const auto kind = static_cast<RecordKind>(flags & ~compact_row);
   const auto encoding = row_encoding(kind);
   if (compact && !encoding) throw std::runtime_error("invalid compact record kind");
-  if (kind == RecordKind::Commit) {
+  if (kind == RecordKind::Commit || kind == RecordKind::AlignedCommit) {
+    if (kind == RecordKind::AlignedCommit) {
+      if (input.remaining() == 0 || input.remaining() > max_commit_padding ||
+          (record.offset + record.size) % commit_alignment != 0 ||
+          std::any_of(payload.begin() + 1, payload.end(), [](std::uint8_t value) { return value != 0; })) {
+        throw std::runtime_error("invalid aligned journal commit");
+      }
+      input.skip(input.remaining());
+    }
     input.finish();
     undo_.clear();
     return true;
@@ -852,6 +894,7 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
   const std::uint64_t fixed = column_bytes + count * (sizeof(std::int64_t) + sizeof(std::uint32_t));
   const auto quantized_bytes = components + count * sizeof(std::int32_t);
   const auto sign_bytes = (components + 7) / 8;
+  const auto encoded_bytes = count * sizeof(EncodedVector);
   const bool quantize = dimension >= 32 && dimension <= 4096 && components >= 256 * 1024 &&
                         integer_distance_kernel();
   const auto minimum = fixed + (quantize ? quantized_bytes + sign_bytes : components * sizeof(float));
@@ -896,7 +939,9 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
   float max_abs = 0;
   float inverse = 0;
   for (const auto &entry : table.rows) {
-    load_row(table, entry.second.reference, buffer, row);
+    EncodedVector encoded{};
+    load_row(table, entry.second.reference, buffer, row, quantize ? &encoded : nullptr,
+             cache.journal_view ? &cache.journal_view : nullptr);
     const auto &vector = std::get<Vector>(row[vector_column]);
     const auto row_index = cache.keys.size();
     if (quantize) {
@@ -935,7 +980,13 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
         }
         cache.quantized_norms[row_index] = norm;
       } else {
-        used = used - quantized_bytes - sign_bytes + components * sizeof(float);
+        const auto mapped_cost = used - sign_bytes + encoded_bytes;
+        if (components * sizeof(float) >= 1024 * 1024 && mapped_cost <= budget) {
+          // Reuse the WAL's stored vectors for exact refinement. Row
+          // mutations invalidate these views before rollback can truncate them.
+          cache.journal_view = journal_.view();
+        }
+        used = cache.journal_view ? mapped_cost : used - quantized_bytes - sign_bytes + components * sizeof(float);
         while (!search_caches_.empty() && used > total_budget - cache_bytes()) search_caches_.pop_back();
         budget = total_budget - cache_bytes();
         if (used > budget) {
@@ -946,20 +997,28 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
         std::vector<std::int8_t>{}.swap(cache.quantized);
         std::vector<std::int32_t>{}.swap(cache.quantized_norms);
         std::vector<std::uint8_t>{}.swap(cache.negative_zeros);
-        cache.vectors.reserve(components);
+        if (cache.journal_view) cache.encoded_vectors.reserve(count);
+        else cache.vectors.reserve(components);
         Bytes previous_buffer;
         Row previous_row;
         auto previous_entry = table.rows.begin();
         for (std::size_t previous = 0; previous < row_index; ++previous, ++previous_entry) {
-          load_row(table, previous_entry->second.reference, previous_buffer, previous_row);
-          const auto &previous_vector = std::get<Vector>(previous_row[vector_column]);
-          cache.vectors.insert(cache.vectors.end(), previous_vector.begin(), previous_vector.end());
+          EncodedVector previous_encoded{};
+          load_row(table, previous_entry->second.reference, previous_buffer, previous_row,
+                   cache.journal_view ? &previous_encoded : nullptr,
+                   cache.journal_view ? &cache.journal_view : nullptr);
+          if (cache.journal_view) {
+            cache.encoded_vectors.push_back(previous_encoded);
+          } else {
+            const auto &previous_vector = std::get<Vector>(previous_row[vector_column]);
+            cache.vectors.insert(cache.vectors.end(), previous_vector.begin(), previous_vector.end());
+          }
         }
         cache.exact_codes = false;
-        std::vector<std::uint8_t>{}.swap(cache.negative_zeros);
       }
     }
-    if (!cache.exact_codes) cache.vectors.insert(cache.vectors.end(), vector.begin(), vector.end());
+    if (cache.journal_view) cache.encoded_vectors.push_back(encoded);
+    else if (!cache.exact_codes) cache.vectors.insert(cache.vectors.end(), vector.begin(), vector.end());
     for (std::size_t column = 0; column < cache.scalars.size(); ++column) {
       auto &values = cache.scalars[column];
       if (auto *integers = std::get_if<std::vector<std::int64_t>>(&values)) {
@@ -983,16 +1042,22 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
   }
   if (cache.exact_codes && max_abs == 0) cache.quantization_step = 1.0;
   if (!cache.exact_codes) {
-    if (quantize && quantized_bytes <= budget - used && max_abs != 0) {
-      used += quantized_bytes;
+    if (quantize && (cache.journal_view || quantized_bytes <= budget - used) && max_abs != 0) {
+      if (!cache.journal_view) used += quantized_bytes;
       cache.quantization_step = static_cast<double>(max_abs) / 127.0;
       cache.quantized.resize(components);
       cache.quantized_norms.resize(count);
       // Interleave complete eight-row blocks in the original allocation.
       if (dimension % 32 == 0) cache.block_rows = count - count % quantized_block_rows;
       double maximum_error_squared = 0.0;
+      Vector decoded;
+      if (cache.journal_view) decoded.resize(dimension);
       for (std::size_t row = 0; row < count; ++row) {
-        const auto *values = cache.vectors.data() + row * dimension;
+        if (cache.journal_view) {
+          const auto &slice = cache.encoded_vectors[row];
+          cache.journal_view.read({slice.offset, slice.length}).vector(decoded.data(), dimension, slice.encoding);
+        }
+        const auto *values = cache.journal_view ? decoded.data() : cache.vectors.data() + row * dimension;
         const bool interleaved = row < cache.block_rows;
         const std::size_t lane = row % quantized_block_rows;
         auto *base = cache.quantized.data() + (interleaved ? row - lane : row) * dimension;
@@ -1053,9 +1118,10 @@ void Database::reorder_quantized(SearchCache &cache,
   }
 }
 
-void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row) {
-  journal_.read(record, buffer);
-  Reader input(buffer);
+void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row,
+                        EncodedVector *encoded_vector, const JournalView *view) {
+  if (!view) journal_.read(record, buffer);
+  auto input = view ? view->read(record) : Reader(buffer);
   const auto flags = input.byte();
   const bool compact = (flags & compact_row) != 0;
   const auto encoding = row_encoding(static_cast<RecordKind>(flags & ~compact_row));
@@ -1081,7 +1147,12 @@ void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row
       }
       auto &vector = std::get<Vector>(row[i]);
       vector.resize(column.width);
+      const auto remaining = input.remaining();
       input.vector(vector.data(), vector.size(), *encoding);
+      if (encoded_vector) {
+        *encoded_vector = {record.offset + record.size - remaining,
+                           static_cast<std::uint32_t>(remaining - input.remaining()), *encoding};
+      }
     }
   }
   input.finish();
@@ -1118,6 +1189,8 @@ void Database::put_row(Table &table, std::int64_t key, const Row &row, Bytes &pa
           case VectorEncoding::Packed: payload.front() = static_cast<std::uint8_t>(RecordKind::PutPacked); break;
           case VectorEncoding::ScaledByte: payload.front() = static_cast<std::uint8_t>(RecordKind::PutScaledByte); break;
           case VectorEncoding::ScaledBits: payload.front() = static_cast<std::uint8_t>(RecordKind::PutScaledBits); break;
+          case VectorEncoding::ScaledRange: payload.front() = static_cast<std::uint8_t>(RecordKind::PutScaledRange); break;
+          case VectorEncoding::FixedDecimal: payload.front() = static_cast<std::uint8_t>(RecordKind::PutFixedDecimal); break;
         }
         break;
       }
@@ -1446,7 +1519,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     };
 
     Vector decoded;
-    if (cache && cache->exact_codes) decoded.resize(query.size());
+    if (cache && (cache->exact_codes || cache->journal_view)) decoded.resize(query.size());
     const auto quantized_position = [&](std::size_t index) {
       if (cache->equality && !cache->equality->positions.empty()) {
         return static_cast<std::size_t>(cache->equality->positions[index]);
@@ -1454,6 +1527,11 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       return index;
     };
     const auto cached_vector = [&](std::size_t index) -> const float * {
+      if (cache->journal_view) {
+        const auto &slice = cache->encoded_vectors[index];
+        cache->journal_view.read({slice.offset, slice.length}).vector(decoded.data(), query.size(), slice.encoding);
+        return decoded.data();
+      }
       const std::size_t offset = index * query.size();
       if (!cache->exact_codes) return cache->vectors.data() + offset;
       const auto position = quantized_position(index);
@@ -1529,9 +1607,11 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       for (; begin < block_end; begin += quantized_block_rows) {
         const double bound = std::min(cutoff - query_norm, 254.0 * 254.0 * query.size());
         std::array<std::int32_t, quantized_block_rows> distances;
-        auto mask = blocks.block(cache->quantized.data() + begin * query.size(),
-                                 cache->quantized_norms.data() + begin, query_quantized.data(), query.size(),
-                                 static_cast<std::int32_t>(std::ceil(bound)), distances.data());
+        unsigned mask = 0;
+        begin = blocks.block(cache->quantized.data(), cache->quantized_norms.data(),
+                             query_quantized.data(), query.size(), static_cast<std::int32_t>(std::ceil(bound)),
+                             begin, block_end, distances.data(), mask);
+        if (begin == block_end) break;
         while (mask != 0) {
           const unsigned lane = static_cast<unsigned>(__builtin_ctz(mask));
           visit(begin + lane, distances[lane] + query_norm);
