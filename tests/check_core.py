@@ -565,6 +565,36 @@ def check_mapped_vectors(args, directory):
     print("Mapped FP32 queries returned exact projected values across writes, rollback and restart", flush=True)
 
 
+def check_dense_topk_ties(args, directory):
+    rows = 2072
+    # Non-grid FP32 values use exact refinement. The sentinel fixes a wider
+    # quantization range so the queries exercise integer pruning as well.
+    vector = json.dumps([0.1327, -0.1331] * 64)
+    sentinel = json.dumps([1, 0] * 64)
+    with Server(args, directory) as db:
+        db.ok("CREATE TABLE dense (id BIGINT PRIMARY KEY, bucket BIGINT, v VECTOR(128));")
+        for start in range(0, rows, 100):
+            keys = range(start, min(start + 100, rows))
+            values = ",".join(f"({key},{key % 2},{vector})" for key in keys)
+            db.ok("INSERT INTO dense VALUES " + values + ";", len(keys))
+        db.ok(f"INSERT INTO dense VALUES ({rows},2,{sentinel});", 1)
+        db.ok("CREATE VECTOR INDEX dense_index ON dense(v);")
+        head = f"SELECT id,L2_DISTANCE(v,{vector}) AS d FROM dense"
+        db.query(head + " ORDER BY d LIMIT 1;", [[0, 0]])
+        for where, keys in (("", list(range(rows))),
+                            (" WHERE bucket=1", list(range(1, rows, 2)))):
+            for k in (10, 32):
+                db.query(head + where + f" ORDER BY d,id ASC LIMIT {k};", [[key, 0] for key in keys[:k]])
+                db.query(head + where + f" ORDER BY d,id DESC LIMIT {k};",
+                         [[key, 0] for key in reversed(keys[-k:])])
+        output, count, error = db.sql(head + " WHERE bucket=2 ORDER BY d LIMIT 10;")
+        a, b = struct.unpack("<2f", struct.pack("<2f", 0.1327, -0.1331))
+        assert error is None and count == 1 and output[0][0] == rows
+        assert math.isclose(output[0][1], math.sqrt(64 * ((1 - a)**2 + b**2)), rel_tol=1e-12)
+        db.query(head + " WHERE bucket=7 ORDER BY d LIMIT 10;", [])
+    print("Dense ties and small result sets passed exact TopK in both sort orders", flush=True)
+
+
 def check_index(args, directory):
     query = "SELECT id FROM items WHERE label='g' ORDER BY L2_DISTANCE(v,[0,0]) LIMIT 1;"
     with Server(args, directory, mode="ann") as db:
@@ -673,6 +703,7 @@ def main():
         check_wal_vector_formats(args, root / "wal_vector_formats", reference)
         check_aligned_commits(args, root / "aligned_commits")
         check_mapped_vectors(args, root / "mapped_vectors")
+        check_dense_topk_ties(args, root / "dense_topk_ties")
         check_index(args, root / "index")
         if args.large:
             check_disk_budget(args, root / "large")

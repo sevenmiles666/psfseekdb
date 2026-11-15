@@ -785,9 +785,15 @@ void Database::rebuild_index(Table &table) {
   // so building the index needs only the in-memory row metadata.
   auto &entries = table.index->ordered;
   entries.clear();
-  for (const auto &row : table.rows) {
-    entries.emplace(row.second.projection, row.first);
+  if (entries.capacity() / 2 > table.rows.size()) {
+    decltype(table.index->ordered){}.swap(entries);
   }
+  entries.reserve(table.rows.size());
+  for (const auto &row : table.rows) {
+    entries.emplace_back(row.second.projection, row.first);
+  }
+  std::sort(entries.begin(), entries.end());
+  table.index->needs_rebuild = false;
 }
 
 void Database::record_row_change(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay) {
@@ -799,18 +805,11 @@ void Database::record_row_change(Table &table, std::int64_t key, std::optional<S
 
 void Database::set_row(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay) {
   invalidate_cache(table.id);
-  const auto current = table.rows.find(key);
-  const bool maintain = table.index && !replay;
-  if (maintain && current != table.rows.end()) {
-    table.index->ordered.erase({current->second.projection, key});
-  }
+  if (table.index && !replay) table.index->needs_rebuild = true;
   if (row) {
     table.rows.insert_or_assign(key, *row);
-    if (maintain) {
-      table.index->ordered.emplace(row->projection, key);
-    }
-  } else if (current != table.rows.end()) {
-    table.rows.erase(current);
+  } else {
+    table.rows.erase(key);
   }
 }
 
@@ -1478,6 +1477,15 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     double worst_squared = cutoff;
     std::vector<Neighbor> nearest;
     nearest.reserve(std::min<std::uint64_t>(limit, target.rows.size()));
+    bool defer_refinement = mode == SearchMode::Exact && blocks.block && cache->journal_view &&
+                            !exact_query && limit <= 32;
+    constexpr std::size_t shortlist_limit = 512;
+    std::vector<std::int32_t> nearest_codes;
+    std::vector<std::pair<std::size_t, std::int32_t>> shortlist;
+    if (defer_refinement) {
+      nearest_codes.reserve(limit);
+      shortlist.reserve(128);
+    }
     const auto consider_distance = [&](std::int64_t key, RecordRef reference, double squared,
                                        std::size_t index = 0) {
       Neighbor candidate{std::sqrt(squared), key, reference, index};
@@ -1544,8 +1552,17 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       }
       return decoded.data();
     };
+    const auto refine_shortlist = [&] {
+      const auto approximate_cutoff = cutoff;
+      for (const auto &[index, distance] : shortlist) {
+        if (distance <= std::min(approximate_cutoff, cutoff)) {
+          consider_distance(cache->keys[index], {}, squared_distance(cached_vector(index), query), index);
+        }
+      }
+      shortlist.clear();
+    };
     const auto consider_cached = [&](std::size_t index, std::optional<std::int32_t> distance = {}) {
-      if (dot && (exact_query || nearest.size() == limit)) {
+      if (dot && (defer_refinement || exact_query || nearest.size() == limit)) {
         if (!distance) {
           const auto position = quantized_position(index);
           std::int32_t cross;
@@ -1563,6 +1580,37 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
           const double scale = cache->quantization_step;
           consider_distance(cache->keys[index], {}, *distance * scale * scale, index);
           return;
+        }
+        if (defer_refinement) {
+          if (nearest_codes.size() < limit || *distance < nearest_codes.front()) {
+            if (nearest_codes.size() == limit) {
+              std::pop_heap(nearest_codes.begin(), nearest_codes.end());
+              nearest_codes.back() = *distance;
+            } else {
+              nearest_codes.push_back(*distance);
+            }
+            std::push_heap(nearest_codes.begin(), nearest_codes.end());
+            if (nearest_codes.size() == limit) {
+              // Each coded norm is within error_radius of the exact scaled
+              // norm. Two margins bound both the contender and the Kth seed.
+              const auto slop = 1.0 + (16.0 * query.size() + 32.0) * std::numeric_limits<double>::epsilon();
+              const auto radius = (std::sqrt(double(nearest_codes.front())) + 2.0 * error_radius) * slop;
+              cutoff = radius * radius;
+            }
+          }
+          if (shortlist.size() == shortlist_limit) {
+            shortlist.erase(std::remove_if(shortlist.begin(), shortlist.end(), [&](const auto &value) {
+              return value.second > cutoff;
+            }), shortlist.end());
+          }
+          if (shortlist.size() < shortlist_limit) {
+            if (*distance <= cutoff) shortlist.emplace_back(index, *distance);
+            return;
+          }
+          // Keep the exact lookup memory bounded when many distances are alike.
+          refine_shortlist();
+          defer_refinement = false;
+          if (*distance > cutoff) return;
         }
       }
       const auto *vector = cached_vector(index);
@@ -1602,7 +1650,8 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
           consider_cached(index, distance);
         }
       };
-      for (; begin < end && (begin % quantized_block_rows != 0 || nearest.size() < limit); ++begin) visit(begin);
+      for (; begin < end && (begin % quantized_block_rows != 0 ||
+             (defer_refinement ? nearest_codes.size() : nearest.size()) < limit); ++begin) visit(begin);
       const auto block_end = std::min(end - end % quantized_block_rows, cache->block_rows);
       for (; begin < block_end; begin += quantized_block_rows) {
         const double bound = std::min(cutoff - query_norm, 254.0 * 254.0 * query.size());
@@ -1648,8 +1697,10 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       }
     }
     if (use_ann) {
+      if (target.index->needs_rebuild) rebuild_index(target);
       const auto &entries = target.index->ordered;
-      auto right = entries.lower_bound({query.front(), std::numeric_limits<std::int64_t>::min()});
+      const auto start = std::make_pair(query.front(), std::numeric_limits<std::int64_t>::min());
+      auto right = std::lower_bound(entries.begin(), entries.end(), start);
       auto left = std::make_reverse_iterator(right);
       const auto lower_bound = [&](float projection) {
         const double difference = static_cast<double>(projection) - query.front();
@@ -1785,6 +1836,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         read_candidate(entry.first, entry.second.reference);
       }
     }
+    if (defer_refinement) refine_shortlist();
     std::sort_heap(nearest.begin(), nearest.end(), closer);
     for (const Neighbor &entry : nearest) {
       if (!cache) {

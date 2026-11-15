@@ -39,7 +39,8 @@ private:
   struct VectorIndex {
     std::string name;
     std::size_t column;
-    std::set<std::pair<float, std::int64_t>> ordered;
+    std::vector<std::pair<float, std::int64_t>> ordered;
+    bool needs_rebuild = false;
   };
 
   struct Table {
