@@ -3,8 +3,8 @@
   "code_base_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
   "canonical_path": "agent/conversation.json",
   "compatibility_path": "conversation.json",
-  "material_sha256": "d7c1c76e8189fbaa40a8f3e98866687459b9f9bad0e4c93d35df330c7577ac94",
-  "material_bytes": 130905,
+  "material_sha256": "c14bdea8799afb43ebf50beea95a0627313f9a06e37bd86d876003d1b266a3f6",
+  "material_bytes": 130601,
   "summary_pointer": "/material_summary",
   "note": "原有 Agent/工具对象完整保留；追加实际来源的 AI 技术交流及工具输入输出。正式评分与提测状态由平台决定。",
   "runtime_files": [
@@ -117,7 +117,7 @@
   },
   "local_engine_optimization_payload_sha256": "882ae688a9a8fa5195f53eda9e7d6da84a6bf8020b5f2201af230f922ef2cb69",
   "runtime_revision_note": "code_base_commit 指向历史 ltc 基线。local_engine_optimization_source_commit 固定历史六项优化的源码。runtime_files 记录当前引擎和构建文件。",
-  "evidence_scope": "agent_and_tool_only",
+  "evidence_scope": "sourced_user_agent_and_tool_records",
   "source_snapshot": {
     "commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
     "material_sha256_before_correction": "3ae237531c8a2a6c643846bcbce8537c087a9fa53101c275c1f497b0b5592bf8",
@@ -160,8 +160,8 @@
   },
   "continuation_discussion": {
     "pointer": "/continuation_technical_discussion",
-    "payload_sha256": "ebd2b01f453401db92ca2dc0b8739404f2f93fda96944245d5c7504cd98a4fe1",
-    "incoming_excerpt_count": 10,
+    "payload_sha256": "188b53c4c0f133349d183bea67daf74b316d2e7a036b99a876e9109b5062d73a",
+    "incoming_excerpt_count": 9,
     "actual_experiment_groups": 3,
     "student_evidence": false
   },

@@ -51,9 +51,7 @@ WAL 按历史追加。日志达到检查阈值且历史明显多于有效行时�
 
 ANN 索引按向量首个坐标和主键排序。从查询坐标两侧按距离下界扫描，满足过滤条件的候选才进入 TopK 堆。收满 K 条后可按 0.1% 的相对距离容差提前停止，返回项仍以完整欧氏距离排序。高维数据中单坐标下界可能较弱，此时扫描和随机读成本较高。没有索引或查询形状超出该路径时走精确检索。
 
-`agent/conversation.json` 保留 Agent 开发指令与实际工具结果，已删除操作对话及由这些对话建立的学生评分引用。[官方赛题说明](https://oceanbase.yuque.com/org-wiki-obtech-vh7w9r/hc3pio/lg8enxlmwg69unt6)
-
-当前材料没有经核实的学生发言，开发指令和实验保持 Agent／工具来源。历史工具结果保留各自的版本与环境。[材料说明](agent/README.md)
+`agent/conversation.json` 包含本会话用户的版本要求和正式结果反馈，以及可核实的开发和测试记录。技术分析和实验保留 Agent 与工具来源，历史结果注明各自的版本与环境。[材料说明](agent/README.md) · [官方赛题说明](https://oceanbase.yuque.com/org-wiki-obtech-vh7w9r/hc3pio/lg8enxlmwg69unt6)
 
 ## 本地验证
 
