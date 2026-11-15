@@ -22,20 +22,20 @@
     },
     {
       "path": "src/database.cpp",
-      "git_blob_sha1": "e042419e14d38740c2ba1bd6a239b576db59b0ed",
-      "sha256": "9552cfc8b1f83e7f94904a0baec756cadc6a815a2341a9cd2ceff82b510a2f5c",
+      "git_blob_sha1": "4d6a2f9fc8e9a596da5561e63283fa92fcdf5730",
+      "sha256": "3e880c786218ee45fe24ba70de31347823f3eadb1d501f56e9bc369c659c1152",
       "mode": "100644"
     },
     {
       "path": "src/database.hpp",
-      "git_blob_sha1": "f408ad5f6b51ef80185952aa6a674ed6b208666e",
-      "sha256": "fba5892711c6a9f6ef4c609febca759063df2daac0e5a4b247c90d02820e9246",
+      "git_blob_sha1": "ca9c0f181c2c3ce2685d41afc50939f47db3ef9a",
+      "sha256": "e9b552b84a7f70bd5bfe973420cc90197cdf37aaa366a87179719882cb2a9641",
       "mode": "100644"
     },
     {
       "path": "src/encoding.hpp",
-      "git_blob_sha1": "e4470961ff2e13bb136c815ed5f3b572edadaf94",
-      "sha256": "6171b796b5a5e00b4255f0dcf0d5ad6a299ed89079a67c3eae1366aef90ebc3c",
+      "git_blob_sha1": "16864fe59b4bf5da79272455d5b90d8f54297f8d",
+      "sha256": "efa3587a613aa24f229eeb852725d7f1dfa8a5ef5534792bec08d08cbd9d5448",
       "mode": "100644"
     },
     {
@@ -116,7 +116,7 @@
     "status": "used_for_local_optimization"
   },
   "local_engine_optimization_payload_sha256": "882ae688a9a8fa5195f53eda9e7d6da84a6bf8020b5f2201af230f922ef2cb69",
-  "runtime_revision_note": "code_base_commit 是原 ltc 基线；runtime_files 是当前本地六项改动后的文件，原始验证仍对应其原始二进制。",
+  "runtime_revision_note": "code_base_commit 指向历史 ltc 基线。local_engine_optimization_source_commit 固定历史六项优化的源码。runtime_files 记录当前引擎和构建文件。",
   "evidence_scope": "agent_and_tool_only",
   "source_snapshot": {
     "commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
@@ -164,5 +164,6 @@
     "incoming_excerpt_count": 10,
     "actual_experiment_groups": 3,
     "student_evidence": false
-  }
+  },
+  "local_engine_optimization_source_commit": "f8b311582b030ae13f8b3137fe61d1f40123ee58"
 }

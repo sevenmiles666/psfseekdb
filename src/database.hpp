@@ -47,6 +47,7 @@ private:
     std::string name;
     std::vector<Column> columns;
     std::size_t primary_key;
+    std::optional<std::size_t> vector_column;
     std::map<std::int64_t, StoredRow> rows;
     std::optional<VectorIndex> index;
     std::size_t cache_reads = 0;
@@ -108,8 +109,9 @@ private:
   void transaction(Transaction command);
 
   Table &table(const std::string &name);
-  float read_projection(const Table &table, Reader &row, VectorEncoding encoding) const;
+  float read_projection(const Table &table, Reader &row, VectorEncoding encoding, bool compact) const;
   void rebuild_index(Table &table);
+  void record_row_change(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay = false);
   void set_row(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay);
   void invalidate_cache(std::uint32_t table);
   SearchCache *search_cache(Table &table, std::size_t vector_column,
@@ -119,7 +121,7 @@ private:
                          std::size_t dimension);
   std::uint64_t cache_bytes() const;
   void load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row);
-  void put_row(const Table &table, std::int64_t key, const Row &row, Bytes &payload);
+  void put_row(Table &table, std::int64_t key, const Row &row, Bytes &payload);
   std::uint64_t create_table(const CreateTable &statement);
   std::uint64_t create_index(const CreateVectorIndex &statement);
   std::uint64_t insert(Insert &statement);

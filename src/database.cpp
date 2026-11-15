@@ -22,8 +22,11 @@ namespace minivector {
 namespace {
 
 enum class RecordKind : std::uint8_t {
-  Create = 1, Put = 2, Delete = 3, Commit = 4, Index = 5, PutHalf = 6, PutPacked = 7, PutScaledByte = 8
+  Create = 1, Put = 2, Delete = 3, Commit = 4, Index = 5, PutHalf = 6, PutPacked = 7,
+  PutScaledByte = 8, PutScaledBits = 9
 };
+
+constexpr std::uint8_t compact_row = 0x80;
 
 std::optional<VectorEncoding> row_encoding(RecordKind kind) {
   switch (kind) {
@@ -31,8 +34,18 @@ std::optional<VectorEncoding> row_encoding(RecordKind kind) {
     case RecordKind::PutHalf: return VectorEncoding::Half;
     case RecordKind::PutPacked: return VectorEncoding::Packed;
     case RecordKind::PutScaledByte: return VectorEncoding::ScaledByte;
+    case RecordKind::PutScaledBits: return VectorEncoding::ScaledBits;
     default: return std::nullopt;
   }
+}
+
+std::uint32_t row_table_id(Reader &input, bool compact) {
+  if (!compact) return input.u32();
+  const auto id = input.varint();
+  if (id > std::numeric_limits<std::uint32_t>::max()) {
+    throw std::runtime_error("invalid table id in journal");
+  }
+  return static_cast<std::uint32_t>(id);
 }
 
 std::size_t column_index(const std::vector<Column> &columns, const std::string &name) {
@@ -588,13 +601,17 @@ void Database::checkpoint() {
 
 bool Database::apply_record(const Bytes &payload, RecordRef record, bool replay) {
   Reader input(payload);
-  const auto kind = static_cast<RecordKind>(input.byte());
+  const auto flags = input.byte();
+  const bool compact = (flags & compact_row) != 0;
+  const auto kind = static_cast<RecordKind>(flags & ~compact_row);
+  const auto encoding = row_encoding(kind);
+  if (compact && !encoding) throw std::runtime_error("invalid compact record kind");
   if (kind == RecordKind::Commit) {
     input.finish();
     undo_.clear();
     return true;
   }
-  const std::uint32_t id = input.u32();
+  const std::uint32_t id = row_table_id(input, compact);
   if (kind == RecordKind::Create) {
     if (id != tables_.size()) {
       throw std::runtime_error("invalid table sequence in journal");
@@ -607,12 +624,17 @@ bool Database::apply_record(const Bytes &payload, RecordRef record, bool replay)
     }
     std::vector<Column> columns;
     columns.reserve(count);
+    std::optional<std::size_t> vector_column;
     for (std::uint32_t i = 0; i < count; ++i) {
       std::string column = input.string();
       const auto type = static_cast<Type>(input.byte());
       const std::uint32_t width = input.u32();
       if (type != Type::Bigint && type != Type::Varchar && type != Type::Vector) {
         throw std::runtime_error("invalid column type in journal");
+      }
+      if (type == Type::Vector) {
+        if (vector_column) throw std::runtime_error("multiple vector columns in journal");
+        vector_column = i;
       }
       columns.push_back({std::move(column), type, width});
     }
@@ -622,7 +644,7 @@ bool Database::apply_record(const Bytes &payload, RecordRef record, bool replay)
     }
     names_.emplace(name, id);
     tables_.push_back(std::make_unique<Table>(
-        Table{id, std::move(name), std::move(columns), primary, {}, std::nullopt}));
+        Table{id, std::move(name), std::move(columns), primary, vector_column, {}, std::nullopt}));
     undo_.push_back({id, UndoKind::Table, 0, std::nullopt});
     return false;
   }
@@ -641,23 +663,16 @@ bool Database::apply_record(const Bytes &payload, RecordRef record, bool replay)
     undo_.push_back({id, UndoKind::Index, 0, std::nullopt});
     return false;
   }
-  const auto encoding = row_encoding(kind);
   if (!encoding && kind != RecordKind::Delete) {
     throw std::runtime_error("invalid mutation in journal");
   }
-  const std::int64_t key = input.i64();
-  const auto existing = target.rows.find(key);
-  std::optional<StoredRow> previous;
-  if (existing != target.rows.end()) {
-    previous = existing->second;
-  }
-  undo_.push_back({id, UndoKind::Row, key, previous});
+  const std::int64_t key = compact ? input.signed_varint() : input.i64();
   if (encoding) {
-    const float projection = target.index && !replay ? read_projection(target, input, *encoding) : 0;
-    set_row(target, key, StoredRow{record, projection}, replay);
+    const float projection = target.vector_column ? read_projection(target, input, *encoding, compact) : 0;
+    record_row_change(target, key, StoredRow{record, projection}, replay);
   } else {
     input.finish();
-    set_row(target, key, std::nullopt, replay);
+    record_row_change(target, key, std::nullopt, replay);
   }
   return false;
 }
@@ -703,12 +718,13 @@ Database::Table &Database::table(const std::string &name) {
   return *tables_[found->second];
 }
 
-float Database::read_projection(const Table &table, Reader &row, VectorEncoding encoding) const {
+float Database::read_projection(const Table &table, Reader &row, VectorEncoding encoding, bool compact) const {
   // Row metadata and the primary key have already been consumed.
-  for (std::size_t i = 0; i < table.index->column; ++i) {
+  for (std::size_t i = 0; i < *table.vector_column; ++i) {
     if (i == table.primary_key) continue;
     if (table.columns[i].type == Type::Bigint) {
-      row.skip(sizeof(std::int64_t));
+      if (compact) row.varint();
+      else row.skip(sizeof(std::int64_t));
     } else {
       const std::uint32_t bytes = row.u32();
       row.skip(bytes);
@@ -723,20 +739,20 @@ float Database::read_projection(const Table &table, Reader &row, VectorEncoding 
 }
 
 void Database::rebuild_index(Table &table) {
-  Bytes buffer;
+  // The first coordinate is captured when each row is written or replayed,
+  // so building the index needs only the in-memory row metadata.
   auto &entries = table.index->ordered;
   entries.clear();
-  for (auto &row : table.rows) {
-    journal_.read(row.second.reference, buffer);
-    Reader input(buffer);
-    const auto encoding = row_encoding(static_cast<RecordKind>(input.byte()));
-    if (!encoding || input.u32() != table.id ||
-        input.i64() != row.first) {
-      throw std::runtime_error("row reference does not match vector index");
-    }
-    row.second.projection = read_projection(table, input, *encoding);
+  for (const auto &row : table.rows) {
     entries.emplace(row.second.projection, row.first);
   }
+}
+
+void Database::record_row_change(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay) {
+  const auto current = table.rows.find(key);
+  const auto previous = current == table.rows.end() ? std::nullopt : std::optional{current->second};
+  undo_.push_back({table.id, UndoKind::Row, key, previous});
+  set_row(table, key, row, replay);
 }
 
 void Database::set_row(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay) {
@@ -1040,18 +1056,20 @@ void Database::reorder_quantized(SearchCache &cache,
 void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row) {
   journal_.read(record, buffer);
   Reader input(buffer);
-  const auto encoding = row_encoding(static_cast<RecordKind>(input.byte()));
-  if (!encoding || input.u32() != table.id) {
+  const auto flags = input.byte();
+  const bool compact = (flags & compact_row) != 0;
+  const auto encoding = row_encoding(static_cast<RecordKind>(flags & ~compact_row));
+  if (!encoding || row_table_id(input, compact) != table.id) {
     throw std::runtime_error("row reference does not match the table");
   }
-  const std::int64_t key = input.i64();
+  const std::int64_t key = compact ? input.signed_varint() : input.i64();
   row.resize(table.columns.size());
   for (std::size_t i = 0; i < table.columns.size(); ++i) {
     const Column &column = table.columns[i];
     if (i == table.primary_key) {
       row[i] = key;
     } else if (column.type == Type::Bigint) {
-      row[i] = input.i64();
+      row[i] = compact ? input.signed_varint() : input.i64();
     } else if (column.type == Type::Varchar) {
       row[i] = input.string();
     } else {
@@ -1069,17 +1087,28 @@ void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row
   input.finish();
 }
 
-void Database::put_row(const Table &table, std::int64_t key, const Row &row, Bytes &payload) {
+void Database::put_row(Table &table, std::int64_t key, const Row &row, Bytes &payload) {
+  // Use the compact format only when no integer field expands.
+  constexpr std::uint64_t seven_byte_max = (std::uint64_t{1} << 49) - 1;
+  const bool compact = table.id < (1U << 21) && std::all_of(row.begin(), row.end(), [&](const Value &value) {
+    const auto *integer = std::get_if<std::int64_t>(&value);
+    return !integer || signed_code(*integer) <= seven_byte_max;
+  });
+  const auto put_integer = [&](std::int64_t value) {
+    if (compact) put_varint(payload, signed_code(value));
+    else put_i64(payload, value);
+  };
   payload.clear();
   payload.push_back(static_cast<std::uint8_t>(RecordKind::Put));
-  put_u32(payload, table.id);
-  put_i64(payload, key);
+  if (compact) put_varint(payload, table.id);
+  else put_u32(payload, table.id);
+  put_integer(key);
   for (std::size_t i = 0; i < row.size(); ++i) {
     if (i == table.primary_key) {
       continue;
     }
     switch (table.columns[i].type) {
-      case Type::Bigint: put_i64(payload, std::get<std::int64_t>(row[i])); break;
+      case Type::Bigint: put_integer(std::get<std::int64_t>(row[i])); break;
       case Type::Varchar: put_string(payload, std::get<std::string>(row[i])); break;
       case Type::Vector: {
         const auto &vector = std::get<Vector>(row[i]);
@@ -1088,12 +1117,16 @@ void Database::put_row(const Table &table, std::int64_t key, const Row &row, Byt
           case VectorEncoding::Half: payload.front() = static_cast<std::uint8_t>(RecordKind::PutHalf); break;
           case VectorEncoding::Packed: payload.front() = static_cast<std::uint8_t>(RecordKind::PutPacked); break;
           case VectorEncoding::ScaledByte: payload.front() = static_cast<std::uint8_t>(RecordKind::PutScaledByte); break;
+          case VectorEncoding::ScaledBits: payload.front() = static_cast<std::uint8_t>(RecordKind::PutScaledBits); break;
         }
         break;
       }
     }
   }
-  write_change(payload);
+  if (compact) payload.front() |= compact_row;
+  const float projection = table.vector_column ? std::get<Vector>(row[*table.vector_column]).front() : 0;
+  const auto record = journal_.append(payload);
+  record_row_change(table, key, StoredRow{record, projection});
 }
 
 std::uint64_t Database::create_table(const CreateTable &statement) {

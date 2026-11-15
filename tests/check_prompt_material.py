@@ -281,9 +281,14 @@ def check(repo):
             raise ValueError('local engine optimization records differ from the manifest')
         if revision['role'] != 'tool' or revision['status'] != 'PASS':
             raise ValueError('local engine optimization requires actual tool results')
-        for name, expected in revision['changed_source_sha256'].items():
-            if hashlib.sha256((repo / name).read_bytes()).hexdigest() != expected:
-                raise ValueError('local engine optimization source differs')
+        source_commit = manifest.get('local_engine_optimization_source_commit')
+        if source_commit is None:
+            for name, expected in revision['changed_source_sha256'].items():
+                if hashlib.sha256((repo / name).read_bytes()).hexdigest() != expected:
+                    raise ValueError('local engine optimization source differs')
+        elif (not re.fullmatch(r'[0-9a-f]{40}', source_commit)
+              or source_commit != material['learning_record']['verification']['commit']):
+            raise ValueError('frozen engine evidence source differs')
     for entry in manifest.get('preserved_tool_payloads', []):
         value = resolve_pointer(material, entry['pointer'])
         payload = json.dumps(value, ensure_ascii=False, sort_keys=True,

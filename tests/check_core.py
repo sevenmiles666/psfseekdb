@@ -397,17 +397,19 @@ def check_topk_rounding(args, directory):
 
 
 def check_wal_vector_formats(args, directory, reference=None):
-    schema = "CREATE TABLE storage (label VARCHAR(16), v VECTOR(17), id BIGINT PRIMARY KEY, bucket BIGINT);"
+    schema = "CREATE TABLE storage (label VARCHAR(16), bucket BIGINT, v VECTOR(17), id BIGINT PRIMARY KEY);"
     half = [-0.0, 65504.0, 2**-14, *([0.125, -3.5] * 7)]
     packed = [(-1)**i * (0.1 + i * 0.03125) for i in range(17)]
     full = [1e-39, 3e38, *([0.2] * 15)]
     scaled = [-0.0, -15.875, 0.125, *([0.75, -2.25] * 7)]
-    rows = [half, packed, full, scaled]
+    scaled_bits = [-0.0, 4.0, -3.875, *([0.75, -2.25] * 7)]
+    rows = [half, packed, full, scaled, scaled_bits]
     packed_bits = lambda values: struct.pack("<17f", *values)
     query = "SELECT v FROM storage ORDER BY id;"
 
     def insert(db, key):
-        db.ok(f"INSERT INTO storage VALUES ('记录😀',{json.dumps(rows[key])},{key},{key % 2});", 1)
+        bucket = {1: -9223372036854775808, 4: 2}.get(key, key % 2)
+        db.ok(f"INSERT INTO storage VALUES ('记录😀',{bucket},{json.dumps(rows[key])},{key});", 1)
 
     def check(db):
         actual, count, error = db.sql(query)
@@ -416,6 +418,7 @@ def check_wal_vector_formats(args, directory, reference=None):
         assert [packed_bits(row[0]) for row in actual] == [packed_bits([abs(v) if v == 0 else v for v in vector])
                                                           for vector in rows]
         zeros = json.dumps([0] * 17)
+        db.query("SELECT bucket FROM storage WHERE id=1;", [[-9223372036854775808]])
         db.query(f"SELECT id,bucket,label FROM storage WHERE label='记录😀' AND bucket=0 "
                  f"ORDER BY L2_DISTANCE(v,{zeros}) LIMIT 2;", [[0, 0, "记录😀"], [2, 0, "记录😀"]])
 
@@ -427,6 +430,7 @@ def check_wal_vector_formats(args, directory, reference=None):
         insert(db, 0)
         insert(db, 1)
         insert(db, 3)
+        insert(db, 4)
         check(db)
         db.ok("BEGIN;")
         db.ok(f"UPDATE storage SET v={json.dumps(full)} WHERE id=1;", 1)
@@ -442,22 +446,32 @@ def check_wal_vector_formats(args, directory, reference=None):
     # Check committed frame kinds so the comparison exercises every codec.
     journal = (directory / "store.wal").read_bytes()
     kinds = set()
+    compact_kinds = set()
     offset = 8
     while offset < len(journal):
         size, crc = struct.unpack_from("<II", journal, offset)
         frame = offset + 8
         assert zlib.crc32(journal[frame:frame + size]) == crc
-        kind = journal[frame]
+        raw_kind = journal[frame]
+        kind = raw_kind & 0x7f
         kinds.add(kind)
+        if raw_kind & 0x80:
+            compact_kinds.add(kind)
         if kind == 6:
-            text_size = struct.unpack_from("<I", journal, frame + 13)[0]
-            assert struct.unpack_from("<H", journal, frame + 17 + text_size)[0] == 0x8000
+            # Table id, primary key and bucket each fit in one varint byte.
+            text_size = struct.unpack_from("<I", journal, frame + 3)[0]
+            assert struct.unpack_from("<H", journal, frame + 8 + text_size)[0] == 0x8000
         elif kind == 8:
-            text_size = struct.unpack_from("<I", journal, frame + 13)[0]
-            assert journal[frame + 18 + text_size] == 0x80
+            text_size = struct.unpack_from("<I", journal, frame + 3)[0]
+            assert journal[frame + 9 + text_size] == 0x80
+        elif kind == 9:
+            text_size = struct.unpack_from("<I", journal, frame + 3)[0]
+            width, first_byte = journal[frame + 9 + text_size:frame + 11 + text_size]
+            assert width == 7 and first_byte & 127 == 64
         offset += 8 + size
-    assert offset == len(journal) and {2, 6, 7, 8} <= kinds
-    print("Mixed vector WAL encodings survived bitwise round-trip, rollback and crash recovery", flush=True)
+    assert offset == len(journal) and {2, 6, 7, 8, 9} <= kinds
+    assert {6, 8, 9} <= compact_kinds and 7 not in compact_kinds
+    print("Mixed vector and BIGINT WAL encodings survived round-trip, rollback and crash recovery", flush=True)
 
 
 def check_index(args, directory):
