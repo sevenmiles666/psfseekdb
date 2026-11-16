@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -8,6 +9,10 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+#if defined(__x86_64__) && defined(__GNUC__)
+#include <immintrin.h>
+#endif
 
 namespace minivector {
 
@@ -220,11 +225,55 @@ inline void put_string(Bytes &out, std::string_view value) {
   out.insert(out.end(), value.begin(), value.end());
 }
 
+#if defined(__x86_64__) && defined(__GNUC__)
+__attribute__((target("avx2")))
+inline void unpack_vector(const std::uint8_t *input, float *values, std::size_t count,
+                           std::uint32_t base) {
+  const auto low_bytes = _mm_setr_epi8(1, 2, 3, -1, 4, 5, 6, -1,
+                                       8, 9, 10, -1, 11, 12, 13, -1);
+  const auto code_bytes = _mm_setr_epi8(0, -1, -1, -1, 0, -1, -1, -1,
+                                        7, -1, -1, -1, 7, -1, -1, -1);
+  std::size_t i = 0;
+  for (; i + 4 <= count; i += 4, input += 14) {
+    __m128i packed;
+    if (i + 4 < count) packed = _mm_loadu_si128(reinterpret_cast<const __m128i *>(input));
+    else {
+      // The final four components occupy 14 bytes. Never read across a
+      // record or mapping boundary just to fill a SIMD register.
+      std::array<std::uint8_t, 16> tail{};
+      std::memcpy(tail.data(), input, 14);
+      packed = _mm_loadu_si128(reinterpret_cast<const __m128i *>(tail.data()));
+    }
+    const auto codes = _mm_srlv_epi32(_mm_shuffle_epi8(packed, code_bytes), _mm_setr_epi32(0, 4, 0, 4));
+    const auto exponents = _mm_add_epi32(_mm_set1_epi32(static_cast<int>(base)),
+                                        _mm_and_si128(codes, _mm_set1_epi32(7)));
+    if (_mm_movemask_epi8(_mm_cmpgt_epi32(exponents, _mm_set1_epi32(127)))) {
+      throw std::runtime_error("invalid packed exponent in journal");
+    }
+    const auto upper = _mm_or_si128(_mm_slli_epi32(exponents, 24),
+                                    _mm_slli_epi32(_mm_and_si128(codes, _mm_set1_epi32(8)), 28));
+    _mm_storeu_ps(values + i, _mm_castsi128_ps(_mm_or_si128(upper, _mm_shuffle_epi8(packed, low_bytes))));
+  }
+  for (; i < count; i += 2) {
+    const auto pair = *input++;
+    for (std::size_t lane = 0; lane < 2 && i + lane < count; ++lane) {
+      const auto code = (pair >> (4 * lane)) & 15;
+      const auto exponent = base + (code & 7);
+      if (exponent > 127) throw std::runtime_error("invalid packed exponent in journal");
+      const std::uint32_t low = input[0] | (std::uint32_t(input[1]) << 8) | (std::uint32_t(input[2]) << 16);
+      values[i + lane] = float_from_bits(((code & 8) << 28) | (exponent << 24) | low);
+      input += 3;
+    }
+  }
+}
+#endif
+
 class Reader {
 public:
-  explicit Reader(const Bytes &input) : input_(input) {}
+  explicit Reader(const Bytes &input) : Reader(input.data(), input.size()) {}
+  Reader(const std::uint8_t *input, std::size_t size) : input_(input), size_(size) {}
 
-  std::size_t remaining() const { return input_.size() - position_; }
+  std::size_t remaining() const { return size_ - position_; }
 
   void skip(std::size_t length) {
     require(length);
@@ -304,7 +353,7 @@ public:
       const std::uint32_t exponent = byte();
       if (exponent == 0 || exponent > 248) throw std::runtime_error("invalid scaled vector in journal");
       require(count);
-      const auto *codes = input_.data() + position_;
+      const auto *codes = input_ + position_;
       const auto scale = float_from_bits(exponent << 23);
       for (std::size_t i = 0; i < count; ++i) {
         const auto magnitude = static_cast<float>(codes[i] & 0x7fU) * scale;
@@ -334,6 +383,15 @@ public:
       }
     } else {
       const std::uint32_t base = byte();
+#if defined(__x86_64__) && defined(__GNUC__)
+      if (count >= 16 && __builtin_cpu_supports("avx2")) {
+        const auto length = count * 3 + (count + 1) / 2;
+        require(length);
+        unpack_vector(input_ + position_, values, count, base);
+        position_ += length;
+        return;
+      }
+#endif
       const auto component = [&](std::uint32_t code) {
         const auto exponent = base + (code & 7);
         if (exponent > 127) throw std::runtime_error("invalid packed exponent in journal");
@@ -356,7 +414,7 @@ public:
     }
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     const auto length = count * sizeof(float);
-    if (length != 0) std::memcpy(values, input_.data() + position_, length);
+    if (length != 0) std::memcpy(values, input_ + position_, length);
     position_ += length;
 #else
     for (std::size_t i = 0; i < count; ++i) values[i] = f32();
@@ -366,7 +424,7 @@ public:
   std::string string() {
     const std::size_t length = u32();
     require(length);
-    const auto *start = reinterpret_cast<const char *>(input_.data() + position_);
+    const auto *start = reinterpret_cast<const char *>(input_ + position_);
     position_ += length;
     return std::string(start, length);
   }
@@ -384,7 +442,8 @@ private:
     }
   }
 
-  const Bytes &input_;
+  const std::uint8_t *input_;
+  std::size_t size_;
   std::size_t position_ = 0;
 };
 

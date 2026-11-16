@@ -14,6 +14,18 @@ struct RecordRef {
   std::uint32_t size;
 };
 
+class JournalMapping {
+public:
+  JournalMapping(void *address, std::size_t size) : address_(address), size_(size) {}
+  ~JournalMapping();
+  JournalMapping(const JournalMapping &) = delete;
+  JournalMapping &operator=(const JournalMapping &) = delete;
+  const std::uint8_t *data(RecordRef record) const;
+private:
+  void *address_;
+  std::size_t size_;
+};
+
 class Journal {
 public:
   explicit Journal(const std::filesystem::path &directory, const char *filename = "store.wal");
@@ -25,6 +37,7 @@ public:
   bool read_frame(std::uint64_t offset, RecordRef &record, Bytes &out);
   void truncate(std::uint64_t size);
   void sync();
+  std::shared_ptr<const JournalMapping> map_readonly();
   void replace_with(Journal &replacement, const std::filesystem::path &directory);
 
 private:

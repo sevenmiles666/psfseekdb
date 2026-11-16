@@ -152,6 +152,63 @@ def integer_blocks(candidate, directory):
     return len(queries) * 2
 
 
+def mixed_vector_references(candidate, directory):
+    rng = random.Random(20261120)
+    vectors = []
+    for i in range(2305):
+        if i % 5 == 0:
+            vector = [rng.uniform(-4, 4) for _ in range(128)]
+        elif i % 5 == 1:
+            vector = [rng.randrange(-8, 9) / 8 for _ in range(128)]
+        elif i % 5 == 2:
+            vector = [rng.randrange(-127, 128) / 64 for _ in range(128)]
+        elif i % 5 == 3:
+            vector = [1.0009765625, -2.001953125] * 64
+        else:
+            vector = [1e20, 1e-40, -3.1415927, 0.0] * 32
+        vectors.append(list(struct.unpack('<128f', struct.pack('<128f', *vector))))
+    literal = lambda v: json.dumps(v, separators=(',', ':'))
+    with Server(config(candidate), directory) as db:
+        # A scalar after the vector exercises references that include a record
+        # suffix; the cache must decode exactly the vector's component count.
+        db.ok('CREATE TABLE t (id BIGINT PRIMARY KEY,v VECTOR(128),g BIGINT,s VARCHAR(32));')
+        db.ok('CREATE TABLE u (id BIGINT PRIMARY KEY,s VARCHAR(64));')
+        for start in range(0, len(vectors), 100):
+            batch = vectors[start:start + 100]
+            db.ok('INSERT INTO t VALUES ' + ','.join(
+                f"({start+j},{literal(v)},{(start+j)%3},'row-{start+j}')"
+                for j, v in enumerate(batch)), len(batch))
+
+        def verify():
+            for filtered in (False, True):
+                q = vectors[15]
+                expected = sorted((math.sqrt(sum((a-b)**2 for a, b in zip(v, q))), i)
+                                  for i, v in enumerate(vectors) if not filtered or i % 3 == 1)[:10]
+                where = ' WHERE g=1' if filtered else ''
+                rows, count, error = db.sql(
+                    f'SELECT id,L2_DISTANCE(v,{literal(q)}) AS d,v,g,s FROM t{where} ORDER BY d LIMIT 10;')
+                assert count == 10 and error is None
+                for row, (distance, key) in zip(rows, expected):
+                    assert row[0] == key and math.isclose(row[1], distance, rel_tol=1e-12, abs_tol=1e-12)
+                    assert struct.pack('<128f', *row[2]) == struct.pack('<128f', *vectors[key])
+                    assert row[3:] == [key % 3, f'row-{key}']
+
+        verify()
+        # Append and truncate an unrelated table after the mapping snapshot.
+        db.ok('BEGIN;')
+        db.ok("INSERT INTO u VALUES (1,'tail');", 1)
+        verify()
+        db.ok('ROLLBACK;')
+        verify()
+        db.ok('BEGIN;')
+        db.ok(f'UPDATE t SET v={literal(vectors[0])} WHERE id=15;', 1)
+        db.ok('ROLLBACK;')
+        verify()
+    with Server(config(candidate), directory) as db:
+        verify()
+    return 10
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference", type=Path, required=True)
@@ -165,6 +222,8 @@ def main():
         print(f"Cached rerank, predicates, projection, rollback, checkpoint, SIGKILL, old-version reopen; {frames} CRCs: PASS", flush=True)
         count = integer_blocks(args.candidate, root / "integer")
         print(f"{count} large exact scans at signed-dot saturation boundaries, partial blocks and primary-key ties: PASS", flush=True)
+        count = mixed_vector_references(args.candidate, root / 'mixed-references')
+        print(f'{count} mixed-encoding reference scans with record suffixes, append, truncate, rollback and reopen: PASS', flush=True)
 
 
 if __name__ == "__main__":

@@ -1013,7 +1013,8 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
   float max_abs = 0;
   float inverse = 0;
   for (const auto &entry : table.rows) {
-    load_row(table, entry.second.reference, buffer, row);
+    CachedVectorSource source{};
+    load_row(table, entry.second.reference, buffer, row, &source);
     const auto &vector = std::get<Vector>(row[vector_column]);
     const auto row_index = cache.keys.size();
     if (quantize) {
@@ -1052,7 +1053,16 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
         }
         cache.quantized_norms[row_index] = norm;
       } else {
-        used = used - quantized_bytes - sign_bytes + components * sizeof(float);
+        const auto mapped_bytes = journal_.size() + count * sizeof(CachedVectorSource);
+        // Count the entire mapped WAL against the cache budget, including
+        // other tables and obsolete rows. Fall back to owned vectors if it
+        // would cost more memory or cannot fit alongside the integer screen.
+        if (mapped_bytes < components * sizeof(float) &&
+            used - sign_bytes + mapped_bytes <= budget) {
+          cache.mapping = journal_.map_readonly();
+        }
+        used = used - quantized_bytes - sign_bytes +
+               (cache.mapping ? mapped_bytes : components * sizeof(float));
         while (!search_caches_.empty() && used > total_budget - cache_bytes()) search_caches_.pop_back();
         budget = total_budget - cache_bytes();
         if (used > budget) {
@@ -1063,20 +1073,28 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
         std::vector<std::int8_t>{}.swap(cache.quantized);
         std::vector<std::int32_t>{}.swap(cache.quantized_norms);
         std::vector<std::uint8_t>{}.swap(cache.negative_zeros);
-        cache.vectors.reserve(components);
+        if (cache.mapping) cache.vector_sources.reserve(count);
+        else cache.vectors.reserve(components);
         Bytes previous_buffer;
         Row previous_row;
         auto previous_entry = table.rows.begin();
         for (std::size_t previous = 0; previous < row_index; ++previous, ++previous_entry) {
-          load_row(table, previous_entry->second.reference, previous_buffer, previous_row);
-          const auto &previous_vector = std::get<Vector>(previous_row[vector_column]);
-          cache.vectors.insert(cache.vectors.end(), previous_vector.begin(), previous_vector.end());
+          CachedVectorSource previous_source{};
+          load_row(table, previous_entry->second.reference, previous_buffer, previous_row, &previous_source);
+          if (cache.mapping) cache.vector_sources.push_back(previous_source);
+          else {
+            const auto &previous_vector = std::get<Vector>(previous_row[vector_column]);
+            cache.vectors.insert(cache.vectors.end(), previous_vector.begin(), previous_vector.end());
+          }
         }
         cache.exact_codes = false;
         std::vector<std::uint8_t>{}.swap(cache.negative_zeros);
       }
     }
-    if (!cache.exact_codes) cache.vectors.insert(cache.vectors.end(), vector.begin(), vector.end());
+    if (!cache.exact_codes) {
+      if (cache.mapping) cache.vector_sources.push_back(source);
+      else cache.vectors.insert(cache.vectors.end(), vector.begin(), vector.end());
+    }
     for (std::size_t column = 0; column < cache.scalars.size(); ++column) {
       auto &values = cache.scalars[column];
       if (auto *integers = std::get_if<std::vector<std::int64_t>>(&values)) {
@@ -1109,8 +1127,15 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
       // Interleave complete eight-row blocks in the original allocation.
       if (dimension % 32 == 0) cache.block_rows = count - count % quantized_block_rows;
       double maximum_error_squared = 0.0;
+      Vector mapped_vector(cache.mapping ? dimension : 0);
       for (std::size_t row = 0; row < count; ++row) {
-        const auto *values = cache.vectors.data() + row * dimension;
+        const float *values;
+        if (cache.mapping) {
+          const auto &source = cache.vector_sources[row];
+          Reader input(cache.mapping->data(source.reference), source.reference.size);
+          input.vector(mapped_vector.data(), dimension, source.encoding);
+          values = mapped_vector.data();
+        } else values = cache.vectors.data() + row * dimension;
         const bool interleaved = row < cache.block_rows;
         const std::size_t lane = row % quantized_block_rows;
         auto *base = cache.quantized.data() + (interleaved ? row - lane : row) * dimension;
@@ -1171,7 +1196,8 @@ void Database::reorder_quantized(SearchCache &cache,
   }
 }
 
-void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row) {
+void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row &row,
+                        CachedVectorSource *vector_source) {
   journal_.read(record, buffer);
   Reader input(buffer);
   const auto flags = input.byte();
@@ -1199,6 +1225,10 @@ void Database::load_row(const Table &table, RecordRef record, Bytes &buffer, Row
       }
       auto &vector = std::get<Vector>(row[i]);
       vector.resize(column.width);
+      if (vector_source) {
+        *vector_source = {{record.offset + buffer.size() - input.remaining(),
+                           static_cast<std::uint32_t>(input.remaining())}, *encoding};
+      }
       input.vector(vector.data(), vector.size(), *encoding);
     }
   }
@@ -1564,7 +1594,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     };
 
     Vector decoded;
-    if (cache && cache->exact_codes) decoded.resize(query.size());
+    if (cache && (cache->exact_codes || cache->mapping)) decoded.resize(query.size());
     const auto quantized_position = [&](std::size_t index) {
       if (cache->equality && !cache->equality->positions.empty()) {
         return static_cast<std::size_t>(cache->equality->positions[index]);
@@ -1573,6 +1603,12 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     };
     const auto cached_vector = [&](std::size_t index) -> const float * {
       const std::size_t offset = index * query.size();
+      if (cache->mapping) {
+        const auto &source = cache->vector_sources[index];
+        Reader input(cache->mapping->data(source.reference), source.reference.size);
+        input.vector(decoded.data(), query.size(), source.encoding);
+        return decoded.data();
+      }
       if (!cache->exact_codes) return cache->vectors.data() + offset;
       const auto position = quantized_position(index);
       const float scale = static_cast<float>(cache->quantization_step);

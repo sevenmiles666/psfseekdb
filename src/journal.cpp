@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <limits>
 #include <sys/file.h>
+#include <sys/mman.h>
 #include <system_error>
 #include <unistd.h>
 
@@ -94,6 +95,31 @@ std::uint32_t checksum(const Bytes &bytes) {
 }
 
 }  // namespace
+
+JournalMapping::~JournalMapping() { ::munmap(address_, size_); }
+
+const std::uint8_t *JournalMapping::data(RecordRef record) const {
+  if (record.offset > size_ || record.size > size_ - record.offset) {
+    throw std::runtime_error("vector reference outside mapped journal");
+  }
+  return static_cast<const std::uint8_t *>(address_) + record.offset;
+}
+
+std::shared_ptr<const JournalMapping> Journal::map_readonly() {
+  if (access_ == Access::Write && std::fflush(stream_.get()) != 0) {
+    io_failure("flush journal before mapping");
+  }
+  if (size_ == 0 || size_ > std::numeric_limits<std::size_t>::max()) return {};
+  auto *address = ::mmap(nullptr, static_cast<std::size_t>(size_), PROT_READ, MAP_SHARED,
+                         ::fileno(stream_.get()), 0);
+  if (address == MAP_FAILED) return {};
+  try {
+    return std::make_shared<const JournalMapping>(address, static_cast<std::size_t>(size_));
+  } catch (...) {
+    ::munmap(address, static_cast<std::size_t>(size_));
+    throw;
+  }
+}
 
 Journal::Journal(const std::filesystem::path &directory, const char *filename) {
   std::filesystem::create_directories(directory);
