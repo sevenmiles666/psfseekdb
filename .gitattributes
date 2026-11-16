@@ -6,6 +6,7 @@
 /Dockerfile text eol=lf
 /src/** text eol=lf
 /agent/conversation.json text eol=lf
+/agent/evidence/learning-conversation.full.json text eol=lf
 /conversation.json text eol=lf
 /agent/learning_prompt.md text eol=lf
 /tests/check_optimization_resources.py text eol=lf
