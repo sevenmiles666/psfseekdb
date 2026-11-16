@@ -6,11 +6,15 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <condition_variable>
 #include <fcntl.h>
+#include <fstream>
 #include <limits>
+#include <mutex>
 #include <numeric>
 #include <set>
 #include <system_error>
+#include <thread>
 #include <unistd.h>
 #include <utility>
 
@@ -200,6 +204,61 @@ struct DistanceEstimate {
 
 constexpr std::size_t quantized_block_rows = 8;
 constexpr std::size_t quantized_row_bytes = 4;
+using BlockVisitor = void (*)(void *, std::size_t, std::int32_t);
+
+bool two_cpu_budget() {
+#if defined(__linux__)
+  if (::sysconf(_SC_NPROCESSORS_ONLN) < 2) return false;
+  std::ifstream file("/sys/fs/cgroup/cpu.max");
+  std::string quota;
+  std::uint64_t period = 0;
+  if (!(file >> quota >> period) || period == 0) return false;
+  return quota == "max" || std::stoull(quota) / period >= 2;
+#else
+  return false;
+#endif
+}
+
+class DistanceWorker {
+public:
+  DistanceWorker() : thread_([this] {
+    std::unique_lock<std::mutex> lock(mutex_);
+    for (;;) {
+      signal_.wait(lock, [&] { return stopping_ || running_; });
+      if (stopping_) return;
+      auto job = std::move(job_);
+      lock.unlock();
+      job();
+      lock.lock();
+      running_ = false;
+      signal_.notify_all();
+    }
+  }) {}
+
+  ~DistanceWorker() {
+    { std::lock_guard<std::mutex> lock(mutex_); stopping_ = true; }
+    signal_.notify_all();
+    thread_.join();
+  }
+
+  void submit(std::function<void()> job) {
+    { std::lock_guard<std::mutex> lock(mutex_); job_ = std::move(job); running_ = true; }
+    signal_.notify_all();
+  }
+
+  void wait() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    signal_.wait(lock, [&] { return !running_; });
+  }
+
+private:
+  std::mutex mutex_;
+  std::condition_variable signal_;
+  std::function<void()> job_;
+  bool running_ = false;
+  bool stopping_ = false;
+  std::thread thread_;
+};
 
 std::size_t quantized_offset(std::size_t row, std::size_t column, std::size_t dimension,
                              std::size_t block_rows) {
@@ -289,32 +348,87 @@ std::int32_t quantized_dot(const std::int8_t *left, const std::int8_t *right, st
   return result;
 }
 
+template <bool shifted>
 __attribute__((target("avx2")))
 __m256i quantized_block_dots(const std::int8_t *vectors, const std::int8_t *query, std::size_t size) {
   const auto ones = _mm256_set1_epi16(1);
   auto sum = _mm256_setzero_si256();
-  for (std::size_t i = 0; i < size; i += quantized_row_bytes) {
+  auto sum1 = sum;
+  auto sum2 = sum;
+  auto sum3 = sum;
+  const auto products = [&](std::size_t i) __attribute__((target("avx2"))) {
     std::int32_t packed;
     std::memcpy(&packed, query + i, sizeof(packed));
     const auto q = _mm256_set1_epi32(packed);
     const auto rows = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(vectors + quantized_block_rows * i));
-    const auto pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(q), _mm256_sign_epi8(rows, q));
-    sum = _mm256_add_epi32(sum, _mm256_madd_epi16(pairs, ones));
+    const auto pairs = shifted ?
+        _mm256_maddubs_epi16(_mm256_xor_si256(rows, _mm256_set1_epi8(-128)), q) :
+        _mm256_maddubs_epi16(_mm256_abs_epi8(q), _mm256_sign_epi8(rows, q));
+    return _mm256_madd_epi16(pairs, ones);
+  };
+  std::size_t i = 0;
+  // Independent accumulators overlap loads and dot products across coordinates.
+  for (; i + 16 <= size; i += 16) {
+    sum = _mm256_add_epi32(sum, products(i));
+    sum1 = _mm256_add_epi32(sum1, products(i + 4));
+    sum2 = _mm256_add_epi32(sum2, products(i + 8));
+    sum3 = _mm256_add_epi32(sum3, products(i + 12));
   }
+  sum = _mm256_add_epi32(_mm256_add_epi32(sum, sum1), _mm256_add_epi32(sum2, sum3));
+  for (; i < size; i += quantized_row_bytes) sum = _mm256_add_epi32(sum, products(i));
   return sum;
 }
 
 __attribute__((target("avx2")))
-unsigned quantized_block_mask(const std::int8_t *vectors, const std::int32_t *norms,
-                              const std::int8_t *query, std::size_t size, std::int32_t cutoff,
-                              std::int32_t *distances) {
-  const auto sum = quantized_block_dots(vectors, query, size);
-  const auto distance = _mm256_sub_epi32(_mm256_loadu_si256(reinterpret_cast<const __m256i *>(norms)),
-                                        _mm256_add_epi32(sum, sum));
-  const auto excluded = _mm256_cmpgt_epi32(distance, _mm256_set1_epi32(cutoff));
-  const auto mask = static_cast<unsigned>(~_mm256_movemask_ps(_mm256_castsi256_ps(excluded))) & 255;
-  if (mask != 0) _mm256_storeu_si256(reinterpret_cast<__m256i *>(distances), distance);
-  return mask;
+void quantized_scan_blocks(const std::int8_t *vectors, const std::int32_t *norms,
+                            const std::int8_t *query, std::size_t size, std::size_t begin,
+                            std::size_t end, const std::int32_t *cutoff,
+                            void *context, BlockVisitor visit) {
+  bool shifted = true;
+  std::int32_t query_sum = 0;
+  for (std::size_t i = 0; i < size; i += 2) {
+    // With this bound even the largest unsigned row pair cannot saturate
+    // pmaddubsw's signed 16-bit result: 255 * 128 < 32768.
+    shifted &= std::abs(int(query[i])) + std::abs(int(query[i + 1])) <= 128;
+    query_sum += int(query[i]) + int(query[i + 1]);
+  }
+  for (auto row = begin; row < end; row += quantized_block_rows) {
+    auto sum = shifted ? quantized_block_dots<true>(vectors + row * size, query, size) :
+                         quantized_block_dots<false>(vectors + row * size, query, size);
+    if (shifted) sum = _mm256_sub_epi32(sum, _mm256_set1_epi32(128 * query_sum));
+    const auto distance = _mm256_sub_epi32(
+        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(norms + row)), _mm256_add_epi32(sum, sum));
+    const auto excluded = _mm256_cmpgt_epi32(distance, _mm256_set1_epi32(*cutoff));
+    auto mask = static_cast<unsigned>(~_mm256_movemask_ps(_mm256_castsi256_ps(excluded))) & 255;
+    if (mask == 0) continue;
+    std::array<std::int32_t, quantized_block_rows> distances;
+    _mm256_storeu_si256(reinterpret_cast<__m256i *>(distances.data()), distance);
+    while (mask != 0) {
+      const auto lane = static_cast<unsigned>(__builtin_ctz(mask));
+      visit(context, row + lane, distances[lane]);
+      mask &= mask - 1;
+    }
+  }
+}
+
+__attribute__((target("avx2")))
+void quantized_distances(const std::int8_t *vectors, const std::int32_t *norms,
+                         const std::int8_t *query, std::size_t size, std::size_t begin,
+                         std::size_t end, std::int32_t *distances) {
+  bool shifted = true;
+  std::int32_t query_sum = 0;
+  for (std::size_t i = 0; i < size; i += 2) {
+    shifted &= std::abs(int(query[i])) + std::abs(int(query[i + 1])) <= 128;
+    query_sum += int(query[i]) + int(query[i + 1]);
+  }
+  for (auto row = begin; row < end; row += quantized_block_rows) {
+    auto sum = shifted ? quantized_block_dots<true>(vectors + row * size, query, size) :
+                         quantized_block_dots<false>(vectors + row * size, query, size);
+    if (shifted) sum = _mm256_sub_epi32(sum, _mm256_set1_epi32(128 * query_sum));
+    const auto distance = _mm256_sub_epi32(
+        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(norms + row)), _mm256_add_epi32(sum, sum));
+    _mm256_storeu_si256(reinterpret_cast<__m256i *>(distances + row - begin), distance);
+  }
 }
 
 __attribute__((target("avx2")))
@@ -344,18 +458,21 @@ std::int32_t quantized_block_row_dot(const std::int8_t *block, std::size_t row,
 
 using QuantizedKernel = std::int32_t (*)(const std::int8_t *, const std::int8_t *, std::size_t);
 
-using BlockKernel = unsigned (*)(const std::int8_t *, const std::int32_t *, const std::int8_t *,
-                                  std::size_t, std::int32_t, std::int32_t *);
+using BlockKernel = void (*)(const std::int8_t *, const std::int32_t *, const std::int8_t *,
+                             std::size_t, std::size_t, std::size_t, const std::int32_t *,
+                             void *, BlockVisitor);
 using BlockRowKernel = std::int32_t (*)(const std::int8_t *, std::size_t, const std::int8_t *, std::size_t);
 
 struct QuantizedBlockKernels {
   BlockKernel block = nullptr;
   BlockRowKernel row = nullptr;
+  void (*distances)(const std::int8_t *, const std::int32_t *, const std::int8_t *,
+                    std::size_t, std::size_t, std::size_t, std::int32_t *) = nullptr;
 };
 
 QuantizedBlockKernels block_kernels() {
 #if defined(__x86_64__) && defined(__GNUC__)
-  if (__builtin_cpu_supports("avx2")) return {quantized_block_mask, quantized_block_row_dot};
+  if (__builtin_cpu_supports("avx2")) return {quantized_scan_blocks, quantized_block_row_dot, quantized_distances};
 #endif
   return {};
 }
@@ -922,13 +1039,13 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
       if (exact) {
         if (cache.quantized.empty()) {
           cache.quantized.resize(components);
-          cache.negative_zeros.resize(sign_bytes);
           cache.quantized_norms.resize(count);
           if (dimension % 32 == 0) cache.block_rows = count - count % quantized_block_rows;
         }
         for (std::size_t i = 0; i < dimension; ++i) {
           cache.quantized[quantized_offset(row_index, i, dimension, cache.block_rows)] = codes[i];
           if (float_bits(vector[i]) == 0x80000000U) {
+            if (cache.negative_zeros.empty()) cache.negative_zeros.resize(sign_bytes);
             const auto index = row_index * dimension + i;
             cache.negative_zeros[index / 8] |= static_cast<std::uint8_t>(1U << (index % 8));
           }
@@ -982,6 +1099,7 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
     cache.keys.push_back(entry.first);
   }
   if (cache.exact_codes && max_abs == 0) cache.quantization_step = 1.0;
+  if (cache.exact_codes && cache.negative_zeros.empty()) used -= sign_bytes;
   if (!cache.exact_codes) {
     if (quantize && quantized_bytes <= budget - used && max_abs != 0) {
       used += quantized_bytes;
@@ -1461,7 +1579,8 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       for (std::size_t i = 0; i < query.size(); ++i) {
         const auto value = cache->quantized[quantized_offset(position, i, query.size(), cache->block_rows)];
         const auto component = offset + i;
-        decoded[i] = value == 0 && (cache->negative_zeros[component / 8] & (1U << (component % 8)))
+        decoded[i] = value == 0 && !cache->negative_zeros.empty() &&
+            (cache->negative_zeros[component / 8] & (1U << (component % 8)))
             ? -0.0f : value * scale;
       }
       return decoded.data();
@@ -1526,17 +1645,44 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       };
       for (; begin < end && (begin % quantized_block_rows != 0 || nearest.size() < limit); ++begin) visit(begin);
       const auto block_end = std::min(end - end % quantized_block_rows, cache->block_rows);
-      for (; begin < block_end; begin += quantized_block_rows) {
-        const double bound = std::min(cutoff - query_norm, 254.0 * 254.0 * query.size());
-        std::array<std::int32_t, quantized_block_rows> distances;
-        auto mask = blocks.block(cache->quantized.data() + begin * query.size(),
-                                 cache->quantized_norms.data() + begin, query_quantized.data(), query.size(),
-                                 static_cast<std::int32_t>(std::ceil(bound)), distances.data());
-        while (mask != 0) {
-          const unsigned lane = static_cast<unsigned>(__builtin_ctz(mask));
-          visit(begin + lane, distances[lane] + query_norm);
-          mask &= mask - 1;
+      static const bool parallel = two_cpu_budget();
+      if (block_end > begin && block_end - begin >= 4096 && parallel) {
+        static DistanceWorker worker;
+        std::vector<std::int32_t> distances(block_end - begin);
+        const auto middle = begin + (block_end - begin) / (2 * quantized_block_rows) * quantized_block_rows;
+        worker.submit([&] {
+          blocks.distances(cache->quantized.data(), cache->quantized_norms.data(),
+                           query_quantized.data(), query.size(), middle, block_end,
+                           distances.data() + middle - begin);
+        });
+        blocks.distances(cache->quantized.data(), cache->quantized_norms.data(),
+                         query_quantized.data(), query.size(), begin, middle, distances.data());
+        worker.wait();
+        for (auto i = begin; i < block_end; ++i) {
+          const auto distance = distances[i - begin] + query_norm;
+          if (distance <= cutoff) visit(i, distance);
         }
+        begin = block_end;
+      }
+      if (begin < block_end) {
+        const auto bound = [&] {
+          return static_cast<std::int32_t>(std::ceil(
+              std::min(cutoff - query_norm, 254.0 * 254.0 * query.size())));
+        };
+        auto integer_cutoff = bound();
+        auto accept = [&](std::size_t position, std::int32_t distance) {
+          visit(position, distance + query_norm);
+          integer_cutoff = bound();
+        };
+        // The AVX2 loop calls back only for survivors; the heap updates its
+        // cutoff in place without crossing a function boundary for each block.
+        blocks.block(cache->quantized.data(), cache->quantized_norms.data(),
+                     query_quantized.data(), query.size(), begin, block_end, &integer_cutoff,
+                     &accept,
+                     [](void *context, std::size_t position, std::int32_t distance) {
+                       (*static_cast<const decltype(accept) *>(context))(position, distance);
+                     });
+        begin = block_end;
       }
       for (; begin < end; ++begin) visit(begin);
     };

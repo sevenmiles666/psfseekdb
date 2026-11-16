@@ -87,6 +87,34 @@ bool is_space(char value) {
   return value == ' ' || value == '\t' || value == '\n' || value == '\r' || value == '\f';
 }
 
+bool short_decimal(const char *first, const char *end, float &value, const char *&next) {
+  const bool negative = first != end && *first == '-';
+  const char *p = first + negative;
+  unsigned integer = 0;
+  unsigned digits = 0;
+  while (p != end && is_digit(*p) && digits < 6) {
+    integer = integer * 10 + unsigned(*p++ - '0');
+    ++digits;
+  }
+  unsigned denominator = 1;
+  if (p != end && *p == '.') {
+    ++p;
+    while (p != end && is_digit(*p) && digits < 6 && denominator < 1000) {
+      integer = integer * 10 + unsigned(*p++ - '0');
+      denominator *= 10;
+      ++digits;
+    }
+  }
+  if (digits == 0 || (p != end && *p != ',' && *p != ']' && !is_space(*p))) return false;
+  // At most six decimal digits and three fractional digits: the double
+  // division cannot cross a float32 rounding midpoint. General literals,
+  // including exponents and long decimals, retain from_chars' conversion.
+  value = static_cast<float>(static_cast<double>(integer) / denominator);
+  if (negative) value = -value;
+  next = p;
+  return true;
+}
+
 std::string lowercase(std::string value) {
   for (char &ch : value) {
     if (ch >= 'A' && ch <= 'Z') {
@@ -168,26 +196,31 @@ public:
         const char *const start = input_.data() + position_;
         const char *const first = start + (sign == '+' ? 1 : 0);
         float value = 0;
-        const auto parsed = std::from_chars(first, end, value);
-        if ((parsed.ec != std::errc{} && parsed.ec != std::errc::result_out_of_range) ||
-            (sign == '+' && *first == '-') ||
-            (parsed.ptr != end && (*parsed.ptr == 'e' || *parsed.ptr == 'E'))) {
-          throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
-        }
-        if (parsed.ec == std::errc::result_out_of_range) {
-          // strtof preserves the existing rounding behavior below the float32 range.
-          const std::string text(start, parsed.ptr);
-          char *last = nullptr;
-          value = std::strtof(text.c_str(), &last);
-          if (last != text.data() + text.size() || !std::isfinite(value)) {
+        const char *next = nullptr;
+        if ((sign == '+' && first != end && *first == '-') ||
+            !short_decimal(first, end, value, next)) {
+          const auto parsed = std::from_chars(first, end, value);
+          if ((parsed.ec != std::errc{} && parsed.ec != std::errc::result_out_of_range) ||
+              (sign == '+' && *first == '-') ||
+              (parsed.ptr != end && (*parsed.ptr == 'e' || *parsed.ptr == 'E'))) {
             throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
           }
+          if (parsed.ec == std::errc::result_out_of_range) {
+            // strtof preserves the existing rounding behavior below the float32 range.
+            const std::string text(start, parsed.ptr);
+            char *last = nullptr;
+            value = std::strtof(text.c_str(), &last);
+            if (last != text.data() + text.size() || !std::isfinite(value)) {
+              throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
+            }
+          }
+          next = parsed.ptr;
         }
         if (!std::isfinite(value)) {
           throw SqlError("INVALID_VECTOR", "vector component is not finite float32");
         }
         result.push_back(value);
-        position_ = static_cast<std::size_t>(parsed.ptr - input_.data());
+        position_ = static_cast<std::size_t>(next - input_.data());
         skip_spaces();
         if (peek() != ',') break;
         ++position_;

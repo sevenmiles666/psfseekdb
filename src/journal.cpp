@@ -60,19 +60,35 @@ std::uint64_t file_position(std::FILE *file) {
 
 std::uint32_t checksum(const Bytes &bytes) {
   static const auto table = [] {
-    std::array<std::uint32_t, 256> values{};
-    for (std::uint32_t i = 0; i < values.size(); ++i) {
+    std::array<std::array<std::uint32_t, 256>, 8> values{};
+    for (std::uint32_t i = 0; i < values[0].size(); ++i) {
       std::uint32_t value = i;
       for (int bit = 0; bit < 8; ++bit) {
         value = (value >> 1) ^ ((value & 1) != 0 ? 0xedb88320U : 0U);
       }
-      values[i] = value;
+      values[0][i] = value;
+    }
+    for (std::uint32_t i = 0; i < values[0].size(); ++i) {
+      auto value = values[0][i];
+      for (std::size_t slice = 1; slice < values.size(); ++slice) {
+        value = (value >> 8) ^ values[0][value & 0xff];
+        values[slice][i] = value;
+      }
     }
     return values;
   }();
   std::uint32_t crc = 0xffffffffU;
-  for (const std::uint8_t value : bytes) {
-    crc = (crc >> 8) ^ table[(crc ^ value) & 0xff];
+  std::size_t i = 0;
+  for (; bytes.size() - i >= 8; i += 8) {
+    const auto *p = bytes.data() + i;
+    const std::uint32_t low = crc ^ std::uint32_t(p[0]) ^ (std::uint32_t(p[1]) << 8) ^
+                            (std::uint32_t(p[2]) << 16) ^ (std::uint32_t(p[3]) << 24);
+    crc = table[7][low & 255] ^ table[6][(low >> 8) & 255] ^
+          table[5][(low >> 16) & 255] ^ table[4][low >> 24] ^
+          table[3][p[4]] ^ table[2][p[5]] ^ table[1][p[6]] ^ table[0][p[7]];
+  }
+  for (; i < bytes.size(); ++i) {
+    crc = (crc >> 8) ^ table[0][(crc ^ bytes[i]) & 0xff];
   }
   return crc ^ 0xffffffffU;
 }
