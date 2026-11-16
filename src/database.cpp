@@ -212,6 +212,11 @@ struct DistanceEstimate {
 constexpr std::size_t quantized_block_rows = 8;
 constexpr std::size_t quantized_row_bytes = 4;
 
+// Store row norm + 256 * row sum. A query byte is u = 64 + q, where
+// 2*q approximates the query in row-code units. Its squared distance is
+// stored_norm + 4*sum(q*q) - 4*dot(row,u). This removes signed-byte
+// conversions from every SIMD group without adding another cached array.
+
 std::size_t quantized_offset(std::size_t row, std::size_t column, std::size_t dimension,
                              std::size_t block_rows) {
   if (row >= block_rows) return row * dimension + column;
@@ -286,8 +291,8 @@ std::int32_t quantized_dot(const std::int8_t *left, const std::int8_t *right, st
   for (; i + 32 <= size; i += 32) {
     const auto x = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(left + i));
     const auto y = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(right + i));
-    // Two products of components in [-127,127] fit in each int16 lane.
-    const auto pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(y), _mm256_sign_epi8(x, y));
+    // Query bytes are in [0,128], row bytes in [-127,127]; two products fit int16.
+    const auto pairs = _mm256_maddubs_epi16(y, x);
     lanes = _mm256_add_epi32(lanes, _mm256_madd_epi16(pairs, ones));
   }
   auto sum = _mm_add_epi32(_mm256_castsi256_si128(lanes), _mm256_extracti128_si256(lanes, 1));
@@ -295,7 +300,7 @@ std::int32_t quantized_dot(const std::int8_t *left, const std::int8_t *right, st
   sum = _mm_hadd_epi32(sum, sum);
   std::int32_t result = _mm_cvtsi128_si32(sum);
   for (; i < size; ++i) {
-    result += int(left[i]) * int(right[i]);
+    result += int(left[i]) * static_cast<std::uint8_t>(right[i]);
   }
   return result;
 }
@@ -309,7 +314,7 @@ inline __m256i quantized_block_dots(const std::int8_t *vectors, const std::int8_
     std::memcpy(&packed, query + i, sizeof(packed));
     const auto q = _mm256_set1_epi32(packed);
     const auto rows = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(vectors + quantized_block_rows * i));
-    const auto pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(q), _mm256_sign_epi8(rows, q));
+    const auto pairs = _mm256_maddubs_epi16(q, rows);
     sum = _mm256_add_epi32(sum, _mm256_madd_epi16(pairs, ones));
   }
   return sum;
@@ -326,7 +331,7 @@ inline std::size_t next_quantized_block(const std::int8_t *vectors, const std::i
   for (; begin < end; begin += quantized_block_rows) {
     const auto sum = quantized_block_dots(vectors + begin * size, query, size);
     const auto row_norms = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(norms + begin));
-    const auto distance = _mm256_sub_epi32(row_norms, _mm256_add_epi32(sum, sum));
+    const auto distance = _mm256_sub_epi32(row_norms, _mm256_slli_epi32(sum, 2));
     const auto excluded = _mm256_cmpgt_epi32(distance, bound);
     mask = static_cast<unsigned>(~_mm256_movemask_ps(_mm256_castsi256_ps(excluded))) & 255;
     if (mask != 0) {
@@ -363,7 +368,7 @@ std::int32_t quantized_block_row_dot(const std::int8_t *block, std::size_t row,
     const auto values = _mm256_setr_epi32(load(i), load(i + 4), load(i + 8), load(i + 12),
                                          load(i + 16), load(i + 20), load(i + 24), load(i + 28));
     const auto q = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(query + i));
-    const auto pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(q), _mm256_sign_epi8(values, q));
+    const auto pairs = _mm256_maddubs_epi16(q, values);
     sum = _mm256_add_epi32(sum, _mm256_madd_epi16(pairs, ones));
   }
   auto total = _mm_add_epi32(_mm256_castsi256_si128(sum), _mm256_extracti128_si256(sum, 1));
@@ -373,7 +378,7 @@ std::int32_t quantized_block_row_dot(const std::int8_t *block, std::size_t row,
 
 __attribute__((target("ssse3"), always_inline))
 inline __m128i quantized_products_ssse3(__m128i values, __m128i query) {
-  const auto pairs = _mm_maddubs_epi16(_mm_abs_epi8(query), _mm_sign_epi8(values, query));
+  const auto pairs = _mm_maddubs_epi16(query, values);
   return _mm_madd_epi16(pairs, _mm_set1_epi16(1));
 }
 
@@ -388,7 +393,7 @@ std::int32_t quantized_dot_ssse3(const std::int8_t *left, const std::int8_t *rig
   }
   lanes = _mm_hadd_epi32(lanes, lanes);
   std::int32_t total = _mm_cvtsi128_si32(_mm_hadd_epi32(lanes, lanes));
-  for (; i < size; ++i) total += int(left[i]) * int(right[i]);
+  for (; i < size; ++i) total += int(left[i]) * static_cast<std::uint8_t>(right[i]);
   return total;
 }
 
@@ -414,8 +419,8 @@ std::size_t find_quantized_block_ssse3(const std::int8_t *vectors, const std::in
     }
     const auto first_norms = _mm_loadu_si128(reinterpret_cast<const __m128i *>(norms + begin));
     const auto second_norms = _mm_loadu_si128(reinterpret_cast<const __m128i *>(norms + begin + 4));
-    const auto a = _mm_sub_epi32(first_norms, _mm_add_epi32(first, first));
-    const auto b = _mm_sub_epi32(second_norms, _mm_add_epi32(second, second));
+    const auto a = _mm_sub_epi32(first_norms, _mm_slli_epi32(first, 2));
+    const auto b = _mm_sub_epi32(second_norms, _mm_slli_epi32(second, 2));
     const auto low = _mm_movemask_ps(_mm_castsi128_ps(_mm_cmpgt_epi32(a, bound)));
     const auto high = _mm_movemask_ps(_mm_castsi128_ps(_mm_cmpgt_epi32(b, bound)));
     mask = static_cast<unsigned>(~(low | (high << 4))) & 255;
@@ -1038,7 +1043,7 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
         exact = exact_scaled_byte(vector[i], inverse, code);
         if (!exact) break;
         codes[i] = static_cast<std::int8_t>(code);
-        norm += code * code;
+        norm += code * code + 256 * code;
       }
       if (exact) {
         if (cache.quantized.empty()) {
@@ -1149,7 +1154,7 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
               (i / quantized_row_bytes * quantized_block_rows + lane) * quantized_row_bytes +
                   i % quantized_row_bytes : i;
           base[offset] = value;
-          norm += int(value) * int(value);
+          norm += int(value) * int(value) + 256 * int(value);
           const double error = scaled - value;
           error_squared += error * error;
         }
@@ -1545,15 +1550,15 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       for (const float value : query) {
         const double scaled = static_cast<double>(value) / cache->quantization_step;
         int code;
-        if (!exact_query || !exact_scaled_byte(value, inverse, code)) {
+        if (!exact_query || !exact_scaled_byte(value, inverse * 0.5f, code) || code < -64 || code > 64) {
           exact_query = false;
           // A saturated code is still a valid estimate. Include the entire
           // clipping error in the bound used before original FP32 refinement.
-          code = static_cast<int>(std::clamp(std::lround(scaled), -127L, 127L));
+          code = static_cast<int>(std::clamp(std::lround(scaled * 0.5), -64L, 64L));
         }
-        query_quantized.push_back(static_cast<std::int8_t>(code));
-        query_norm += code * code;
-        const auto error = scaled - code;
+        query_quantized.push_back(static_cast<std::int8_t>(code + 64));
+        query_norm += 4 * code * code;
+        const auto error = scaled - 2 * code;
         query_error_squared += error * error;
       }
       error_radius = cache->quantization_error + quantization_error_bound(query_error_squared, query.size());
@@ -1640,6 +1645,12 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       return decoded.data();
     };
     const auto refine_shortlist = [&] {
+      // Refine the nearest coded seeds first, tightening the exact bound before
+      // decoding the remaining contenders. Equal distances still use key order.
+      if (shortlist.size() > limit) {
+        std::nth_element(shortlist.begin(), shortlist.begin() + limit, shortlist.end(),
+            [](const auto &left, const auto &right) { return left.second < right.second; });
+      }
       const auto approximate_cutoff = cutoff;
       for (const auto &[index, distance] : shortlist) {
         if (distance <= std::min(approximate_cutoff, cutoff)) {
@@ -1660,7 +1671,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
           } else {
             cross = dot(cache->quantized.data() + position * query.size(), query_quantized.data(), query.size());
           }
-          distance = cache->quantized_norms[position] + query_norm - 2 * cross;
+          distance = cache->quantized_norms[position] + query_norm - 4 * cross;
         }
         if (*distance > cutoff) return;
         if (exact_query) {
@@ -1741,7 +1752,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
              (defer_refinement ? nearest_codes.size() : nearest.size()) < limit); ++begin) visit(begin);
       const auto block_end = std::min(end - end % quantized_block_rows, cache->block_rows);
       for (; begin < block_end; begin += quantized_block_rows) {
-        const double bound = std::min(cutoff - query_norm, 254.0 * 254.0 * query.size());
+        const double bound = std::min(cutoff - query_norm, 255.0 * 255.0 * query.size());
         std::array<std::int32_t, quantized_block_rows> distances;
         unsigned mask = 0;
         begin = blocks.block(cache->quantized.data(), cache->quantized_norms.data(),
