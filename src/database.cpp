@@ -368,6 +368,82 @@ std::int32_t quantized_block_row_dot(const std::int8_t *block, std::size_t row,
   total = _mm_hadd_epi32(total, total);
   return _mm_cvtsi128_si32(_mm_hadd_epi32(total, total));
 }
+
+__attribute__((target("ssse3"), always_inline))
+inline __m128i quantized_products_ssse3(__m128i values, __m128i query) {
+  const auto pairs = _mm_maddubs_epi16(_mm_abs_epi8(query), _mm_sign_epi8(values, query));
+  return _mm_madd_epi16(pairs, _mm_set1_epi16(1));
+}
+
+__attribute__((target("ssse3")))
+std::int32_t quantized_dot_ssse3(const std::int8_t *left, const std::int8_t *right, std::size_t size) {
+  auto lanes = _mm_setzero_si128();
+  std::size_t i = 0;
+  for (; i + 16 <= size; i += 16) {
+    const auto a = _mm_loadu_si128(reinterpret_cast<const __m128i *>(left + i));
+    const auto b = _mm_loadu_si128(reinterpret_cast<const __m128i *>(right + i));
+    lanes = _mm_add_epi32(lanes, quantized_products_ssse3(a, b));
+  }
+  lanes = _mm_hadd_epi32(lanes, lanes);
+  std::int32_t total = _mm_cvtsi128_si32(_mm_hadd_epi32(lanes, lanes));
+  for (; i < size; ++i) total += int(left[i]) * int(right[i]);
+  return total;
+}
+
+__attribute__((target("ssse3")))
+std::size_t find_quantized_block_ssse3(const std::int8_t *vectors, const std::int32_t *norms,
+                                       const std::int8_t *query, std::size_t size, std::int32_t cutoff,
+                                       std::size_t begin, std::size_t end, std::int32_t *distances, unsigned &mask) {
+  const auto bound = _mm_set1_epi32(cutoff);
+  for (; begin < end; begin += quantized_block_rows) {
+    const auto *start = vectors + begin * size;
+    auto first = _mm_setzero_si128();
+    auto second = _mm_setzero_si128();
+    // The same eight-row layout can be read as two groups of four rows.
+    for (std::size_t i = 0; i < size; i += quantized_row_bytes) {
+      std::int32_t word;
+      std::memcpy(&word, query + i, sizeof(word));
+      const auto q = _mm_set1_epi32(word);
+      const auto *group = start + quantized_block_rows * i;
+      const auto a = _mm_loadu_si128(reinterpret_cast<const __m128i *>(group));
+      const auto b = _mm_loadu_si128(reinterpret_cast<const __m128i *>(group + 16));
+      first = _mm_add_epi32(first, quantized_products_ssse3(a, q));
+      second = _mm_add_epi32(second, quantized_products_ssse3(b, q));
+    }
+    const auto first_norms = _mm_loadu_si128(reinterpret_cast<const __m128i *>(norms + begin));
+    const auto second_norms = _mm_loadu_si128(reinterpret_cast<const __m128i *>(norms + begin + 4));
+    const auto a = _mm_sub_epi32(first_norms, _mm_add_epi32(first, first));
+    const auto b = _mm_sub_epi32(second_norms, _mm_add_epi32(second, second));
+    const auto low = _mm_movemask_ps(_mm_castsi128_ps(_mm_cmpgt_epi32(a, bound)));
+    const auto high = _mm_movemask_ps(_mm_castsi128_ps(_mm_cmpgt_epi32(b, bound)));
+    mask = static_cast<unsigned>(~(low | (high << 4))) & 255;
+    if (mask != 0) {
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(distances), a);
+      _mm_storeu_si128(reinterpret_cast<__m128i *>(distances + 4), b);
+      break;
+    }
+  }
+  return begin;
+}
+
+__attribute__((target("ssse3")))
+std::int32_t quantized_block_row_dot_ssse3(const std::int8_t *block, std::size_t row,
+                                          const std::int8_t *query, std::size_t size) {
+  const auto *start = block + quantized_row_bytes * row;
+  auto lanes = _mm_setzero_si128();
+  for (std::size_t i = 0; i < size; i += 16) {
+    const auto load = [&](std::size_t coordinate) {
+      std::int32_t word;
+      std::memcpy(&word, start + quantized_block_rows * coordinate, sizeof(word));
+      return word;
+    };
+    const auto values = _mm_setr_epi32(load(i), load(i + 4), load(i + 8), load(i + 12));
+    const auto q = _mm_loadu_si128(reinterpret_cast<const __m128i *>(query + i));
+    lanes = _mm_add_epi32(lanes, quantized_products_ssse3(values, q));
+  }
+  lanes = _mm_hadd_epi32(lanes, lanes);
+  return _mm_cvtsi128_si32(_mm_hadd_epi32(lanes, lanes));
+}
 #endif
 
 using QuantizedKernel = std::int32_t (*)(const std::int8_t *, const std::int8_t *, std::size_t);
@@ -385,13 +461,16 @@ struct QuantizedBlockKernels {
 QuantizedBlockKernels block_kernels() {
 #if defined(__x86_64__) && defined(__GNUC__)
   if (__builtin_cpu_supports("avx2")) return {find_quantized_block, quantized_block_row_dot};
+  if (__builtin_cpu_supports("ssse3")) return {find_quantized_block_ssse3, quantized_block_row_dot_ssse3};
 #endif
   return {};
 }
 
 QuantizedKernel integer_distance_kernel() {
 #if defined(__x86_64__) && defined(__GNUC__)
-  return __builtin_cpu_supports("avx2") ? quantized_dot : nullptr;
+  if (__builtin_cpu_supports("avx2")) return quantized_dot;
+  if (__builtin_cpu_supports("ssse3")) return quantized_dot_ssse3;
+  return nullptr;
 #else
   return nullptr;
 #endif
