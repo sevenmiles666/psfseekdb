@@ -63,7 +63,7 @@ inline void put_floats(Bytes &out, const float *values, std::size_t count) {
 #endif
 }
 
-enum class VectorEncoding { Full, Half, Packed, ScaledByte, ScaledBits, ScaledRange, FixedDecimal };
+enum class VectorEncoding { Full, Half, Packed, ScaledByte, ScaledBits, ScaledRange, FixedDecimal, SharedExponent };
 
 inline std::uint32_t float_bits(float value) {
   std::uint32_t bits;
@@ -85,6 +85,8 @@ inline std::size_t vector_bytes(VectorEncoding encoding, std::size_t count) {
     case VectorEncoding::ScaledBits: return 2 + (count + 7) / 8;  // Minimum before reading its width.
     case VectorEncoding::ScaledRange: return 3 + (count + 7) / 8;
     case VectorEncoding::FixedDecimal: return 1 + (count + 7) / 8;
+    case VectorEncoding::SharedExponent:
+      return count <= 1 ? count * 4 : 5 + 3 * (count - 1) + (count + 2) / 4;
     case VectorEncoding::Full: return count * 4;
   }
   throw std::logic_error("unknown vector encoding");
@@ -280,6 +282,45 @@ inline bool put_fixed_decimals(Bytes &out, const float *values, std::size_t coun
   return false;
 }
 
+inline bool put_shared_exponent(Bytes &out, const float *values, std::size_t count,
+                                std::size_t previous_size) {
+  if (count < 64) return false;
+  unsigned base = 0;
+  for (std::size_t i = 1; i < count; ++i) {
+    base = std::max(base, (float_bits(values[i]) >> 23) & 255U);
+  }
+  std::size_t escapes = 0;
+  for (std::size_t i = 1; i < count; ++i) {
+    escapes += base - ((float_bits(values[i]) >> 23) & 255U) >= 3;
+  }
+  const auto bytes = vector_bytes(VectorEncoding::SharedExponent, count) + escapes;
+  if (bytes >= previous_size) return false;
+
+  // Keep the first coordinate directly readable when replay only needs the projection.
+  put_float(out, values[0]);
+  const auto start = out.size();
+  out.resize(start + bytes - sizeof(float));
+  auto *destination = out.data() + start;
+  *destination++ = static_cast<std::uint8_t>(base);
+  for (std::size_t group = 1; group < count; group += 4) {
+    auto *tags = destination++;
+    unsigned codes = 0;
+    for (std::size_t i = group; i < std::min(count, group + 4); ++i) {
+      const auto bits = float_bits(values[i]);
+      const auto exponent = (bits >> 23) & 255U;
+      const auto delta = base - exponent;
+      codes |= std::min(delta, 3U) << (2 * (i - group));
+      const auto stored = (bits & 0x7fffffU) | ((bits >> 8) & 0x800000U);
+      *destination++ = static_cast<std::uint8_t>(stored);
+      *destination++ = static_cast<std::uint8_t>(stored >> 8);
+      *destination++ = static_cast<std::uint8_t>(stored >> 16);
+      if (delta >= 3) *destination++ = static_cast<std::uint8_t>(exponent);
+    }
+    *tags = static_cast<std::uint8_t>(codes);
+  }
+  return true;
+}
+
 inline VectorEncoding put_vector(Bytes &out, const float *values, std::size_t count) {
   // Only encode bit patterns that round-trip exactly, including signed zero.
   // Nonzero values must be normal binary16 numbers with no discarded bits.
@@ -320,6 +361,9 @@ inline VectorEncoding put_vector(Bytes &out, const float *values, std::size_t co
   const auto previous_encoding = packed ? VectorEncoding::Packed : VectorEncoding::Full;
   if (put_fixed_decimals(out, values, count, vector_bytes(previous_encoding, count))) {
     return VectorEncoding::FixedDecimal;
+  }
+  if (put_shared_exponent(out, values, count, vector_bytes(previous_encoding, count))) {
+    return VectorEncoding::SharedExponent;
   }
   if (packed) {
     // Pack sign and the upper exponent delta into a nibble per component.
@@ -466,6 +510,26 @@ public:
   void vector(float *values, std::size_t count, VectorEncoding encoding) {
     if (encoding == VectorEncoding::Full) {
       floats(values, count);
+    } else if (encoding == VectorEncoding::SharedExponent) {
+      if (count == 0) return;
+      values[0] = f32();
+      if (count == 1) return;
+      const unsigned base = byte();
+      if (base == 255) throw std::runtime_error("invalid shared exponent in journal");
+      for (std::size_t group = 1; group < count; group += 4) {
+        const unsigned tags = byte();
+        for (std::size_t i = group; i < std::min(count, group + 4); ++i) {
+          require(3);
+          const auto *stored = input_ + position_;
+          const std::uint32_t bits = stored[0] | (std::uint32_t(stored[1]) << 8) |
+                                     (std::uint32_t(stored[2]) << 16);
+          position_ += 3;
+          const auto delta = (tags >> (2 * (i - group))) & 3U;
+          const auto exponent = delta == 3 ? byte() : base - delta;
+          if (exponent >= 255) throw std::runtime_error("invalid component exponent in journal");
+          values[i] = float_from_bits(((bits & 0x800000U) << 8) | (exponent << 23) | (bits & 0x7fffffU));
+        }
+      }
     } else if (encoding == VectorEncoding::Half) {
       for (std::size_t i = 0; i < count; ++i) values[i] = f16();
     } else if (encoding == VectorEncoding::ScaledByte) {

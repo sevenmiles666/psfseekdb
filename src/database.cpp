@@ -23,7 +23,8 @@ namespace {
 
 enum class RecordKind : std::uint8_t {
   Create = 1, Put = 2, Delete = 3, Commit = 4, Index = 5, PutHalf = 6, PutPacked = 7,
-  PutScaledByte = 8, PutScaledBits = 9, PutScaledRange = 10, AlignedCommit = 11, PutFixedDecimal = 12
+  PutScaledByte = 8, PutScaledBits = 9, PutScaledRange = 10, AlignedCommit = 11, PutFixedDecimal = 12,
+  PutSharedExponent = 13
 };
 
 constexpr std::uint8_t compact_row = 0x80;
@@ -39,6 +40,7 @@ std::optional<VectorEncoding> row_encoding(RecordKind kind) {
     case RecordKind::PutScaledBits: return VectorEncoding::ScaledBits;
     case RecordKind::PutScaledRange: return VectorEncoding::ScaledRange;
     case RecordKind::PutFixedDecimal: return VectorEncoding::FixedDecimal;
+    case RecordKind::PutSharedExponent: return VectorEncoding::SharedExponent;
     default: return std::nullopt;
   }
 }
@@ -1268,6 +1270,9 @@ void Database::put_row(Table &table, std::int64_t key, const Row &row, Bytes &pa
           case VectorEncoding::ScaledBits: payload.front() = static_cast<std::uint8_t>(RecordKind::PutScaledBits); break;
           case VectorEncoding::ScaledRange: payload.front() = static_cast<std::uint8_t>(RecordKind::PutScaledRange); break;
           case VectorEncoding::FixedDecimal: payload.front() = static_cast<std::uint8_t>(RecordKind::PutFixedDecimal); break;
+          case VectorEncoding::SharedExponent:
+            payload.front() = static_cast<std::uint8_t>(RecordKind::PutSharedExponent);
+            break;
         }
         break;
       }

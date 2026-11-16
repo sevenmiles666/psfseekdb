@@ -70,10 +70,10 @@ class Server:
             raise AssertionError(f"no response, process status={self.process.poll()}\n{self.log.read()}")
         return output
 
-    def request(self, message, *, ensure_ascii=False):
+    def request(self, message, *, ensure_ascii=False, parse_int=int):
         self.process.stdin.write(json.dumps(message, ensure_ascii=ensure_ascii) + "\n")
         self.process.stdin.flush()
-        response = json.loads(self.line())
+        response = json.loads(self.line(), parse_int=parse_int)
         assert type(response["id"]) is type(message["id"]) and response["id"] == message["id"]
         assert type(response["ok"]) is bool
         return response
@@ -500,6 +500,45 @@ def check_wal_vector_formats(args, directory, reference=None):
     print("Mixed vector and BIGINT WAL encodings survived round-trip, rollback and crash recovery", flush=True)
 
 
+def check_shared_exponent(args, directory):
+    width = 130
+    # Include a wide first coordinate, a short final group, escape exponents,
+    # signed zero and a subnormal. The many normal components keep it compact.
+    bits = [0xff7fffff]
+    for i in range(1, width - 2):
+        exponent = 40 if i % 23 == 0 else 127 - i % 3
+        bits.append(((i % 2) << 31) | (exponent << 23) | (i * 104729 & 0x7fffff))
+    bits.extend((0x80000000, 1))
+    packed = struct.pack(f"<{width}I", *bits)
+    vector = json.dumps(struct.unpack(f"<{width}f", packed))
+    zeros = json.dumps([0] * width)
+
+    with Server(args, directory) as db:
+        db.ok(f"CREATE TABLE vectors (id BIGINT PRIMARY KEY, v VECTOR({width}));")
+        db.ok(f"INSERT INTO vectors VALUES (1,{vector}),(2,{zeros});", 2)
+        db.ok("CREATE VECTOR INDEX idx ON vectors(v);")
+        db.stop(crash=True)
+
+    journal = (directory / "store.wal").read_bytes()
+    offset = 8
+    kinds = set()
+    while offset < len(journal):
+        size = struct.unpack_from("<I", journal, offset)[0]
+        kinds.add(journal[offset + 8] & 0x7f)
+        offset += 8 + size
+    assert offset == len(journal) and 13 in kinds
+
+    for mode in ("exact", "ann"):
+        with Server(args, directory, mode=mode) as db:
+            response = db.request(
+                {"id": "round-trip", "op": "execute", "sql": "SELECT v FROM vectors WHERE id=1;"},
+                parse_int=lambda text: -0.0 if text == "-0" else int(text),
+            )
+            assert response["ok"] and struct.pack(f"<{width}f", *response["rows"][0][0]) == packed
+            db.query(f"SELECT id FROM vectors ORDER BY L2_DISTANCE(v,{vector}) LIMIT 1;", [[1]])
+    print("Shared exponents preserved all FP32 bits and projection after SIGKILL", flush=True)
+
+
 def check_aligned_commits(args, directory):
     vector = json.dumps([-4, 4, *([0] * 126)])
     note = "v" * 70
@@ -715,6 +754,7 @@ def main():
         check_exact_oracle(args, root / "oracle")
         check_topk_rounding(args, root / "topk_rounding")
         check_wal_vector_formats(args, root / "wal_vector_formats", reference)
+        check_shared_exponent(args, root / "shared_exponent")
         check_aligned_commits(args, root / "aligned_commits")
         check_mapped_vectors(args, root / "mapped_vectors")
         check_dense_topk_ties(args, root / "dense_topk_ties")
