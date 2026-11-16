@@ -101,6 +101,7 @@ using Statement = std::variant<CreateTable, CreateVectorIndex, Insert, Update, D
 
 Statement parse_sql(std::string_view sql);
 Vector parse_vector(std::string_view text);
+void parse_vector(std::string_view text, Vector &result);
 std::size_t unicode_length(std::string_view text);
 
 }  // namespace minivector

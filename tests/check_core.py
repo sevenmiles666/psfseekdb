@@ -340,6 +340,8 @@ def check_topk_rounding(args, directory):
                 return [f32(rng.uniform(-1.0, 1.0) * scale) for _ in range(dimension)]
 
             data = [vector() for _ in range(size)]
+            if table == "grid":
+                data[0][0] = -0.0
             if table == "mixed":
                 data[size // 2][-1] = f32(0.1)
             if table == "blocks":
@@ -368,6 +370,9 @@ def check_topk_rounding(args, directory):
             if table == "blocks":
                 queries.append(("", lambda key: True, data[0]))
                 queries.append(("", lambda key: True, data[3]))
+                outside_codes = [f32(1.0625), *data[0][1:]]
+                queries.append(("", lambda key: True, outside_codes))
+                queries.append(("WHERE bucket=0", lambda key: key % 3 == 0, outside_codes))
             if table in ("grid", "mixed"):
                 data_query = [f32(value + 1e-4) for value in data[0]]
                 queries.append(("", lambda key: True, data[0]))
@@ -384,6 +389,15 @@ def check_topk_rounding(args, directory):
                 for (key, stored, distance), (exact, _) in zip(output, expected):
                     assert [f32(value) for value in stored] == data[key]
                     assert math.isclose(distance, exact, rel_tol=1e-12)
+            if table == "grid":
+                # Preserve the spelling of a negative zero emitted by the server.
+                sql = f"SELECT id,v FROM grid ORDER BY L2_DISTANCE(v,{json.dumps(data[0])}) LIMIT 1;"
+                db.process.stdin.write(json.dumps({"id": "signed-zero", "op": "execute", "sql": sql}) + "\n")
+                db.process.stdin.flush()
+                response = json.loads(db.line(), parse_int=lambda text: -0.0 if text == "-0" else int(text))
+                assert response["ok"] and response["id"] == "signed-zero"
+                assert len(response["rows"]) == 1 and response["rows"][0][0] == 0
+                assert math.copysign(1.0, response["rows"][0][1][0]) == -1.0
 
         db.ok("CREATE TABLE rounded (id BIGINT PRIMARY KEY, v VECTOR(2));")
         db.ok("INSERT INTO rounded VALUES (2,[1,0]),(1,[1,0.00000001490116119384765625]);", 2)

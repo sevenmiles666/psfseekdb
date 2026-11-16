@@ -40,7 +40,7 @@ private:
     std::string name;
     std::size_t column;
     std::vector<std::pair<float, std::int64_t>> ordered;
-    bool needs_rebuild = false;
+    bool needs_rebuild = true;
   };
 
   struct Table {

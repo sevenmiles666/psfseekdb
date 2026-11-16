@@ -150,11 +150,11 @@ public:
     throw SqlError("SYNTAX", "unexpected character at byte " + std::to_string(start));
   }
 
-  Vector vector_body() {
+  void vector_body(Vector &result) {
     const auto skip_spaces = [&] {
       while (is_space(peek())) ++position_;
     };
-    Vector result;
+    result.clear();
     skip_spaces();
     if (peek() != ']') {
       const char *const end = input_.data() + input_.size();
@@ -195,7 +195,6 @@ public:
     }
     if (peek() != ']') throw SqlError("SYNTAX", "expected ]");
     ++position_;
-    return result;
   }
 
 private:
@@ -319,10 +318,15 @@ public:
   }
 
   Vector vector() {
-    if (token_.kind != TokenKind::Symbol || token_.text != "[") throw SqlError("SYNTAX", "expected [");
-    Vector result = lexer_.vector_body();
-    advance();
+    Vector result;
+    vector(result);
     return result;
+  }
+
+  void vector(Vector &result) {
+    if (token_.kind != TokenKind::Symbol || token_.text != "[") throw SqlError("SYNTAX", "expected [");
+    lexer_.vector_body(result);
+    advance();
   }
 
   void finish() const {
@@ -580,10 +584,15 @@ private:
 Statement parse_sql(std::string_view sql) { return Parser(sql).statement(); }
 
 Vector parse_vector(std::string_view text) {
-  Parser parser(text);
-  Vector result = parser.vector();
-  parser.finish();
+  Vector result;
+  parse_vector(text, result);
   return result;
+}
+
+void parse_vector(std::string_view text, Vector &result) {
+  Parser parser(text);
+  parser.vector(result);
+  parser.finish();
 }
 
 }  // namespace minivector
