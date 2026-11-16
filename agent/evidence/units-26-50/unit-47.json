@@ -1,0 +1,161 @@
+{
+  "unit": 47,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "shutdown": {
+      "exit_code": 0,
+      "inside": [
+        [
+          10
+        ],
+        [
+          99
+        ]
+      ],
+      "after_restart": [
+        [
+          10
+        ],
+        [
+          20
+        ]
+      ]
+    },
+    "eof": {
+      "exit_code": 0,
+      "inside": [
+        [
+          10
+        ],
+        [
+          99
+        ]
+      ],
+      "after_restart": [
+        [
+          10
+        ],
+        [
+          20
+        ]
+      ]
+    }
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "shutdown",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY);\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976854908427,
+      "received_monotonic_ns": 3976858746619
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (10),(20);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":2}",
+      "sent_monotonic_ns": 3976858785962,
+      "received_monotonic_ns": 3976863010930
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"BEGIN;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976863046069,
+      "received_monotonic_ns": 3976863182120
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"DELETE FROM t WHERE id=20;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976863212226,
+      "received_monotonic_ns": 3976863388005
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (99);\"}",
+      "response": "{\"id\":5,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976863415826,
+      "received_monotonic_ns": 3976863602128
+    },
+    {
+      "request": "{\"id\":6,\"op\":\"execute\",\"sql\":\"SELECT id FROM t ORDER BY id;\"}",
+      "response": "{\"id\":6,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[10],[99]]}",
+      "sent_monotonic_ns": 3976863636114,
+      "received_monotonic_ns": 3976863825498
+    },
+    {
+      "request": "{\"id\":7,\"op\":\"shutdown\"}",
+      "response": "{\"id\":7,\"ok\":true}",
+      "sent_monotonic_ns": 3976863854299,
+      "received_monotonic_ns": 3976864039791
+    },
+    {
+      "operation": "start",
+      "name": "shutdown",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"SELECT id FROM t ORDER BY id;\"}",
+      "response": "{\"id\":1,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[10],[20]]}",
+      "sent_monotonic_ns": 3976874493611,
+      "received_monotonic_ns": 3976874713640
+    },
+    {
+      "operation": "start",
+      "name": "eof",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY);\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976889517990,
+      "received_monotonic_ns": 3976893582062
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (10),(20);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":2}",
+      "sent_monotonic_ns": 3976893620251,
+      "received_monotonic_ns": 3976897276389
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"BEGIN;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976897314762,
+      "received_monotonic_ns": 3976897418205
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"DELETE FROM t WHERE id=20;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976897438545,
+      "received_monotonic_ns": 3976897575653
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (99);\"}",
+      "response": "{\"id\":5,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976897602837,
+      "received_monotonic_ns": 3976897705429
+    },
+    {
+      "request": "{\"id\":6,\"op\":\"execute\",\"sql\":\"SELECT id FROM t ORDER BY id;\"}",
+      "response": "{\"id\":6,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[10],[99]]}",
+      "sent_monotonic_ns": 3976897724281,
+      "received_monotonic_ns": 3976897857422
+    },
+    {
+      "operation": "close_stdin"
+    },
+    {
+      "operation": "start",
+      "name": "eof",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"SELECT id FROM t ORDER BY id;\"}",
+      "response": "{\"id\":1,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[10],[20]]}",
+      "sent_monotonic_ns": 3976908570968,
+      "received_monotonic_ns": 3976908700001
+    }
+  ]
+}

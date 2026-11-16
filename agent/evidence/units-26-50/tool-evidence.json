@@ -1,0 +1,266 @@
+{
+  "source_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "scope": "Units 26–50. Actual tool measurements and source records.",
+  "binary_sha256": {
+    "normal": "b0b7fcdcc0d1df2db12aa02f77d09f68ad3d6ac9e645812ef10d50dbae5e1cfe",
+    "diagnostic": "62b69f16cc21e0aa30779e34690f9a0467f0fb34fa412dc478e09e4af7a89a4a",
+    "baseline": "225890017b1ccb32f824533c99204cecd7753e44497859d5c87841355309f49a",
+    "unit_44_standalone": "99613b79614d310b37c0f709af82c129490cf84fc78ed581b78e5d86196c5023"
+  },
+  "docker_image_ids": {
+    "baseline": "sha256:b6e2802343ec785348e0ee11ec27263b10c41f664deffd86cfdb605e32c3f0c5",
+    "candidate": "sha256:30afd7abad623192746079b56861f61996b4243bc92f903bb223f4dfb77462d1"
+  },
+  "experiments": [
+    {
+      "unit": 26,
+      "role": "tool",
+      "status": "PASS",
+      "title": "事务中的建表",
+      "output": "建表在事务内可查。ROLLBACK 后返回 UNKNOWN_TABLE。另一次提交并重启后读到 [[7]]。",
+      "scope": "覆盖 CREATE TABLE 的事务内可见性、撤销及提交后恢复。",
+      "raw_record": "unit-26.json",
+      "raw_record_sha256": "254f4ac9e97ca8e0521c26c3dbcff368cffe7056d59d0e3ed66b47d09c053355"
+    },
+    {
+      "unit": 27,
+      "role": "tool",
+      "status": "PASS",
+      "title": "复用已删主键",
+      "output": "删除 ID 5 后为 []。重新插入后为 [[5, 'after', 42]]，重启后仍只有 [[5, 'after', 42]]。",
+      "scope": "原始记录含建表、写入、删除和重启响应及事务日志记录类型。",
+      "raw_record": "unit-27.json",
+      "raw_record_sha256": "a273f35714d510a185ac4e8d32324f1079a31112de3ccfa846627296d6566dda"
+    },
+    {
+      "unit": 28,
+      "role": "tool",
+      "status": "PASS",
+      "title": "只读事务的 WAL",
+      "output": "直接查询和 BEGIN/COMMIT 内查询返回相同行。WAL 为 112 → 112 → 112 字节，逐字节相同。",
+      "scope": "在本版本同一进程的同一数据目录测量纯 SELECT。",
+      "raw_record": "unit-28.json",
+      "raw_record_sha256": "ca38042d4bee2cfdccb82c6ca4a4737b1ecd43b71aad77e801447f2d5c45c2aa"
+    },
+    {
+      "unit": 29,
+      "role": "tool",
+      "status": "PASS",
+      "title": "数据目录锁",
+      "output": "目录 A 被占用时，第二进程退出码 1，报 lock journal。打开 B 正常退出 0。A=[[11]]，B=[[22]]。",
+      "scope": "WSL 原生、ext4 文件系统。A 持锁期间验证 B 可独立读写，并在 A 重启后复查。",
+      "raw_record": "unit-29.json",
+      "raw_record_sha256": "054051ae20dd97aefcaf6841e29c06fd8436c8263c8f19c5219ab247faaa1f8d"
+    },
+    {
+      "unit": 30,
+      "role": "tool",
+      "status": "PASS",
+      "title": "旧数据卷继续写入",
+      "output": "953baf7 写入两条旧记录，5c96573 打开副本并追加一条。重启后核对 3 行，向量按 FP32 位模式逐元素匹配。",
+      "scope": "仅验证上述升级方向。旧记录覆盖 ScaledRange 与 Half，新记录采用 FixedDecimal。",
+      "raw_record": "unit-30.json",
+      "raw_record_sha256": "2846175d35402b9f17762aaba819f2ff31b92b43d975a65be4f18604c10e3564"
+    },
+    {
+      "unit": 31,
+      "role": "tool",
+      "status": "PASS",
+      "title": "多个 AND 的交集",
+      "output": "ID 条件给出 [[3], [4], [5]]，类别条件给出 [[1], [3], [5]]。手算交集 [[3], [5]]，交换条件顺序后两次均一致。",
+      "scope": "验证等值与范围条件的结果语义。条件顺序的执行成本未在此项计时。",
+      "raw_record": "unit-31.json",
+      "raw_record_sha256": "a6f53ba5e1410beb02576a65f8f6261c908a6afa51ad083e8dd09903bd921fa3"
+    },
+    {
+      "unit": 32,
+      "role": "tool",
+      "status": "PASS",
+      "title": "LIMIT 0 的结果格式",
+      "output": "普通查询保留列 id，距离表达式保留 id、d。两次 LIMIT 0 的 rows 都为空。距离查询换 LIMIT 1 返回 [[1,1]]，列定义相同。",
+      "scope": "覆盖普通列、L2_DISTANCE 别名和空行集。",
+      "raw_record": "unit-32.json",
+      "raw_record_sha256": "8f2726e8c70f7aa6eb76640f9382eeb7f847dc76deac926e67457fc387f1b7b5"
+    },
+    {
+      "unit": 33,
+      "role": "tool",
+      "status": "PASS",
+      "title": "UPDATE 计数",
+      "output": "改值、重复写同值、零匹配的 affected_rows 依次为 [1, 1, 0]。三次后行值均为 [1,20]。",
+      "scope": "计数在本版本和这一 UPDATE 路径中对应命中行数。",
+      "raw_record": "unit-33.json",
+      "raw_record_sha256": "799f4ab16c71bcd310b685a0f8a614b05e9d64e3d8d0ce012f20c2df449d12f4"
+    },
+    {
+      "unit": 34,
+      "role": "tool",
+      "status": "PASS",
+      "title": "VARCHAR 长度边界",
+      "output": "AB 为 2 个码点、2 字节。中A 为 2 个码点、4 字节。😀中 为 2 个码点、7 字节，均通过读回核对。😀中A 为 3 个码点、8 字节，返回 VARCHAR_LENGTH。",
+      "scope": "以普通 ASCII、中文和单码点 emoji 验证 Unicode 码点计数。组合字符可单独验证。",
+      "raw_record": "unit-34.json",
+      "raw_record_sha256": "272ff1b7d449aae6ee6878f562a2de6f61eb747383c6c68fd01d88515944e324"
+    },
+    {
+      "unit": 35,
+      "role": "tool",
+      "status": "PASS",
+      "title": "显式插入列名",
+      "output": "按建表顺序读取得到 [[1, 11, 22], [2, 44, 33]]。第二行以 id、right_value、left_value 顺序写入 2、33、44。",
+      "scope": "覆盖提供全部列名且重排同类型数值列的 INSERT。",
+      "raw_record": "unit-35.json",
+      "raw_record_sha256": "bdfee3a0ea532342ec21643e13a103a97c03b6f995223432fcad14f126c3c62b"
+    },
+    {
+      "unit": 36,
+      "role": "tool",
+      "status": "PASS",
+      "title": "ANN 首坐标剪枝",
+      "output": "首坐标分散时 ANN 实际访问 10 个投影条目，另做 64 个样本。首坐标集中时改用缓存精确扫描 4,096 行。两组 Recall@10 均为 100%。",
+      "scope": "各 4,096 行、32 维。原生查询中位数由 exact/ANN 0.377/0.121 ms 变为集中场景的 0.283/0.330 ms。",
+      "raw_record": "unit-36.json",
+      "raw_record_sha256": "c2b29716b2dbdf7c46b7b649100f14720c50432e9f452a7697286964bea28f6b"
+    },
+    {
+      "unit": 37,
+      "role": "tool",
+      "status": "PASS",
+      "title": "延迟精确复算回退",
+      "output": "随机分散样本精确复算 15 条且未触发回退。2,071 条并列加一条远样本时，两种排序均在 512 个候选处回退。",
+      "scope": "所有返回 ID、距离和顺序均对过独立精确扫描，涵盖主键升序与降序。",
+      "raw_record": "unit-37.json",
+      "raw_record_sha256": "b0dc1f3cf0dace42464127a4f38ed353dc1a7833b306d4c282bd9dc7697e4fa6"
+    },
+    {
+      "unit": 38,
+      "role": "tool",
+      "status": "PASS",
+      "title": "128 与 129 维的计算路径",
+      "output": "128 维首个诊断查询运行 398 个八行整数块。129 维追加零后改用逐行整数点积。两组返回 ID、距离和顺序一致。",
+      "scope": "均为 3,200 行格点数据，原生中位数分别为 0.141 和 0.171 ms。",
+      "raw_record": "unit-38.json",
+      "raw_record_sha256": "4e86a490e5353d7108bc0650bc19d959ade1b6419fe16a7fd0caf337d0d56da0"
+    },
+    {
+      "unit": 39,
+      "role": "tool",
+      "status": "PASS",
+      "title": "多表争用向量缓存",
+      "output": "单表实际缓存约 4.86 MiB。同表重复两次均命中，A/B 交替后四次都淘汰并重建。命中和切换耗时中位数分别为 0.486 和 39.227 ms。",
+      "scope": "两个 4,900 行、1,024 维表，共享 8 MiB 预算。每次返回均与精确参考核对。",
+      "raw_record": "unit-39.json",
+      "raw_record_sha256": "b0a8010871b19404e3d09bc2609677fe56aedd4ab36e8610d85a455ae1431769"
+    },
+    {
+      "unit": 40,
+      "role": "tool",
+      "status": "PASS",
+      "title": "延迟重建索引",
+      "output": "修改后 exact 查询直接看到新最近邻 ID 3000。第一次 ANN 才记录重建，第二次 ANN 无重建事件。两条 ANN 分别耗时 0.440 和 0.107 ms。",
+      "scope": "6,000 行二维表。顺序为预热、修改、exact、ANN、ANN。重建事件与常规耗时分开采集。",
+      "raw_record": "unit-40.json",
+      "raw_record_sha256": "21ac9652d3e8b1a995e5cfe3da269ce68bf262fb8b0fad24ba38d89636881aca"
+    },
+    {
+      "unit": 41,
+      "role": "tool",
+      "status": "PASS",
+      "title": "单表超出缓存预算",
+      "output": "6,200 和 7,100 行可建缓存。7,800 行因准入估算超预算，逐次查询扫描 7,800 条 WAL 行。6200 行 1.30 ms、峰值 20.98 MiB, 7100 行 1.34 ms、峰值 17.77 MiB, 7800 行 22.64 ms、峰值 11.22 MiB。",
+      "scope": "同为 1,024 维稀疏格点数据。M 是 64 MiB 容器的 memory.peak，准入由数据库的 8 MiB 缓存预算决定。",
+      "raw_record": "unit-41.json",
+      "raw_record_sha256": "e664a48ebd5f20b2b2fe454b9b4612b9eeaf0345e179afdf6d60d7352e57464f"
+    },
+    {
+      "unit": 42,
+      "role": "tool",
+      "status": "PASS",
+      "title": "整数紧凑编码的日志与 I/O",
+      "output": "WAL 逻辑大小 282,718 → 440,974 B，数据设备写入 692,224 → 847,872 B。两份重启后各 10,000 行全量一致。",
+      "scope": "向量编码均为 ScaledRange。大整数使整条行记录退出紧凑格式，差额包含主键和表 ID 等字段的编码变化。",
+      "raw_record": "unit-42.json",
+      "raw_record_sha256": "12fc5fe923610a0f883c3a5ac482f826c8d4aa938f9ba0b8d867a1528e86fdb8"
+    },
+    {
+      "unit": 43,
+      "role": "tool",
+      "status": "PASS",
+      "title": "批大小与同步成本",
+      "output": "每批 25 → 100 行：同步 200 → 50 次，fdatasync 合计 762.1 → 196.6 ms，常规写入中位数 820.1 → 225.7 ms。",
+      "scope": "5,000 行原生 WSL、本地文件系统。两种批次重启后内容相同。fdatasync 仅计同步调用，常规耗时另测。",
+      "raw_record": "unit-43.json",
+      "raw_record_sha256": "be4a82a8845cab0f4cb3e62fd6f6689e79b94474ab8a61e2b25152641d4ce09b"
+    },
+    {
+      "unit": 44,
+      "role": "tool",
+      "status": "PASS",
+      "title": "双线程扫描的规模拐点",
+      "output": "256 行的单线程/双线程墙钟中位数为 1.43/2.89 ms。32,768 行为 154.69/94.53 ms。各查询的 TopK 逐条一致。",
+      "scope": "每轮 48 次查询、共七轮，均绑定同一对逻辑 CPU。独立 C++ 扫描实验，保留调用、排队、等待、扫描和合并的原始时间。",
+      "raw_record": "unit-44.json",
+      "raw_record_sha256": "19701d9e76e6033eb7f3dd9aa4278c78d8c299e2f736b574aa4bf34ef06a2030"
+    },
+    {
+      "unit": 45,
+      "role": "tool",
+      "status": "PASS",
+      "title": "原生优化收益的容器迁移",
+      "output": "同一批 1,000 条 exact 查询，原生中位数 0.237 → 0.225 s，Docker 1.035 → 0.940 s。两组 Recall@10 均为 100%。",
+      "scope": "953baf7 与 5c96573，固定同一数据、预热和验证。Docker 为 2 CPU、64 MiB、无 swap，记录保留 I/O 和峰值内存。",
+      "raw_record": "unit-45.json",
+      "raw_record_sha256": "c92512ed41f8618714e2b3b3e4666a7f25c661cc72a12708e97d82b9956c7e10"
+    },
+    {
+      "unit": 46,
+      "role": "tool",
+      "status": "PASS",
+      "title": "逐请求响应与刷出",
+      "output": "输入管道保持打开。收到完整的 185 或 17,222 字节响应后，再发送下一条请求。两种大小都连续取得两次完整响应。",
+      "scope": "WSL 原生管道，读行超时 25 s。记录含每条请求的发送及接收单调时钟。",
+      "raw_record": "unit-46.json",
+      "raw_record_sha256": "baa88dd8d7736597051081b58ead67071c91a615c40e21966cb04109dbfd7987"
+    },
+    {
+      "unit": 47,
+      "role": "tool",
+      "status": "PASS",
+      "title": "正常关闭时的未提交数据",
+      "output": "shutdown 和 stdin EOF 都以 0 退出。两种模式重启后都读回 [[10], [20]]，已提交的 ID 20 恢复，未提交的 ID 99 消失。",
+      "scope": "两种正常退出分别使用独立数据目录，执行相同的未提交删除和插入。",
+      "raw_record": "unit-47.json",
+      "raw_record_sha256": "bf90c32a4e89b5c9bc0336dff678f8559caf5bf87c656be9f0ab53a2828571c0"
+    },
+    {
+      "unit": 48,
+      "role": "tool",
+      "status": "PASS",
+      "title": "search_mode 的请求作用域",
+      "output": "显式 ANN 走投影路径并返回 ID 1。同连接下一条省略模式走默认 exact，返回 ID 2，与新连接输出一致。",
+      "scope": "选用了 ANN 和 exact 可区分的二维输入。诊断记录含每条实际模式和路径。",
+      "raw_record": "unit-48.json",
+      "raw_record_sha256": "b3a939f62788b8c76476da033948834f95fc7184130a370c524a3450824d7de3"
+    },
+    {
+      "unit": 49,
+      "role": "tool",
+      "status": "PASS",
+      "title": "不同表的同名索引",
+      "output": "A、B 都成功建立 same_name。ANN 分别返回最近 ID 13 和 31，重启后结果相同。",
+      "scope": "覆盖两个表各自一个同名向量索引。",
+      "raw_record": "unit-49.json",
+      "raw_record_sha256": "050f26cebcb7e787d425fd68c9a22ae83d3d246fec43a416bbdb432f6989c3d3"
+    },
+    {
+      "unit": 50,
+      "role": "tool",
+      "status": "PASS",
+      "title": "普通列混合排序",
+      "output": "按 points DESC, tag ASC 查询，ID 顺序为 [3, 4, 8, 5, 6, 7, 1]。LIMIT 3 为 [3, 4, 8]，与独立元组排序一致。",
+      "scope": "第一键 BIGINT、第二键 VARCHAR。两个键都相同时，本例按主键确定顺序。",
+      "raw_record": "unit-50.json",
+      "raw_record_sha256": "16b59c0f107f1914b50b4b5357a1a6cbb81a4cf7287b21f4dd5bc20b96dce78b"
+    }
+  ]
+}

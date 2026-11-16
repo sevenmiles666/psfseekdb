@@ -6,6 +6,8 @@
 
 `material-manifest.json` 记录双副本、原件和运行源码的摘要。运行 `python3 tests/check_prompt_material.py` 校验材料、引用及源码一致性。正式评分由评测平台生成。
 
+第 26～50 项覆盖事务、SQL、向量缓存、性能和协议。每项保留工具实测摘要、适用范围、原始记录及 SHA-256。[逐项报告](evidence/units-26-50/results.md) · [实测 JSON](evidence/units-26-50/tool-evidence.json)
+
 ## 历史材料
 
 下文记载提交 `1f09a83` 及以前的材料。早期实验以 ltc 代码 `dccb61eb98b9f6a98cee30d59aca5684d9fedc15` 为基线。

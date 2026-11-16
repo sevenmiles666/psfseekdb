@@ -1,0 +1,1498 @@
+{
+  "unit": 36,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "spread_first": {
+      "rows": 4096,
+      "dimension": 32,
+      "diagnostics": [
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "projection",
+            "projection_visits": 10,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 74,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "10"
+            ],
+            [
+              "projection_rebuild",
+              "0",
+              "4096",
+              "162702"
+            ],
+            [
+              "search",
+              "projection",
+              "10",
+              "0",
+              "74",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "projection",
+            "projection_visits": 10,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 74,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "10"
+            ],
+            [
+              "search",
+              "projection",
+              "10",
+              "0",
+              "74",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "projection",
+            "projection_visits": 10,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 74,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "10"
+            ],
+            [
+              "search",
+              "projection",
+              "10",
+              "0",
+              "74",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "projection",
+            "projection_visits": 10,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 74,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "10"
+            ],
+            [
+              "search",
+              "projection",
+              "10",
+              "0",
+              "74",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "projection",
+            "projection_visits": 10,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 74,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "10"
+            ],
+            [
+              "search",
+              "projection",
+              "10",
+              "0",
+              "74",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        }
+      ],
+      "timings_ms": {
+        "exact": [
+          0.22909,
+          0.440172,
+          0.41509,
+          0.449436,
+          0.484437,
+          0.327162,
+          0.275565,
+          0.400585,
+          0.441871,
+          0.458776,
+          0.246663,
+          0.329709,
+          0.377429,
+          0.299066,
+          0.328815
+        ],
+        "ann": [
+          0.131628,
+          0.111905,
+          0.109591,
+          0.108483,
+          0.107869,
+          0.126631,
+          0.145642,
+          0.145954,
+          0.143146,
+          0.145428,
+          0.105535,
+          0.103241,
+          0.105233,
+          0.126642,
+          0.121129
+        ]
+      },
+      "median_ms": {
+        "exact": 0.377429,
+        "ann": 0.121129
+      }
+    },
+    "constant_first": {
+      "rows": 4096,
+      "dimension": 32,
+      "diagnostics": [
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4160,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "64"
+            ],
+            [
+              "search",
+              "exact_cache",
+              "0",
+              "0",
+              "4160",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4160,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "64"
+            ],
+            [
+              "search",
+              "exact_cache",
+              "0",
+              "0",
+              "4160",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4160,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "64"
+            ],
+            [
+              "search",
+              "exact_cache",
+              "0",
+              "0",
+              "4160",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4160,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "64"
+            ],
+            [
+              "search",
+              "exact_cache",
+              "0",
+              "0",
+              "4160",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "exact": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4096,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "ann": {
+            "path": "exact_cache",
+            "projection_visits": 0,
+            "integer_blocks": 0,
+            "cache_candidate_offers": 4160,
+            "wal_visits": 0,
+            "shortlist_refined": 0,
+            "integer_dot": 0
+          },
+          "recall_at_10": 1.0,
+          "ann_events": [
+            [
+              "request_mode",
+              "ann"
+            ],
+            [
+              "cache_hit",
+              "0"
+            ],
+            [
+              "projection_sample",
+              "64",
+              "64"
+            ],
+            [
+              "search",
+              "exact_cache",
+              "0",
+              "0",
+              "4160",
+              "0",
+              "0",
+              "0"
+            ]
+          ]
+        }
+      ],
+      "timings_ms": {
+        "exact": [
+          0.225886,
+          0.251009,
+          0.283377,
+          0.418769,
+          0.376742,
+          0.232115,
+          0.247621,
+          0.438117,
+          0.34092,
+          0.489334,
+          0.251462,
+          0.25016,
+          0.261738,
+          0.317055,
+          0.408525
+        ],
+        "ann": [
+          0.26446,
+          0.319465,
+          0.404168,
+          0.438999,
+          0.532105,
+          0.291168,
+          0.400035,
+          0.306155,
+          0.330097,
+          0.405771,
+          0.325954,
+          0.281299,
+          0.313861,
+          0.334894,
+          0.355576
+        ]
+      },
+      "median_ms": {
+        "exact": 0.283377,
+        "ann": 0.330097
+      }
+    }
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "spread_first-diag",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, v VECTOR(32));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4114613113209,
+      "received_monotonic_ns": 4114617308890
+    },
+    {
+      "operation": "load_summary",
+      "table": "t",
+      "dimension": 32,
+      "rows": 4096,
+      "data_sha256": "b8810fa5403c31b96ae3d8f8bfb091202949838ccda03bda36fa99bd5a6ab700",
+      "batch_rows": 100,
+      "first": [
+        [
+          0,
+          "[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]"
+        ]
+      ]
+    },
+    {
+      "request": "{\"id\":43,\"op\":\"execute\",\"sql\":\"CREATE VECTOR INDEX ix ON t(v);\"}",
+      "response": "{\"id\":43,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4114839378059,
+      "received_monotonic_ns": 4114844131336
+    },
+    {
+      "request": "{\"id\":44,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[96.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":44,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[768,0.03125],[769,0.09375],[767,0.15625],[770,0.21875],[766,0.28125],[771,0.34375],[765,0.40625],[772,0.46875],[764,0.53125],[773,0.59375]]}",
+      "sent_monotonic_ns": 4114844334808,
+      "received_monotonic_ns": 4114847249098
+    },
+    {
+      "request": "{\"id\":45,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[96.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":45,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[768,0.03125],[769,0.09375],[767,0.15625],[770,0.21875],[766,0.28125],[771,0.34375],[765,0.40625],[772,0.46875],[764,0.53125],[773,0.59375]]}",
+      "sent_monotonic_ns": 4114847371289,
+      "received_monotonic_ns": 4114847705474
+    },
+    {
+      "request": "{\"id\":46,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[192.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":46,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[1536,0.03125],[1537,0.09375],[1535,0.15625],[1538,0.21875],[1534,0.28125],[1539,0.34375],[1533,0.40625],[1540,0.46875],[1532,0.53125],[1541,0.59375]]}",
+      "sent_monotonic_ns": 4114847860860,
+      "received_monotonic_ns": 4114848266448
+    },
+    {
+      "request": "{\"id\":47,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[192.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":47,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[1536,0.03125],[1537,0.09375],[1535,0.15625],[1538,0.21875],[1534,0.28125],[1539,0.34375],[1533,0.40625],[1540,0.46875],[1532,0.53125],[1541,0.59375]]}",
+      "sent_monotonic_ns": 4114848382474,
+      "received_monotonic_ns": 4114848560811
+    },
+    {
+      "request": "{\"id\":48,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[256.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":48,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[2048,0.03125],[2049,0.09375],[2047,0.15625],[2050,0.21875],[2046,0.28125],[2051,0.34375],[2045,0.40625],[2052,0.46875],[2044,0.53125],[2053,0.59375]]}",
+      "sent_monotonic_ns": 4114848672069,
+      "received_monotonic_ns": 4114848992299
+    },
+    {
+      "request": "{\"id\":49,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[256.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":49,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[2048,0.03125],[2049,0.09375],[2047,0.15625],[2050,0.21875],[2046,0.28125],[2051,0.34375],[2045,0.40625],[2052,0.46875],[2044,0.53125],[2053,0.59375]]}",
+      "sent_monotonic_ns": 4114849053179,
+      "received_monotonic_ns": 4114849175779
+    },
+    {
+      "request": "{\"id\":50,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[320.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":50,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[2560,0.03125],[2561,0.09375],[2559,0.15625],[2562,0.21875],[2558,0.28125],[2563,0.34375],[2557,0.40625],[2564,0.46875],[2556,0.53125],[2565,0.59375]]}",
+      "sent_monotonic_ns": 4114849250314,
+      "received_monotonic_ns": 4114849731115
+    },
+    {
+      "request": "{\"id\":51,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[320.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":51,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[2560,0.03125],[2561,0.09375],[2559,0.15625],[2562,0.21875],[2558,0.28125],[2563,0.34375],[2557,0.40625],[2564,0.46875],[2556,0.53125],[2565,0.59375]]}",
+      "sent_monotonic_ns": 4114849834325,
+      "received_monotonic_ns": 4114849999482
+    },
+    {
+      "request": "{\"id\":52,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[384.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":52,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3072,0.03125],[3073,0.09375],[3071,0.15625],[3074,0.21875],[3070,0.28125],[3075,0.34375],[3069,0.40625],[3076,0.46875],[3068,0.53125],[3077,0.59375]]}",
+      "sent_monotonic_ns": 4114850130077,
+      "received_monotonic_ns": 4114850504331
+    },
+    {
+      "request": "{\"id\":53,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[384.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":53,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3072,0.03125],[3073,0.09375],[3071,0.15625],[3074,0.21875],[3070,0.28125],[3075,0.34375],[3069,0.40625],[3076,0.46875],[3068,0.53125],[3077,0.59375]]}",
+      "sent_monotonic_ns": 4114850597879,
+      "received_monotonic_ns": 4114850760367
+    },
+    {
+      "operation": "start",
+      "name": "spread_first-timings",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, v VECTOR(32));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4114866601618,
+      "received_monotonic_ns": 4114870084093
+    },
+    {
+      "operation": "load_summary",
+      "table": "t",
+      "dimension": 32,
+      "rows": 4096,
+      "data_sha256": "b8810fa5403c31b96ae3d8f8bfb091202949838ccda03bda36fa99bd5a6ab700",
+      "batch_rows": 100,
+      "first": [
+        [
+          0,
+          "[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]"
+        ]
+      ]
+    },
+    {
+      "request": "{\"id\":43,\"op\":\"execute\",\"sql\":\"CREATE VECTOR INDEX ix ON t(v);\"}",
+      "response": "{\"id\":43,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4115082235547,
+      "received_monotonic_ns": 4115086102516
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "ann",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "exact",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "ann",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "ann",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "exact",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "exact",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "ann",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "start",
+      "name": "constant_first-diag",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, v VECTOR(32));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4115174064011,
+      "received_monotonic_ns": 4115178109439
+    },
+    {
+      "operation": "load_summary",
+      "table": "t",
+      "dimension": 32,
+      "rows": 4096,
+      "data_sha256": "882db674d989a86f3789b6fd6341b3094125f79f9562d24c4cd052f425384641",
+      "batch_rows": 100,
+      "first": [
+        [
+          0,
+          "[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]"
+        ]
+      ]
+    },
+    {
+      "request": "{\"id\":43,\"op\":\"execute\",\"sql\":\"CREATE VECTOR INDEX ix ON t(v);\"}",
+      "response": "{\"id\":43,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4115408580784,
+      "received_monotonic_ns": 4115412777455
+    },
+    {
+      "request": "{\"id\":44,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,96.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":44,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[768,0.03125],[769,0.09375],[767,0.15625],[770,0.21875],[766,0.28125],[771,0.34375],[765,0.40625],[772,0.46875],[764,0.53125],[773,0.59375]]}",
+      "sent_monotonic_ns": 4115412893911,
+      "received_monotonic_ns": 4115415606312
+    },
+    {
+      "request": "{\"id\":45,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,96.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":45,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[768,0.03125],[769,0.09375],[767,0.15625],[770,0.21875],[766,0.28125],[771,0.34375],[765,0.40625],[772,0.46875],[764,0.53125],[773,0.59375]]}",
+      "sent_monotonic_ns": 4115415719604,
+      "received_monotonic_ns": 4115416066355
+    },
+    {
+      "request": "{\"id\":46,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,192.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":46,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[1536,0.03125],[1537,0.09375],[1535,0.15625],[1538,0.21875],[1534,0.28125],[1539,0.34375],[1533,0.40625],[1540,0.46875],[1532,0.53125],[1541,0.59375]]}",
+      "sent_monotonic_ns": 4115416202007,
+      "received_monotonic_ns": 4115416601782
+    },
+    {
+      "request": "{\"id\":47,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,192.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":47,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[1536,0.03125],[1537,0.09375],[1535,0.15625],[1538,0.21875],[1534,0.28125],[1539,0.34375],[1533,0.40625],[1540,0.46875],[1532,0.53125],[1541,0.59375]]}",
+      "sent_monotonic_ns": 4115416702421,
+      "received_monotonic_ns": 4115417280593
+    },
+    {
+      "request": "{\"id\":48,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,256.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":48,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[2048,0.03125],[2049,0.09375],[2047,0.15625],[2050,0.21875],[2046,0.28125],[2051,0.34375],[2045,0.40625],[2052,0.46875],[2044,0.53125],[2053,0.59375]]}",
+      "sent_monotonic_ns": 4115417416482,
+      "received_monotonic_ns": 4115417840632
+    },
+    {
+      "request": "{\"id\":49,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,256.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":49,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[2048,0.03125],[2049,0.09375],[2047,0.15625],[2050,0.21875],[2046,0.28125],[2051,0.34375],[2045,0.40625],[2052,0.46875],[2044,0.53125],[2053,0.59375]]}",
+      "sent_monotonic_ns": 4115417931306,
+      "received_monotonic_ns": 4115418370068
+    },
+    {
+      "request": "{\"id\":50,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,320.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":50,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[2560,0.03125],[2561,0.09375],[2559,0.15625],[2562,0.21875],[2558,0.28125],[2563,0.34375],[2557,0.40625],[2564,0.46875],[2556,0.53125],[2565,0.59375]]}",
+      "sent_monotonic_ns": 4115418500103,
+      "received_monotonic_ns": 4115418977064
+    },
+    {
+      "request": "{\"id\":51,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,320.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":51,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[2560,0.03125],[2561,0.09375],[2559,0.15625],[2562,0.21875],[2558,0.28125],[2563,0.34375],[2557,0.40625],[2564,0.46875],[2556,0.53125],[2565,0.59375]]}",
+      "sent_monotonic_ns": 4115419077660,
+      "received_monotonic_ns": 4115419554995
+    },
+    {
+      "request": "{\"id\":52,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,384.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":52,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3072,0.03125],[3073,0.09375],[3071,0.15625],[3074,0.21875],[3070,0.28125],[3075,0.34375],[3069,0.40625],[3076,0.46875],[3068,0.53125],[3077,0.59375]]}",
+      "sent_monotonic_ns": 4115419678800,
+      "received_monotonic_ns": 4115420041252
+    },
+    {
+      "request": "{\"id\":53,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,384.03125,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":53,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3072,0.03125],[3073,0.09375],[3071,0.15625],[3074,0.21875],[3070,0.28125],[3075,0.34375],[3069,0.40625],[3076,0.46875],[3068,0.53125],[3077,0.59375]]}",
+      "sent_monotonic_ns": 4115420139071,
+      "received_monotonic_ns": 4115420537774
+    },
+    {
+      "operation": "start",
+      "name": "constant_first-timings",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, v VECTOR(32));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4115435763015,
+      "received_monotonic_ns": 4115439781737
+    },
+    {
+      "operation": "load_summary",
+      "table": "t",
+      "dimension": 32,
+      "rows": 4096,
+      "data_sha256": "882db674d989a86f3789b6fd6341b3094125f79f9562d24c4cd052f425384641",
+      "batch_rows": 100,
+      "first": [
+        [
+          0,
+          "[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]"
+        ]
+      ]
+    },
+    {
+      "request": "{\"id\":43,\"op\":\"execute\",\"sql\":\"CREATE VECTOR INDEX ix ON t(v);\"}",
+      "response": "{\"id\":43,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4115657717807,
+      "received_monotonic_ns": 4115661735677
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "ann",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "exact",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "ann",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "ann",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "exact",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "exact",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    },
+    {
+      "operation": "validated_searches",
+      "mode": "ann",
+      "table": "t",
+      "queries": 5,
+      "response_sha256": "bbb644bc3a24af0957b63631cc85d2e58a5b085e981d7647064e80e4262c1e7f",
+      "first_response": [
+        [
+          768,
+          0.03125
+        ],
+        [
+          769,
+          0.09375
+        ],
+        [
+          767,
+          0.15625
+        ],
+        [
+          770,
+          0.21875
+        ],
+        [
+          766,
+          0.28125
+        ],
+        [
+          771,
+          0.34375
+        ],
+        [
+          765,
+          0.40625
+        ],
+        [
+          772,
+          0.46875
+        ],
+        [
+          764,
+          0.53125
+        ],
+        [
+          773,
+          0.59375
+        ]
+      ]
+    }
+  ]
+}

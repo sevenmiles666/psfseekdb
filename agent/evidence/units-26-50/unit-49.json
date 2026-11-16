@@ -1,0 +1,106 @@
+{
+  "unit": 49,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "ddl_replies": [
+      {
+        "id": 3,
+        "ok": true,
+        "affected_rows": 0
+      },
+      {
+        "id": 6,
+        "ok": true,
+        "affected_rows": 0
+      }
+    ],
+    "ann_both_tables_recovered": [
+      [
+        [
+          13,
+          1
+        ]
+      ],
+      [
+        [
+          31,
+          1
+        ]
+      ]
+    ]
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "index-name",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE a (id BIGINT PRIMARY KEY, v VECTOR(2));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976972042322,
+      "received_monotonic_ns": 3976976217318
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO a VALUES (13,[1,0]),(14,[2,0]);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":2}",
+      "sent_monotonic_ns": 3976976261081,
+      "received_monotonic_ns": 3976980541605
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"CREATE VECTOR INDEX same_name ON a(v);\"}",
+      "response": "{\"id\":3,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976980597902,
+      "received_monotonic_ns": 3976984489794
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"CREATE TABLE b (id BIGINT PRIMARY KEY, v VECTOR(2));\"}",
+      "response": "{\"id\":4,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976984532220,
+      "received_monotonic_ns": 3976988384865
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"INSERT INTO b VALUES (31,[1,0]),(32,[2,0]);\"}",
+      "response": "{\"id\":5,\"ok\":true,\"affected_rows\":2}",
+      "sent_monotonic_ns": 3976988422710,
+      "received_monotonic_ns": 3976992059002
+    },
+    {
+      "request": "{\"id\":6,\"op\":\"execute\",\"sql\":\"CREATE VECTOR INDEX same_name ON b(v);\"}",
+      "response": "{\"id\":6,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976992093613,
+      "received_monotonic_ns": 3976996545940
+    },
+    {
+      "request": "{\"id\":7,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM a ORDER BY d LIMIT 1;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":7,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[13,1]]}",
+      "sent_monotonic_ns": 3976996607950,
+      "received_monotonic_ns": 3976997309286
+    },
+    {
+      "request": "{\"id\":8,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM b ORDER BY d LIMIT 1;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":8,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[31,1]]}",
+      "sent_monotonic_ns": 3976997353306,
+      "received_monotonic_ns": 3976997502777
+    },
+    {
+      "operation": "start",
+      "name": "index-name",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM a ORDER BY d LIMIT 1;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":1,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[13,1]]}",
+      "sent_monotonic_ns": 3977007519710,
+      "received_monotonic_ns": 3977007906411
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM b ORDER BY d LIMIT 1;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":2,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[31,1]]}",
+      "sent_monotonic_ns": 3977007939157,
+      "received_monotonic_ns": 3977008041428
+    }
+  ]
+}

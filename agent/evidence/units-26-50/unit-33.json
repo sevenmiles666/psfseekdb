@@ -1,0 +1,88 @@
+{
+  "unit": 33,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "changed_same_and_no_match_counts": [
+      1,
+      1,
+      0
+    ],
+    "rows_after_each": [
+      [
+        [
+          1,
+          20
+        ]
+      ],
+      [
+        [
+          1,
+          20
+        ]
+      ],
+      [
+        [
+          1,
+          20
+        ]
+      ]
+    ]
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "affected",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, points BIGINT);\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976684720553,
+      "received_monotonic_ns": 3976689515517
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (1,10);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976689562955,
+      "received_monotonic_ns": 3976694749612
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"UPDATE t SET points=20 WHERE id=1;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976694796597,
+      "received_monotonic_ns": 3976698838679
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"SELECT id,points FROM t;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"columns\":[\"id\",\"points\"],\"rows\":[[1,20]]}",
+      "sent_monotonic_ns": 3976698875747,
+      "received_monotonic_ns": 3976699002269
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"UPDATE t SET points=20 WHERE id=1;\"}",
+      "response": "{\"id\":5,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976699023956,
+      "received_monotonic_ns": 3976703279851
+    },
+    {
+      "request": "{\"id\":6,\"op\":\"execute\",\"sql\":\"SELECT id,points FROM t;\"}",
+      "response": "{\"id\":6,\"ok\":true,\"columns\":[\"id\",\"points\"],\"rows\":[[1,20]]}",
+      "sent_monotonic_ns": 3976703317857,
+      "received_monotonic_ns": 3976703453798
+    },
+    {
+      "request": "{\"id\":7,\"op\":\"execute\",\"sql\":\"UPDATE t SET points=20 WHERE id=8;\"}",
+      "response": "{\"id\":7,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976703477037,
+      "received_monotonic_ns": 3976703590228
+    },
+    {
+      "request": "{\"id\":8,\"op\":\"execute\",\"sql\":\"SELECT id,points FROM t;\"}",
+      "response": "{\"id\":8,\"ok\":true,\"columns\":[\"id\",\"points\"],\"rows\":[[1,20]]}",
+      "sent_monotonic_ns": 3976703617369,
+      "received_monotonic_ns": 3976703730965
+    }
+  ]
+}

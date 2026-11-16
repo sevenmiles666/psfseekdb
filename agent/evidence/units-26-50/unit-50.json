@@ -1,0 +1,136 @@
+{
+  "unit": 50,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "one_key": [
+      [
+        3,
+        9,
+        "a"
+      ],
+      [
+        4,
+        9,
+        "a"
+      ],
+      [
+        5,
+        9,
+        "c"
+      ],
+      [
+        8,
+        9,
+        "b"
+      ],
+      [
+        6,
+        8,
+        "a"
+      ],
+      [
+        7,
+        8,
+        "z"
+      ],
+      [
+        1,
+        7,
+        "v"
+      ]
+    ],
+    "mixed_keys": [
+      [
+        3,
+        9,
+        "a"
+      ],
+      [
+        4,
+        9,
+        "a"
+      ],
+      [
+        8,
+        9,
+        "b"
+      ],
+      [
+        5,
+        9,
+        "c"
+      ],
+      [
+        6,
+        8,
+        "a"
+      ],
+      [
+        7,
+        8,
+        "z"
+      ],
+      [
+        1,
+        7,
+        "v"
+      ]
+    ],
+    "mixed_limit_three": [
+      [
+        3,
+        9,
+        "a"
+      ],
+      [
+        4,
+        9,
+        "a"
+      ],
+      [
+        8,
+        9,
+        "b"
+      ]
+    ]
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "mixed-sort",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, points BIGINT, tag VARCHAR(4));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3977029529202,
+      "received_monotonic_ns": 3977033693682
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (8,9,'b'),(4,9,'a'),(3,9,'a'),(7,8,'z'),(5,9,'c'),(6,8,'a'),(1,7,'v')\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":7}",
+      "sent_monotonic_ns": 3977033753903,
+      "received_monotonic_ns": 3977037975116
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"SELECT id,points,tag FROM t ORDER BY points DESC;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"columns\":[\"id\",\"points\",\"tag\"],\"rows\":[[3,9,\"a\"],[4,9,\"a\"],[5,9,\"c\"],[8,9,\"b\"],[6,8,\"a\"],[7,8,\"z\"],[1,7,\"v\"]]}",
+      "sent_monotonic_ns": 3977038027921,
+      "received_monotonic_ns": 3977038194756
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"SELECT id,points,tag FROM t ORDER BY points DESC, tag ASC;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"columns\":[\"id\",\"points\",\"tag\"],\"rows\":[[3,9,\"a\"],[4,9,\"a\"],[8,9,\"b\"],[5,9,\"c\"],[6,8,\"a\"],[7,8,\"z\"],[1,7,\"v\"]]}",
+      "sent_monotonic_ns": 3977038224031,
+      "received_monotonic_ns": 3977038346597
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"SELECT id,points,tag FROM t ORDER BY points DESC, tag ASC LIMIT 3;\"}",
+      "response": "{\"id\":5,\"ok\":true,\"columns\":[\"id\",\"points\",\"tag\"],\"rows\":[[3,9,\"a\"],[4,9,\"a\"],[8,9,\"b\"]]}",
+      "sent_monotonic_ns": 3977038371561,
+      "received_monotonic_ns": 3977038488123
+    }
+  ]
+}

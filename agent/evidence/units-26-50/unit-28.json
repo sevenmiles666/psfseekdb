@@ -1,0 +1,77 @@
+{
+  "unit": 28,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "before_bytes": 112,
+    "after_direct_bytes": 112,
+    "after_transaction_bytes": 112,
+    "sha256": "45369068b70f9a02d2c7e722638c031a54c42f75595dd309b5b194b1303939cf",
+    "identical_reads": [
+      [
+        1,
+        "yes"
+      ],
+      [
+        2,
+        "no"
+      ]
+    ]
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "readonly",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, label VARCHAR(10));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976458970919,
+      "received_monotonic_ns": 3976463063836
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (1,'yes'),(2,'no');\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":2}",
+      "sent_monotonic_ns": 3976463104440,
+      "received_monotonic_ns": 3976466915760
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"SELECT id,label FROM t ORDER BY id;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"columns\":[\"id\",\"label\"],\"rows\":[[1,\"yes\"],[2,\"no\"]]}",
+      "sent_monotonic_ns": 3976467044061,
+      "received_monotonic_ns": 3976467205384
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"SELECT id,label FROM t ORDER BY id;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"columns\":[\"id\",\"label\"],\"rows\":[[1,\"yes\"],[2,\"no\"]]}",
+      "sent_monotonic_ns": 3976467229399,
+      "received_monotonic_ns": 3976467349932
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"BEGIN;\"}",
+      "response": "{\"id\":5,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976467412643,
+      "received_monotonic_ns": 3976467514273
+    },
+    {
+      "request": "{\"id\":6,\"op\":\"execute\",\"sql\":\"SELECT id,label FROM t ORDER BY id;\"}",
+      "response": "{\"id\":6,\"ok\":true,\"columns\":[\"id\",\"label\"],\"rows\":[[1,\"yes\"],[2,\"no\"]]}",
+      "sent_monotonic_ns": 3976467534257,
+      "received_monotonic_ns": 3976467651017
+    },
+    {
+      "request": "{\"id\":7,\"op\":\"execute\",\"sql\":\"SELECT id,label FROM t ORDER BY id;\"}",
+      "response": "{\"id\":7,\"ok\":true,\"columns\":[\"id\",\"label\"],\"rows\":[[1,\"yes\"],[2,\"no\"]]}",
+      "sent_monotonic_ns": 3976467678266,
+      "received_monotonic_ns": 3976467793487
+    },
+    {
+      "request": "{\"id\":8,\"op\":\"execute\",\"sql\":\"COMMIT;\"}",
+      "response": "{\"id\":8,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976467813935,
+      "received_monotonic_ns": 3976467932453
+    }
+  ]
+}

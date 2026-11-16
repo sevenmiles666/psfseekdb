@@ -1,0 +1,347 @@
+{
+  "unit": 45,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "baseline_commit": "953baf72b8218a90f8245b0ae7d47841e63358c8",
+    "candidate_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+    "input_sha256": "f0e117a72f087071507e2b5ef2497b2897bda1d7b4333f84fe761fbaddcfdeea",
+    "seed": 20261116,
+    "distribution": "continuous",
+    "rows": 10000,
+    "dimension": 128,
+    "queries": 1000,
+    "k": 10,
+    "warmup": 8,
+    "container_cpus": 2,
+    "container_memory_limit_bytes": 67108864,
+    "image_ids": {
+      "baseline": "sha256:b6e2802343ec785348e0ee11ec27263b10c41f664deffd86cfdb605e32c3f0c5",
+      "candidate": "sha256:30afd7abad623192746079b56861f61996b4243bc92f903bb223f4dfb77462d1"
+    },
+    "median_seconds": {
+      "native": {
+        "baseline": 0.237160922,
+        "candidate": 0.224542952
+      },
+      "docker": {
+        "baseline": 1.0354192830000102,
+        "candidate": 0.9399948399995992
+      }
+    },
+    "rounds": {
+      "native": [
+        {
+          "baseline": {
+            "seconds": 0.241879457,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "response_sha256": "39f3f55d1d97e0960c16d52f290e6b893607db817140cddc99595e1643bd7432"
+          },
+          "candidate": {
+            "seconds": 0.250678247,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "response_sha256": "39f3f55d1d97e0960c16d52f290e6b893607db817140cddc99595e1643bd7432"
+          }
+        },
+        {
+          "candidate": {
+            "seconds": 0.194540917,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "response_sha256": "39f3f55d1d97e0960c16d52f290e6b893607db817140cddc99595e1643bd7432"
+          },
+          "baseline": {
+            "seconds": 0.218295497,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "response_sha256": "39f3f55d1d97e0960c16d52f290e6b893607db817140cddc99595e1643bd7432"
+          }
+        },
+        {
+          "baseline": {
+            "seconds": 0.237160922,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "response_sha256": "39f3f55d1d97e0960c16d52f290e6b893607db817140cddc99595e1643bd7432"
+          },
+          "candidate": {
+            "seconds": 0.224542952,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "response_sha256": "39f3f55d1d97e0960c16d52f290e6b893607db817140cddc99595e1643bd7432"
+          }
+        }
+      ],
+      "docker": [
+        {
+          "baseline": {
+            "seconds": 0.9800802220006517,
+            "index_and_warmup_seconds": 0.02957059999971534,
+            "valid_unique_ids_filters_distances_passed": true,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "data_device": "8:64",
+            "io_stat": {
+              "8:64": {
+                "rbytes": 3375104,
+                "wbytes": 4927488,
+                "rios": 5,
+                "wios": 176,
+                "dbytes": 0,
+                "dios": 0
+              }
+            },
+            "io_bytes": 8302592,
+            "memory_peak_bytes": 18599936,
+            "memory_limit_bytes": 67108864,
+            "swap_limit_bytes": 0,
+            "data_file_bytes": 4642054
+          },
+          "candidate": {
+            "seconds": 0.9399948399995992,
+            "index_and_warmup_seconds": 0.028214477000801708,
+            "valid_unique_ids_filters_distances_passed": true,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "data_device": "8:64",
+            "io_stat": {
+              "8:64": {
+                "rbytes": 0,
+                "wbytes": 4927488,
+                "rios": 0,
+                "wios": 176,
+                "dbytes": 0,
+                "dios": 0
+              }
+            },
+            "io_bytes": 4927488,
+            "memory_peak_bytes": 14184448,
+            "memory_limit_bytes": 67108864,
+            "swap_limit_bytes": 0,
+            "data_file_bytes": 4642054
+          }
+        },
+        {
+          "candidate": {
+            "seconds": 0.90302768499987,
+            "index_and_warmup_seconds": 0.027296799000396277,
+            "valid_unique_ids_filters_distances_passed": true,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "data_device": "8:64",
+            "io_stat": {
+              "8:64": {
+                "rbytes": 0,
+                "wbytes": 4927488,
+                "rios": 0,
+                "wios": 176,
+                "dbytes": 0,
+                "dios": 0
+              }
+            },
+            "io_bytes": 4927488,
+            "memory_peak_bytes": 13893632,
+            "memory_limit_bytes": 67108864,
+            "swap_limit_bytes": 0,
+            "data_file_bytes": 4642054
+          },
+          "baseline": {
+            "seconds": 1.3459109180002997,
+            "index_and_warmup_seconds": 0.03385202300069068,
+            "valid_unique_ids_filters_distances_passed": true,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "data_device": "8:64",
+            "io_stat": {
+              "8:64": {
+                "rbytes": 0,
+                "wbytes": 4927488,
+                "rios": 0,
+                "wios": 176,
+                "dbytes": 0,
+                "dios": 0
+              }
+            },
+            "io_bytes": 4927488,
+            "memory_peak_bytes": 14929920,
+            "memory_limit_bytes": 67108864,
+            "swap_limit_bytes": 0,
+            "data_file_bytes": 4642054
+          }
+        },
+        {
+          "baseline": {
+            "seconds": 1.0354192830000102,
+            "index_and_warmup_seconds": 0.029026406000411953,
+            "valid_unique_ids_filters_distances_passed": true,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "data_device": "8:64",
+            "io_stat": {
+              "8:64": {
+                "rbytes": 0,
+                "wbytes": 4927488,
+                "rios": 0,
+                "wios": 176,
+                "dbytes": 0,
+                "dios": 0
+              }
+            },
+            "io_bytes": 4927488,
+            "memory_peak_bytes": 14671872,
+            "memory_limit_bytes": 67108864,
+            "swap_limit_bytes": 0,
+            "data_file_bytes": 4642054
+          },
+          "candidate": {
+            "seconds": 0.9689355239997894,
+            "index_and_warmup_seconds": 0.02902655500020046,
+            "valid_unique_ids_filters_distances_passed": true,
+            "recall": {
+              "filtered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              },
+              "unfiltered": {
+                "count": 500,
+                "mean_recall_at_10": 1.0,
+                "minimum_recall_at_10": 1.0
+              }
+            },
+            "data_device": "8:64",
+            "io_stat": {
+              "8:64": {
+                "rbytes": 0,
+                "wbytes": 4927488,
+                "rios": 0,
+                "wios": 176,
+                "dbytes": 0,
+                "dios": 0
+              }
+            },
+            "io_bytes": 4927488,
+            "memory_peak_bytes": 14503936,
+            "memory_limit_bytes": 67108864,
+            "swap_limit_bytes": 0,
+            "data_file_bytes": 4642054
+          }
+        }
+      ]
+    }
+  },
+  "trace": []
+}

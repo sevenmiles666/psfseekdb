@@ -1,0 +1,101 @@
+{
+  "unit": 26,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "rolled_back": {
+      "code": "UNKNOWN_TABLE",
+      "message": "unknown table cancelled"
+    },
+    "committed_rows_after_restart": [
+      [
+        7
+      ]
+    ]
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "ddl",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"BEGIN;\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976367057145,
+      "received_monotonic_ns": 3976367212414
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"CREATE TABLE cancelled (id BIGINT PRIMARY KEY);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976367245084,
+      "received_monotonic_ns": 3976367401713
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"SELECT id FROM cancelled;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"columns\":[\"id\"],\"rows\":[]}",
+      "sent_monotonic_ns": 3976367438070,
+      "received_monotonic_ns": 3976367577989
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"ROLLBACK;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976367605626,
+      "received_monotonic_ns": 3976367765811
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"SELECT id FROM cancelled;\"}",
+      "response": "{\"id\":5,\"ok\":false,\"error\":{\"code\":\"UNKNOWN_TABLE\",\"message\":\"unknown table cancelled\"}}",
+      "sent_monotonic_ns": 3976367793200,
+      "received_monotonic_ns": 3976367951443
+    },
+    {
+      "request": "{\"id\":6,\"op\":\"execute\",\"sql\":\"BEGIN;\"}",
+      "response": "{\"id\":6,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976367981980,
+      "received_monotonic_ns": 3976368099211
+    },
+    {
+      "request": "{\"id\":7,\"op\":\"execute\",\"sql\":\"CREATE TABLE saved (id BIGINT PRIMARY KEY);\"}",
+      "response": "{\"id\":7,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976368125339,
+      "received_monotonic_ns": 3976368247431
+    },
+    {
+      "request": "{\"id\":8,\"op\":\"execute\",\"sql\":\"INSERT INTO saved VALUES (7);\"}",
+      "response": "{\"id\":8,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976368269042,
+      "received_monotonic_ns": 3976368593658
+    },
+    {
+      "request": "{\"id\":9,\"op\":\"execute\",\"sql\":\"SELECT id FROM saved;\"}",
+      "response": "{\"id\":9,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[7]]}",
+      "sent_monotonic_ns": 3976368626803,
+      "received_monotonic_ns": 3976368780239
+    },
+    {
+      "request": "{\"id\":10,\"op\":\"execute\",\"sql\":\"COMMIT;\"}",
+      "response": "{\"id\":10,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976368810516,
+      "received_monotonic_ns": 3976372897452
+    },
+    {
+      "operation": "start",
+      "name": "ddl",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"SELECT id FROM cancelled;\"}",
+      "response": "{\"id\":1,\"ok\":false,\"error\":{\"code\":\"UNKNOWN_TABLE\",\"message\":\"unknown table cancelled\"}}",
+      "sent_monotonic_ns": 3976384370926,
+      "received_monotonic_ns": 3976384713661
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"SELECT id FROM saved;\"}",
+      "response": "{\"id\":2,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[7]]}",
+      "sent_monotonic_ns": 3976384746482,
+      "received_monotonic_ns": 3976384868516
+    }
+  ]
+}

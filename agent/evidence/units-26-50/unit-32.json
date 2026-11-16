@@ -1,0 +1,76 @@
+{
+  "unit": 32,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "plain": {
+      "id": 3,
+      "ok": true,
+      "columns": [
+        "id"
+      ],
+      "rows": []
+    },
+    "vector_limit_zero": {
+      "id": 4,
+      "ok": true,
+      "columns": [
+        "id",
+        "d"
+      ],
+      "rows": []
+    },
+    "vector_limit_one": {
+      "id": 5,
+      "ok": true,
+      "columns": [
+        "id",
+        "d"
+      ],
+      "rows": [
+        [
+          1,
+          1
+        ]
+      ]
+    }
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "limit",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, v VECTOR(2));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976651460209,
+      "received_monotonic_ns": 3976655622801
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (1,[1,0]),(2,[2,0]);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":2}",
+      "sent_monotonic_ns": 3976655675154,
+      "received_monotonic_ns": 3976660784839
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"SELECT id FROM t ORDER BY id LIMIT 0;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"columns\":[\"id\"],\"rows\":[]}",
+      "sent_monotonic_ns": 3976660841859,
+      "received_monotonic_ns": 3976661000566
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM t ORDER BY d LIMIT 0;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[]}",
+      "sent_monotonic_ns": 3976661038077,
+      "received_monotonic_ns": 3976661179592
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0,0]) AS d FROM t ORDER BY d LIMIT 1;\"}",
+      "response": "{\"id\":5,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[1,1]]}",
+      "sent_monotonic_ns": 3976661218676,
+      "received_monotonic_ns": 3976661720106
+    }
+  ]
+}
