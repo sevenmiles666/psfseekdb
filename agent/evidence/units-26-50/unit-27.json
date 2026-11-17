@@ -1,0 +1,93 @@
+{
+  "unit": 27,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "after_delete": [],
+    "reinserted": [
+      [
+        5,
+        "after",
+        42
+      ]
+    ],
+    "reopened": [
+      [
+        5,
+        "after",
+        42
+      ]
+    ],
+    "wal_kinds": [
+      1,
+      4,
+      2,
+      4,
+      3,
+      4,
+      2,
+      4
+    ]
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "reuse",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, title VARCHAR(30), points BIGINT);\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976407205141,
+      "received_monotonic_ns": 3976411123775
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (5,'before',9);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976411158289,
+      "received_monotonic_ns": 3976415560063
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"SELECT id, title, points FROM t ORDER BY id;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"columns\":[\"id\",\"title\",\"points\"],\"rows\":[[5,\"before\",9]]}",
+      "sent_monotonic_ns": 3976415619637,
+      "received_monotonic_ns": 3976415830246
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"DELETE FROM t WHERE id=5;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976415863078,
+      "received_monotonic_ns": 3976420007700
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"SELECT id, title, points FROM t ORDER BY id;\"}",
+      "response": "{\"id\":5,\"ok\":true,\"columns\":[\"id\",\"title\",\"points\"],\"rows\":[]}",
+      "sent_monotonic_ns": 3976420039940,
+      "received_monotonic_ns": 3976420160281
+    },
+    {
+      "request": "{\"id\":6,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (5,'after',42);\"}",
+      "response": "{\"id\":6,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976420190775,
+      "received_monotonic_ns": 3976423683024
+    },
+    {
+      "request": "{\"id\":7,\"op\":\"execute\",\"sql\":\"SELECT id, title, points FROM t ORDER BY id;\"}",
+      "response": "{\"id\":7,\"ok\":true,\"columns\":[\"id\",\"title\",\"points\"],\"rows\":[[5,\"after\",42]]}",
+      "sent_monotonic_ns": 3976423716600,
+      "received_monotonic_ns": 3976423844113
+    },
+    {
+      "operation": "start",
+      "name": "reuse",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"SELECT id, title, points FROM t ORDER BY id;\"}",
+      "response": "{\"id\":1,\"ok\":true,\"columns\":[\"id\",\"title\",\"points\"],\"rows\":[[5,\"after\",42]]}",
+      "sent_monotonic_ns": 3976436010732,
+      "received_monotonic_ns": 3976436193397
+    }
+  ]
+}

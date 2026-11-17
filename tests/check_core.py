@@ -70,10 +70,10 @@ class Server:
             raise AssertionError(f"no response, process status={self.process.poll()}\n{self.log.read()}")
         return output
 
-    def request(self, message, *, ensure_ascii=False):
+    def request(self, message, *, ensure_ascii=False, parse_int=int):
         self.process.stdin.write(json.dumps(message, ensure_ascii=ensure_ascii) + "\n")
         self.process.stdin.flush()
-        response = json.loads(self.line())
+        response = json.loads(self.line(), parse_int=parse_int)
         assert type(response["id"]) is type(message["id"]) and response["id"] == message["id"]
         assert type(response["ok"]) is bool
         return response
@@ -340,6 +340,8 @@ def check_topk_rounding(args, directory):
                 return [f32(rng.uniform(-1.0, 1.0) * scale) for _ in range(dimension)]
 
             data = [vector() for _ in range(size)]
+            if table == "grid":
+                data[0][0] = -0.0
             if table == "mixed":
                 data[size // 2][-1] = f32(0.1)
             if table == "blocks":
@@ -368,6 +370,9 @@ def check_topk_rounding(args, directory):
             if table == "blocks":
                 queries.append(("", lambda key: True, data[0]))
                 queries.append(("", lambda key: True, data[3]))
+                outside_codes = [f32(1.0625), *data[0][1:]]
+                queries.append(("", lambda key: True, outside_codes))
+                queries.append(("WHERE bucket=0", lambda key: key % 3 == 0, outside_codes))
             if table in ("grid", "mixed"):
                 data_query = [f32(value + 1e-4) for value in data[0]]
                 queries.append(("", lambda key: True, data[0]))
@@ -384,6 +389,15 @@ def check_topk_rounding(args, directory):
                 for (key, stored, distance), (exact, _) in zip(output, expected):
                     assert [f32(value) for value in stored] == data[key]
                     assert math.isclose(distance, exact, rel_tol=1e-12)
+            if table == "grid":
+                # Preserve the spelling of a negative zero emitted by the server.
+                sql = f"SELECT id,v FROM grid ORDER BY L2_DISTANCE(v,{json.dumps(data[0])}) LIMIT 1;"
+                db.process.stdin.write(json.dumps({"id": "signed-zero", "op": "execute", "sql": sql}) + "\n")
+                db.process.stdin.flush()
+                response = json.loads(db.line(), parse_int=lambda text: -0.0 if text == "-0" else int(text))
+                assert response["ok"] and response["id"] == "signed-zero"
+                assert len(response["rows"]) == 1 and response["rows"][0][0] == 0
+                assert math.copysign(1.0, response["rows"][0][1][0]) == -1.0
 
         db.ok("CREATE TABLE rounded (id BIGINT PRIMARY KEY, v VECTOR(2));")
         db.ok("INSERT INTO rounded VALUES (2,[1,0]),(1,[1,0.00000001490116119384765625]);", 2)
@@ -399,16 +413,18 @@ def check_topk_rounding(args, directory):
 def check_wal_vector_formats(args, directory, reference=None):
     schema = "CREATE TABLE storage (label VARCHAR(16), bucket BIGINT, v VECTOR(17), id BIGINT PRIMARY KEY);"
     half = [-0.0, 65504.0, 2**-14, *([0.125, -3.5] * 7)]
-    packed = [(-1)**i * (0.1 + i * 0.03125) for i in range(17)]
+    packed = [(-1)**i * (math.pi / 32 + i * 0.03125) for i in range(17)]
     full = [1e-39, 3e38, *([0.2] * 15)]
     scaled = [-0.0, -15.875, 0.125, *([0.75, -2.25] * 7)]
-    scaled_bits = [-0.0, 4.0, -3.875, *([0.75, -2.25] * 7)]
-    rows = [half, packed, full, scaled, scaled_bits]
+    scaled_bits = [-0.0, 4.0, -3.875, *([4.0, 3.875] * 7)]
+    scaled_range = [-0.0, 4.0, -3.875, *([0.75, -2.25] * 7)]
+    decimals = [-0.0, *[(-1)**i * (0.1327 + i * 0.0003) for i in range(16)]]
+    rows = [half, packed, full, scaled, scaled_bits, scaled_range, decimals]
     packed_bits = lambda values: struct.pack("<17f", *values)
     query = "SELECT v FROM storage ORDER BY id;"
 
     def insert(db, key):
-        bucket = {1: -9223372036854775808, 4: 2}.get(key, key % 2)
+        bucket = {1: -9223372036854775808, 4: 2, 6: 3}.get(key, key % 2)
         db.ok(f"INSERT INTO storage VALUES ('记录😀',{bucket},{json.dumps(rows[key])},{key});", 1)
 
     def check(db):
@@ -431,6 +447,8 @@ def check_wal_vector_formats(args, directory, reference=None):
         insert(db, 1)
         insert(db, 3)
         insert(db, 4)
+        insert(db, 5)
+        insert(db, 6)
         check(db)
         db.ok("BEGIN;")
         db.ok(f"UPDATE storage SET v={json.dumps(full)} WHERE id=1;", 1)
@@ -468,10 +486,166 @@ def check_wal_vector_formats(args, directory, reference=None):
             text_size = struct.unpack_from("<I", journal, frame + 3)[0]
             width, first_byte = journal[frame + 9 + text_size:frame + 11 + text_size]
             assert width == 7 and first_byte & 127 == 64
+        elif kind == 10:
+            text_size = struct.unpack_from("<I", journal, frame + 3)[0]
+            assert journal[frame + 11 + text_size] & 63 == 0
+        elif kind == 12:
+            text_size = struct.unpack_from("<I", journal, frame + 3)[0]
+            width = journal[frame + 8 + text_size] & 31
+            code = int.from_bytes(journal[frame + 9 + text_size:frame + 13 + text_size], "little")
+            assert code & ((1 << width) - 1) == 1 << (width - 1)
         offset += 8 + size
-    assert offset == len(journal) and {2, 6, 7, 8, 9} <= kinds
-    assert {6, 8, 9} <= compact_kinds and 7 not in compact_kinds
+    assert offset == len(journal) and {2, 6, 7, 8, 9, 10, 12} <= kinds
+    assert {6, 8, 9, 10, 12} <= compact_kinds and 7 not in compact_kinds
     print("Mixed vector and BIGINT WAL encodings survived round-trip, rollback and crash recovery", flush=True)
+
+
+def check_shared_exponent(args, directory):
+    width = 130
+    # Include a wide first coordinate, a short final group, escape exponents,
+    # signed zero and a subnormal. The many normal components keep it compact.
+    bits = [0xff7fffff]
+    for i in range(1, width - 2):
+        exponent = 40 if i % 23 == 0 else 127 - i % 3
+        bits.append(((i % 2) << 31) | (exponent << 23) | (i * 104729 & 0x7fffff))
+    bits.extend((0x80000000, 1))
+    packed = struct.pack(f"<{width}I", *bits)
+    vector = json.dumps(struct.unpack(f"<{width}f", packed))
+    zeros = json.dumps([0] * width)
+
+    with Server(args, directory) as db:
+        db.ok(f"CREATE TABLE vectors (id BIGINT PRIMARY KEY, v VECTOR({width}));")
+        db.ok(f"INSERT INTO vectors VALUES (1,{vector}),(2,{zeros});", 2)
+        db.ok("CREATE VECTOR INDEX idx ON vectors(v);")
+        db.stop(crash=True)
+
+    journal = (directory / "store.wal").read_bytes()
+    offset = 8
+    kinds = set()
+    while offset < len(journal):
+        size = struct.unpack_from("<I", journal, offset)[0]
+        kinds.add(journal[offset + 8] & 0x7f)
+        offset += 8 + size
+    assert offset == len(journal) and 13 in kinds
+
+    for mode in ("exact", "ann"):
+        with Server(args, directory, mode=mode) as db:
+            response = db.request(
+                {"id": "round-trip", "op": "execute", "sql": "SELECT v FROM vectors WHERE id=1;"},
+                parse_int=lambda text: -0.0 if text == "-0" else int(text),
+            )
+            assert response["ok"] and struct.pack(f"<{width}f", *response["rows"][0][0]) == packed
+            db.query(f"SELECT id FROM vectors ORDER BY L2_DISTANCE(v,{vector}) LIMIT 1;", [[1]])
+    print("Shared exponents preserved all FP32 bits and projection after SIGKILL", flush=True)
+
+
+def check_aligned_commits(args, directory):
+    vector = json.dumps([-4, 4, *([0] * 126)])
+    note = "v" * 70
+    with Server(args, directory) as db:
+        db.ok("CREATE TABLE ledger (id BIGINT PRIMARY KEY, note VARCHAR(80), v VECTOR(128));")
+        for start in (0, 100):
+            db.ok("BEGIN;")
+            db.ok("INSERT INTO ledger VALUES " + ",".join(
+                f"({key},'{note}',{vector})" for key in range(start, start + 100)), 100)
+            db.ok("COMMIT;")
+        db.stop(crash=True)
+
+    path = directory / "store.wal"
+    journal = path.read_bytes()
+    offset = 8
+    aligned = []
+    while offset < len(journal):
+        size, crc = struct.unpack_from("<II", journal, offset)
+        frame = journal[offset + 8:offset + 8 + size]
+        assert zlib.crc32(frame) == crc
+        offset += 8 + size
+        if frame[0] == 11:
+            assert offset % 4096 == 0 and frame[1:] == bytes(size - 1)
+            aligned.append(offset)
+    assert len(aligned) == 2 and aligned[-1] == len(journal)
+    query = "SELECT id FROM ledger ORDER BY id;"
+    with Server(args, directory) as db:
+        db.query(query, [[key] for key in range(200)])
+    path.write_bytes(journal[:-4])
+    with Server(args, directory) as db:
+        db.query(query, [[key] for key in range(100)])
+        assert path.stat().st_size == aligned[0]
+    print("Aligned commits survived SIGKILL and recovered to the previous complete commit after truncation",
+          flush=True)
+
+
+def check_mapped_vectors(args, directory):
+    rows, dimension = 2070, 128
+    rng = random.Random(20261115)
+
+    def packed(values):
+        return struct.pack(f"<{dimension}f", *values)
+
+    vectors = [struct.unpack(f"<{dimension}f", packed([rng.uniform(-1, 1) for _ in range(dimension)]))
+               for _ in range(rows)]
+    query_vector = json.dumps(vectors[1])
+    query = f"SELECT id,v,L2_DISTANCE(v,{query_vector}) AS d FROM mapped WHERE bucket=1 ORDER BY d LIMIT 1;"
+
+    def check(db, key):
+        actual, count, error = db.sql(query)
+        assert error is None and count == 1
+        assert actual[0][0] == key and actual[0][2] == 0
+        assert packed(actual[0][1]) == packed(vectors[1])
+
+    with Server(args, directory) as db:
+        db.ok("CREATE TABLE mapped (id BIGINT PRIMARY KEY, bucket BIGINT, v VECTOR(128));")
+        for start in range(0, rows, 100):
+            values = [f"({key},1,{json.dumps(vectors[key])})"
+                      for key in range(start, min(start + 100, rows))]
+            db.ok("INSERT INTO mapped VALUES " + ",".join(values), len(values))
+        db.ok("CREATE VECTOR INDEX positions ON mapped(v);")
+        db.ok("CREATE TABLE scratch (id BIGINT PRIMARY KEY);")
+        check(db, 1)
+        db.ok("BEGIN;")
+        db.ok("INSERT INTO scratch VALUES (1);", 1)
+        check(db, 1)
+        db.ok("ROLLBACK;")
+        check(db, 1)
+        db.ok("BEGIN;")
+        db.ok(f"UPDATE mapped SET v={query_vector} WHERE id=0;", 1)
+        check(db, 0)
+        db.ok("ROLLBACK;")
+        check(db, 1)
+        db.stop(crash=True)
+    with Server(args, directory) as db:
+        check(db, 1)
+    print("Mapped FP32 queries returned exact projected values across writes, rollback and restart", flush=True)
+
+
+def check_dense_topk_ties(args, directory):
+    rows = 2072
+    # Non-grid FP32 values use exact refinement. The sentinel fixes a wider
+    # quantization range so the queries exercise integer pruning as well.
+    vector = json.dumps([0.1327, -0.1331] * 64)
+    sentinel = json.dumps([1, 0] * 64)
+    with Server(args, directory) as db:
+        db.ok("CREATE TABLE dense (id BIGINT PRIMARY KEY, bucket BIGINT, v VECTOR(128));")
+        for start in range(0, rows, 100):
+            keys = range(start, min(start + 100, rows))
+            values = ",".join(f"({key},{key % 2},{vector})" for key in keys)
+            db.ok("INSERT INTO dense VALUES " + values + ";", len(keys))
+        db.ok(f"INSERT INTO dense VALUES ({rows},2,{sentinel});", 1)
+        db.ok("CREATE VECTOR INDEX dense_index ON dense(v);")
+        head = f"SELECT id,L2_DISTANCE(v,{vector}) AS d FROM dense"
+        db.query(head + " ORDER BY d LIMIT 1;", [[0, 0]])
+        for where, keys in (("", list(range(rows))),
+                            (" WHERE bucket=1", list(range(1, rows, 2)))):
+            for k in (10, 32):
+                db.query(head + where + f" ORDER BY d,id ASC LIMIT {k};", [[key, 0] for key in keys[:k]])
+                db.query(head + where + f" ORDER BY d,id DESC LIMIT {k};",
+                         [[key, 0] for key in reversed(keys[-k:])])
+        output, count, error = db.sql(head + " WHERE bucket=2 ORDER BY d LIMIT 10;")
+        a, b = struct.unpack("<2f", struct.pack("<2f", 0.1327, -0.1331))
+        assert error is None and count == 1 and output[0][0] == rows
+        assert math.isclose(output[0][1], math.sqrt(64 * ((1 - a)**2 + b**2)), rel_tol=1e-12)
+        db.query(head + " WHERE bucket=7 ORDER BY d LIMIT 10;", [])
+    print("Dense ties and small result sets passed exact TopK in both sort orders", flush=True)
 
 
 def check_index(args, directory):
@@ -580,6 +754,10 @@ def main():
         check_exact_oracle(args, root / "oracle")
         check_topk_rounding(args, root / "topk_rounding")
         check_wal_vector_formats(args, root / "wal_vector_formats", reference)
+        check_shared_exponent(args, root / "shared_exponent")
+        check_aligned_commits(args, root / "aligned_commits")
+        check_mapped_vectors(args, root / "mapped_vectors")
+        check_dense_topk_ties(args, root / "dense_topk_ties")
         check_index(args, root / "index")
         if args.large:
             check_disk_budget(args, root / "large")

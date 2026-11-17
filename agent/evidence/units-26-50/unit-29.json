@@ -1,0 +1,97 @@
+{
+  "unit": 29,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "concurrent_same_directory": {
+      "stdout": "",
+      "stderr": "minivectordb: lock journal: Resource temporarily unavailable\n",
+      "exit_code": 1
+    },
+    "separate_directory_exit_code": 0,
+    "a_rows": [
+      [
+        11
+      ]
+    ],
+    "b_rows": [
+      [
+        22
+      ]
+    ],
+    "filesystem": "ext4",
+    "transport": "WSL native"
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "a",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY);\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4471257096802,
+      "received_monotonic_ns": 4471261038478
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (11);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 4471261092031,
+      "received_monotonic_ns": 4471264910488
+    },
+    {
+      "operation": "start_competing_instance",
+      "stdout": "",
+      "stderr": "minivectordb: lock journal: Resource temporarily unavailable\n",
+      "exit_code": 1
+    },
+    {
+      "operation": "start",
+      "name": "b",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"SELECT id FROM t;\"}",
+      "response": "{\"id\":1,\"ok\":false,\"error\":{\"code\":\"UNKNOWN_TABLE\",\"message\":\"unknown table t\"}}",
+      "sent_monotonic_ns": 4471280081349,
+      "received_monotonic_ns": 4471280321050
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4471280357270,
+      "received_monotonic_ns": 4471284433803
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (22);\"}",
+      "response": "{\"id\":3,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 4471284491326,
+      "received_monotonic_ns": 4471288597182
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"SELECT id FROM t;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[22]]}",
+      "sent_monotonic_ns": 4471288657045,
+      "received_monotonic_ns": 4471288822474
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"SELECT id FROM t;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[11]]}",
+      "sent_monotonic_ns": 4471288852438,
+      "received_monotonic_ns": 4471289050052
+    },
+    {
+      "operation": "start",
+      "name": "a",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"SELECT id FROM t;\"}",
+      "response": "{\"id\":1,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[11]]}",
+      "sent_monotonic_ns": 4471302969044,
+      "received_monotonic_ns": 4471303179675
+    }
+  ]
+}

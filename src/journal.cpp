@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <limits>
 #include <sys/file.h>
+#include <sys/mman.h>
 #include <system_error>
 #include <unistd.h>
 
@@ -13,7 +14,6 @@ namespace {
 
 constexpr std::array<std::uint8_t, Journal::records_begin> magic{
     'M', 'V', 'D', 'B', 'L', 'O', 'G', '1'};
-constexpr std::uint64_t frame_header_size = 8;
 
 [[noreturn]] void io_failure(const char *description) {
   throw std::system_error(errno ? errno : EIO, std::generic_category(), description);
@@ -59,25 +59,55 @@ std::uint64_t file_position(std::FILE *file) {
 }
 
 std::uint32_t checksum(const Bytes &bytes) {
-  static const auto table = [] {
-    std::array<std::uint32_t, 256> values{};
-    for (std::uint32_t i = 0; i < values.size(); ++i) {
+  static constexpr auto table = [] {
+    std::array<std::array<std::uint32_t, 256>, 8> values{};
+    for (std::uint32_t i = 0; i < values.front().size(); ++i) {
       std::uint32_t value = i;
       for (int bit = 0; bit < 8; ++bit) {
         value = (value >> 1) ^ ((value & 1) != 0 ? 0xedb88320U : 0U);
       }
-      values[i] = value;
+      values[0][i] = value;
+    }
+    for (std::size_t slice = 1; slice < values.size(); ++slice) {
+      for (std::size_t i = 0; i < values.front().size(); ++i) {
+        const auto previous = values[slice - 1][i];
+        values[slice][i] = (previous >> 8) ^ values[0][previous & 0xff];
+      }
     }
     return values;
   }();
   std::uint32_t crc = 0xffffffffU;
-  for (const std::uint8_t value : bytes) {
-    crc = (crc >> 8) ^ table[(crc ^ value) & 0xff];
+  std::size_t i = 0;
+  for (; i + 8 <= bytes.size(); i += 8) {
+    // Each slice accounts for the bytes after its position in this group.
+    const auto word = crc ^ (std::uint32_t(bytes[i]) | (std::uint32_t(bytes[i + 1]) << 8) |
+        (std::uint32_t(bytes[i + 2]) << 16) | (std::uint32_t(bytes[i + 3]) << 24));
+    crc = table[7][word & 0xff] ^ table[6][(word >> 8) & 0xff] ^ table[5][(word >> 16) & 0xff] ^
+          table[4][word >> 24] ^ table[3][bytes[i + 4]] ^ table[2][bytes[i + 5]] ^
+          table[1][bytes[i + 6]] ^ table[0][bytes[i + 7]];
+  }
+  for (; i < bytes.size(); ++i) {
+    crc = (crc >> 8) ^ table[0][(crc ^ bytes[i]) & 0xff];
   }
   return crc ^ 0xffffffffU;
 }
 
 }  // namespace
+
+JournalView::JournalView(const void *address, std::size_t length)
+    : data_(static_cast<const std::uint8_t *>(address), Unmap{length}) {}
+
+void JournalView::Unmap::operator()(const std::uint8_t *address) const noexcept {
+  ::munmap(const_cast<std::uint8_t *>(address), length);
+}
+
+Reader JournalView::read(RecordRef record) const {
+  const auto length = data_.get_deleter().length;
+  if (record.offset > length || record.size > length - record.offset) {
+    throw std::runtime_error("read outside mapped journal bounds");
+  }
+  return Reader(data_.get() + record.offset, record.size);
+}
 
 Journal::Journal(const std::filesystem::path &directory, const char *filename) {
   std::filesystem::create_directories(directory);
@@ -197,6 +227,15 @@ void Journal::sync() {
   if (result != 0) {
     io_failure("sync journal");
   }
+}
+
+JournalView Journal::view() {
+  if (size_ == 0 || size_ > std::numeric_limits<std::size_t>::max()) return {};
+  if (access_ == Access::Write && std::fflush(stream_.get()) != 0) io_failure("flush journal for mapping");
+  const auto length = static_cast<std::size_t>(size_);
+  const auto *address = ::mmap(nullptr, length, PROT_READ, MAP_SHARED, ::fileno(stream_.get()), 0);
+  if (address == MAP_FAILED) return {};
+  return JournalView(address, length);
 }
 
 void Journal::replace_with(Journal &replacement, const std::filesystem::path &directory) {

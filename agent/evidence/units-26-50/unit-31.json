@@ -1,0 +1,99 @@
+{
+  "unit": 31,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "id_condition": [
+      [
+        3
+      ],
+      [
+        4
+      ],
+      [
+        5
+      ]
+    ],
+    "category_condition": [
+      [
+        1
+      ],
+      [
+        3
+      ],
+      [
+        5
+      ]
+    ],
+    "oracle_intersection": [
+      [
+        3
+      ],
+      [
+        5
+      ]
+    ],
+    "combined": [
+      [
+        [
+          3
+        ],
+        [
+          5
+        ]
+      ],
+      [
+        [
+          3
+        ],
+        [
+          5
+        ]
+      ]
+    ]
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "predicates",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, category VARCHAR(1));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976621803641,
+      "received_monotonic_ns": 3976626078374
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (1,'A'),(2,'B'),(3,'A'),(4,'B'),(5,'A');\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":5}",
+      "sent_monotonic_ns": 3976626123106,
+      "received_monotonic_ns": 3976630912952
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"SELECT id FROM t WHERE id>=3 ORDER BY id;\"}",
+      "response": "{\"id\":3,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[3],[4],[5]]}",
+      "sent_monotonic_ns": 3976630963548,
+      "received_monotonic_ns": 3976631148630
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"SELECT id FROM t WHERE category='A' ORDER BY id;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[1],[3],[5]]}",
+      "sent_monotonic_ns": 3976631181797,
+      "received_monotonic_ns": 3976631300245
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"SELECT id FROM t WHERE id>=3 AND category='A' ORDER BY id;\"}",
+      "response": "{\"id\":5,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[3],[5]]}",
+      "sent_monotonic_ns": 3976631334382,
+      "received_monotonic_ns": 3976631445512
+    },
+    {
+      "request": "{\"id\":6,\"op\":\"execute\",\"sql\":\"SELECT id FROM t WHERE category='A' AND id>=3 ORDER BY id;\"}",
+      "response": "{\"id\":6,\"ok\":true,\"columns\":[\"id\"],\"rows\":[[3],[5]]}",
+      "sent_monotonic_ns": 3976631467565,
+      "received_monotonic_ns": 3976631574728
+    }
+  ]
+}

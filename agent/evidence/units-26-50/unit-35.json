@@ -1,0 +1,56 @@
+{
+  "unit": 35,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "schema_order": [
+      "id",
+      "left_value",
+      "right_value"
+    ],
+    "rows": [
+      [
+        1,
+        11,
+        22
+      ],
+      [
+        2,
+        44,
+        33
+      ]
+    ]
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "named",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, left_value BIGINT, right_value BIGINT);\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976765478493,
+      "received_monotonic_ns": 3976769331636
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (1,11,22);\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976769377209,
+      "received_monotonic_ns": 3976773300996
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"INSERT INTO t (id,right_value,left_value) VALUES (2,33,44);\"}",
+      "response": "{\"id\":3,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976773328461,
+      "received_monotonic_ns": 3976777220577
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"SELECT id,left_value,right_value FROM t ORDER BY id;\"}",
+      "response": "{\"id\":4,\"ok\":true,\"columns\":[\"id\",\"left_value\",\"right_value\"],\"rows\":[[1,11,22],[2,44,33]]}",
+      "sent_monotonic_ns": 3976777251674,
+      "received_monotonic_ns": 3976777408290
+    }
+  ]
+}

@@ -1,0 +1,817 @@
+{
+  "unit": 40,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "projection_rebuild_stages": [
+      "first_ann",
+      "first_ann_after_change"
+    ],
+    "changed_id": 3000,
+    "diagnostic": {
+      "first_ann": {
+        "result": {
+          "id": 63,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              9,
+              2.125
+            ]
+          ]
+        },
+        "events": [
+          [
+            "request_mode",
+            "ann"
+          ],
+          [
+            "cache_build",
+            "0",
+            "120066"
+          ],
+          [
+            "projection_rebuild",
+            "0",
+            "6000",
+            "149506"
+          ],
+          [
+            "search",
+            "projection",
+            "10",
+            "0",
+            "10",
+            "0",
+            "0",
+            "0"
+          ]
+        ]
+      },
+      "warm_ann": {
+        "result": {
+          "id": 64,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              9,
+              2.125
+            ]
+          ]
+        },
+        "events": [
+          [
+            "request_mode",
+            "ann"
+          ],
+          [
+            "cache_hit",
+            "0"
+          ],
+          [
+            "search",
+            "projection",
+            "10",
+            "0",
+            "10",
+            "0",
+            "0",
+            "0"
+          ]
+        ]
+      },
+      "update": {
+        "result": {
+          "id": 65,
+          "ok": true,
+          "affected_rows": 1
+        },
+        "events": [
+          [
+            "request_mode",
+            "exact"
+          ],
+          [
+            "sync_ns",
+            "3624397"
+          ]
+        ]
+      },
+      "exact_after_change": {
+        "result": {
+          "id": 66,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              3000,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        },
+        "events": [
+          [
+            "request_mode",
+            "exact"
+          ],
+          [
+            "cache_build",
+            "0",
+            "120066"
+          ],
+          [
+            "search",
+            "exact_cache",
+            "0",
+            "0",
+            "6000",
+            "0",
+            "0",
+            "0"
+          ]
+        ]
+      },
+      "first_ann_after_change": {
+        "result": {
+          "id": 67,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              3000,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        },
+        "events": [
+          [
+            "request_mode",
+            "ann"
+          ],
+          [
+            "cache_hit",
+            "0"
+          ],
+          [
+            "projection_rebuild",
+            "0",
+            "6000",
+            "228734"
+          ],
+          [
+            "search",
+            "projection",
+            "10",
+            "0",
+            "10",
+            "0",
+            "0",
+            "0"
+          ]
+        ]
+      },
+      "second_ann_after_change": {
+        "result": {
+          "id": 68,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              3000,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        },
+        "events": [
+          [
+            "request_mode",
+            "ann"
+          ],
+          [
+            "cache_hit",
+            "0"
+          ],
+          [
+            "search",
+            "projection",
+            "10",
+            "0",
+            "10",
+            "0",
+            "0",
+            "0"
+          ]
+        ]
+      }
+    },
+    "timings": {
+      "first_ann": {
+        "result": {
+          "id": 63,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              9,
+              2.125
+            ]
+          ]
+        },
+        "elapsed_ms": 3.142652
+      },
+      "warm_ann": {
+        "result": {
+          "id": 64,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              9,
+              2.125
+            ]
+          ]
+        },
+        "elapsed_ms": 0.17752
+      },
+      "update": {
+        "result": {
+          "id": 65,
+          "ok": true,
+          "affected_rows": 1
+        },
+        "elapsed_ms": 4.290406
+      },
+      "exact_after_change": {
+        "result": {
+          "id": 66,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              3000,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        },
+        "elapsed_ms": 1.90595
+      },
+      "first_ann_after_change": {
+        "result": {
+          "id": 67,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              3000,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        },
+        "elapsed_ms": 0.44022
+      },
+      "second_ann_after_change": {
+        "result": {
+          "id": 68,
+          "ok": true,
+          "columns": [
+            "id",
+            "d"
+          ],
+          "rows": [
+            [
+              3000,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1.125
+            ],
+            [
+              2,
+              1.25
+            ],
+            [
+              3,
+              1.375
+            ],
+            [
+              4,
+              1.5
+            ],
+            [
+              5,
+              1.625
+            ],
+            [
+              6,
+              1.75
+            ],
+            [
+              7,
+              1.875
+            ],
+            [
+              8,
+              2
+            ]
+          ]
+        },
+        "elapsed_ms": 0.107121
+      }
+    }
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "diagnostic",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, v VECTOR(2));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4123284648848,
+      "received_monotonic_ns": 4123289103994
+    },
+    {
+      "operation": "load_summary",
+      "table": "t",
+      "dimension": 2,
+      "rows": 6000,
+      "data_sha256": "3b7b7c039eb412ecb2ae07925c646ee038925e861a7e5ae014ef9deec1f9a057",
+      "batch_rows": 100,
+      "first": [
+        [
+          0,
+          "[1.0,0.0]"
+        ]
+      ]
+    },
+    {
+      "request": "{\"id\":62,\"op\":\"execute\",\"sql\":\"CREATE VECTOR INDEX ix ON t(v);\"}",
+      "response": "{\"id\":62,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4123577439233,
+      "received_monotonic_ns": 4123581602166
+    },
+    {
+      "request": "{\"id\":63,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":63,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2],[9,2.125]]}",
+      "sent_monotonic_ns": 4123581738756,
+      "received_monotonic_ns": 4123584335605
+    },
+    {
+      "request": "{\"id\":64,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":64,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2],[9,2.125]]}",
+      "sent_monotonic_ns": 4123584480516,
+      "received_monotonic_ns": 4123584636947
+    },
+    {
+      "request": "{\"id\":65,\"op\":\"execute\",\"sql\":\"UPDATE t SET v=[0,0] WHERE id=3000;\"}",
+      "response": "{\"id\":65,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 4123584754008,
+      "received_monotonic_ns": 4123588607912
+    },
+    {
+      "request": "{\"id\":66,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":66,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3000,0],[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2]]}",
+      "sent_monotonic_ns": 4123588717425,
+      "received_monotonic_ns": 4123591377834
+    },
+    {
+      "request": "{\"id\":67,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":67,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3000,0],[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2]]}",
+      "sent_monotonic_ns": 4123591546880,
+      "received_monotonic_ns": 4123592017087
+    },
+    {
+      "request": "{\"id\":68,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":68,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3000,0],[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2]]}",
+      "sent_monotonic_ns": 4123592161678,
+      "received_monotonic_ns": 4123592414646
+    },
+    {
+      "operation": "start",
+      "name": "timings",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, v VECTOR(2));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4123608211992,
+      "received_monotonic_ns": 4123612400084
+    },
+    {
+      "operation": "load_summary",
+      "table": "t",
+      "dimension": 2,
+      "rows": 6000,
+      "data_sha256": "3b7b7c039eb412ecb2ae07925c646ee038925e861a7e5ae014ef9deec1f9a057",
+      "batch_rows": 100,
+      "first": [
+        [
+          0,
+          "[1.0,0.0]"
+        ]
+      ]
+    },
+    {
+      "request": "{\"id\":62,\"op\":\"execute\",\"sql\":\"CREATE VECTOR INDEX ix ON t(v);\"}",
+      "response": "{\"id\":62,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 4123881145854,
+      "received_monotonic_ns": 4123884999053
+    },
+    {
+      "request": "{\"id\":63,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":63,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2],[9,2.125]]}",
+      "sent_monotonic_ns": 4123885094293,
+      "received_monotonic_ns": 4123888236945
+    },
+    {
+      "request": "{\"id\":64,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":64,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2],[9,2.125]]}",
+      "sent_monotonic_ns": 4123888310728,
+      "received_monotonic_ns": 4123888488248
+    },
+    {
+      "request": "{\"id\":65,\"op\":\"execute\",\"sql\":\"UPDATE t SET v=[0,0] WHERE id=3000;\"}",
+      "response": "{\"id\":65,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 4123888532936,
+      "received_monotonic_ns": 4123892823342
+    },
+    {
+      "request": "{\"id\":66,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"exact\"}",
+      "response": "{\"id\":66,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3000,0],[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2]]}",
+      "sent_monotonic_ns": 4123892871678,
+      "received_monotonic_ns": 4123894777628
+    },
+    {
+      "request": "{\"id\":67,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":67,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3000,0],[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2]]}",
+      "sent_monotonic_ns": 4123894848216,
+      "received_monotonic_ns": 4123895288436
+    },
+    {
+      "request": "{\"id\":68,\"op\":\"execute\",\"sql\":\"SELECT id,L2_DISTANCE(v,[0.0,0.0]) AS d FROM t ORDER BY d LIMIT 10;\",\"search_mode\":\"ann\"}",
+      "response": "{\"id\":68,\"ok\":true,\"columns\":[\"id\",\"d\"],\"rows\":[[3000,0],[0,1],[1,1.125],[2,1.25],[3,1.375],[4,1.5],[5,1.625],[6,1.75],[7,1.875],[8,2]]}",
+      "sent_monotonic_ns": 4123895349876,
+      "received_monotonic_ns": 4123895456997
+    }
+  ]
+}

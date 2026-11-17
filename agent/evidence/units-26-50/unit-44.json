@@ -1,0 +1,322 @@
+{
+  "unit": 44,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "scope": "standalone two-worker exact scan kernel, does not measure SQL or container I/O",
+    "cpu_affinity": [
+      0,
+      1
+    ],
+    "cpu_max": "max 100000",
+    "groups": [
+      {
+        "rows": 256,
+        "dimension": 128,
+        "queries": 48,
+        "rounds": [
+          {
+            "single": {
+              "wall_ns": 1242765,
+              "caller_scan_ns": 1240488,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 2996784,
+              "caller_scan_ns": 821026,
+              "worker_scan_ns": 819386,
+              "dispatch_ns": 573182,
+              "worker_queue_ns": 1142617,
+              "caller_waiting_ns": 1569835,
+              "merge_ns": 20241
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 1513949,
+              "caller_scan_ns": 1510843,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 1948611,
+              "caller_scan_ns": 978350,
+              "worker_scan_ns": 657524,
+              "dispatch_ns": 477068,
+              "worker_queue_ns": 818227,
+              "caller_waiting_ns": 468022,
+              "merge_ns": 15236
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 1270903,
+              "caller_scan_ns": 1268572,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 3214304,
+              "caller_scan_ns": 688334,
+              "worker_scan_ns": 854458,
+              "dispatch_ns": 538373,
+              "worker_queue_ns": 1151094,
+              "caller_waiting_ns": 1957347,
+              "merge_ns": 18756
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 1510351,
+              "caller_scan_ns": 1507288,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 3173992,
+              "caller_scan_ns": 863922,
+              "worker_scan_ns": 842852,
+              "dispatch_ns": 615184,
+              "worker_queue_ns": 1148917,
+              "caller_waiting_ns": 1660139,
+              "merge_ns": 21555
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 1426645,
+              "caller_scan_ns": 1422131,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 2740987,
+              "caller_scan_ns": 792071,
+              "worker_scan_ns": 659601,
+              "dispatch_ns": 593188,
+              "worker_queue_ns": 1085604,
+              "caller_waiting_ns": 1324292,
+              "merge_ns": 18529
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 1487230,
+              "caller_scan_ns": 1484187,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 1939006,
+              "caller_scan_ns": 980048,
+              "worker_scan_ns": 707371,
+              "dispatch_ns": 479682,
+              "worker_queue_ns": 810855,
+              "caller_waiting_ns": 453346,
+              "merge_ns": 15017
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 1294540,
+              "caller_scan_ns": 1292209,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 2892451,
+              "caller_scan_ns": 858965,
+              "worker_scan_ns": 776039,
+              "dispatch_ns": 566291,
+              "worker_queue_ns": 1094379,
+              "caller_waiting_ns": 1433620,
+              "merge_ns": 20019
+            }
+          }
+        ]
+      },
+      {
+        "rows": 32768,
+        "dimension": 128,
+        "queries": 48,
+        "rounds": [
+          {
+            "single": {
+              "wall_ns": 155363991,
+              "caller_scan_ns": 155299745,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 94529567,
+              "caller_scan_ns": 82350359,
+              "worker_scan_ns": 87111879,
+              "dispatch_ns": 1021637,
+              "worker_queue_ns": 2331008,
+              "caller_waiting_ns": 11010126,
+              "merge_ns": 90649
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 167588282,
+              "caller_scan_ns": 167487229,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 96442173,
+              "caller_scan_ns": 88814927,
+              "worker_scan_ns": 87208730,
+              "dispatch_ns": 1056026,
+              "worker_queue_ns": 2133624,
+              "caller_waiting_ns": 6426245,
+              "merge_ns": 89297
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 151834359,
+              "caller_scan_ns": 151753357,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 92601400,
+              "caller_scan_ns": 82251522,
+              "worker_scan_ns": 86879184,
+              "dispatch_ns": 967624,
+              "worker_queue_ns": 2112322,
+              "caller_waiting_ns": 9236822,
+              "merge_ns": 86521
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 157449289,
+              "caller_scan_ns": 157375018,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 94584293,
+              "caller_scan_ns": 84724694,
+              "worker_scan_ns": 87290440,
+              "dispatch_ns": 1059723,
+              "worker_queue_ns": 2076673,
+              "caller_waiting_ns": 8659811,
+              "merge_ns": 89243
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 154693056,
+              "caller_scan_ns": 154628120,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 91397956,
+              "caller_scan_ns": 82846387,
+              "worker_scan_ns": 83434019,
+              "dispatch_ns": 1051387,
+              "worker_queue_ns": 2243057,
+              "caller_waiting_ns": 7358985,
+              "merge_ns": 77485
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 152009958,
+              "caller_scan_ns": 151957786,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 93771708,
+              "caller_scan_ns": 84704516,
+              "worker_scan_ns": 83968833,
+              "dispatch_ns": 1104828,
+              "worker_queue_ns": 2202777,
+              "caller_waiting_ns": 7837784,
+              "merge_ns": 76654
+            }
+          },
+          {
+            "single": {
+              "wall_ns": 152820189,
+              "caller_scan_ns": 152764166,
+              "worker_scan_ns": 0,
+              "dispatch_ns": 0,
+              "worker_queue_ns": 0,
+              "caller_waiting_ns": 0,
+              "merge_ns": 0
+            },
+            "two_threads": {
+              "wall_ns": 98783157,
+              "caller_scan_ns": 88877518,
+              "worker_scan_ns": 87603209,
+              "dispatch_ns": 1114503,
+              "worker_queue_ns": 2199266,
+              "caller_waiting_ns": 8661743,
+              "merge_ns": 80406
+            }
+          }
+        ]
+      }
+    ],
+    "all_results_equal": true
+  },
+  "trace": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "0,1",
+        "parallel-scan"
+      ],
+      "response": "{\"groups\":[{\"rows\":256,\"dimension\":128,\"queries\":48,\"rounds\":[{\"single\":{\"wall_ns\":1242765,\"caller_scan_ns\":1240488,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":2996784,\"caller_scan_ns\":821026,\"worker_scan_ns\":819386,\"dispatch_ns\":573182,\"worker_queue_ns\":1142617,\"caller_waiting_ns\":1569835,\"merge_ns\":20241}},{\"single\":{\"wall_ns\":1513949,\"caller_scan_ns\":1510843,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":1948611,\"caller_scan_ns\":978350,\"worker_scan_ns\":657524,\"dispatch_ns\":477068,\"worker_queue_ns\":818227,\"caller_waiting_ns\":468022,\"merge_ns\":15236}},{\"single\":{\"wall_ns\":1270903,\"caller_scan_ns\":1268572,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":3214304,\"caller_scan_ns\":688334,\"worker_scan_ns\":854458,\"dispatch_ns\":538373,\"worker_queue_ns\":1151094,\"caller_waiting_ns\":1957347,\"merge_ns\":18756}},{\"single\":{\"wall_ns\":1510351,\"caller_scan_ns\":1507288,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":3173992,\"caller_scan_ns\":863922,\"worker_scan_ns\":842852,\"dispatch_ns\":615184,\"worker_queue_ns\":1148917,\"caller_waiting_ns\":1660139,\"merge_ns\":21555}},{\"single\":{\"wall_ns\":1426645,\"caller_scan_ns\":1422131,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":2740987,\"caller_scan_ns\":792071,\"worker_scan_ns\":659601,\"dispatch_ns\":593188,\"worker_queue_ns\":1085604,\"caller_waiting_ns\":1324292,\"merge_ns\":18529}},{\"single\":{\"wall_ns\":1487230,\"caller_scan_ns\":1484187,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":1939006,\"caller_scan_ns\":980048,\"worker_scan_ns\":707371,\"dispatch_ns\":479682,\"worker_queue_ns\":810855,\"caller_waiting_ns\":453346,\"merge_ns\":15017}},{\"single\":{\"wall_ns\":1294540,\"caller_scan_ns\":1292209,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":2892451,\"caller_scan_ns\":858965,\"worker_scan_ns\":776039,\"dispatch_ns\":566291,\"worker_queue_ns\":1094379,\"caller_waiting_ns\":1433620,\"merge_ns\":20019}}]},{\"rows\":32768,\"dimension\":128,\"queries\":48,\"rounds\":[{\"single\":{\"wall_ns\":155363991,\"caller_scan_ns\":155299745,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":94529567,\"caller_scan_ns\":82350359,\"worker_scan_ns\":87111879,\"dispatch_ns\":1021637,\"worker_queue_ns\":2331008,\"caller_waiting_ns\":11010126,\"merge_ns\":90649}},{\"single\":{\"wall_ns\":167588282,\"caller_scan_ns\":167487229,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":96442173,\"caller_scan_ns\":88814927,\"worker_scan_ns\":87208730,\"dispatch_ns\":1056026,\"worker_queue_ns\":2133624,\"caller_waiting_ns\":6426245,\"merge_ns\":89297}},{\"single\":{\"wall_ns\":151834359,\"caller_scan_ns\":151753357,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":92601400,\"caller_scan_ns\":82251522,\"worker_scan_ns\":86879184,\"dispatch_ns\":967624,\"worker_queue_ns\":2112322,\"caller_waiting_ns\":9236822,\"merge_ns\":86521}},{\"single\":{\"wall_ns\":157449289,\"caller_scan_ns\":157375018,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":94584293,\"caller_scan_ns\":84724694,\"worker_scan_ns\":87290440,\"dispatch_ns\":1059723,\"worker_queue_ns\":2076673,\"caller_waiting_ns\":8659811,\"merge_ns\":89243}},{\"single\":{\"wall_ns\":154693056,\"caller_scan_ns\":154628120,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":91397956,\"caller_scan_ns\":82846387,\"worker_scan_ns\":83434019,\"dispatch_ns\":1051387,\"worker_queue_ns\":2243057,\"caller_waiting_ns\":7358985,\"merge_ns\":77485}},{\"single\":{\"wall_ns\":152009958,\"caller_scan_ns\":151957786,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":93771708,\"caller_scan_ns\":84704516,\"worker_scan_ns\":83968833,\"dispatch_ns\":1104828,\"worker_queue_ns\":2202777,\"caller_waiting_ns\":7837784,\"merge_ns\":76654}},{\"single\":{\"wall_ns\":152820189,\"caller_scan_ns\":152764166,\"worker_scan_ns\":0,\"dispatch_ns\":0,\"worker_queue_ns\":0,\"caller_waiting_ns\":0,\"merge_ns\":0},\"two_threads\":{\"wall_ns\":98783157,\"caller_scan_ns\":88877518,\"worker_scan_ns\":87603209,\"dispatch_ns\":1114503,\"worker_queue_ns\":2199266,\"caller_waiting_ns\":8661743,\"merge_ns\":80406}}]}],\"all_results_equal\":true}\n"
+    }
+  ]
+}

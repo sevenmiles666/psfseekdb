@@ -1,0 +1,94 @@
+{
+  "unit": 34,
+  "status": "PASS",
+  "role": "tool",
+  "code_commit": "5c965733f0e5dbfe86421449357bf17bf3e59108",
+  "result": {
+    "cases": [
+      {
+        "text": "AB",
+        "code_points": 2,
+        "utf8_bytes": 2,
+        "result": 1
+      },
+      {
+        "text": "中A",
+        "code_points": 2,
+        "utf8_bytes": 4,
+        "result": 1
+      },
+      {
+        "text": "😀中",
+        "code_points": 2,
+        "utf8_bytes": 7,
+        "result": 1
+      },
+      {
+        "text": "😀中A",
+        "code_points": 3,
+        "utf8_bytes": 8,
+        "result": {
+          "code": "VARCHAR_LENGTH",
+          "message": "value is too long for word"
+        }
+      }
+    ],
+    "rows": [
+      [
+        1,
+        "AB"
+      ],
+      [
+        2,
+        "中A"
+      ],
+      [
+        3,
+        "😀中"
+      ]
+    ]
+  },
+  "trace": [
+    {
+      "operation": "start",
+      "name": "varchar",
+      "transport": "native JSONL"
+    },
+    {
+      "request": "{\"id\":1,\"op\":\"execute\",\"sql\":\"CREATE TABLE t (id BIGINT PRIMARY KEY, word VARCHAR(2));\"}",
+      "response": "{\"id\":1,\"ok\":true,\"affected_rows\":0}",
+      "sent_monotonic_ns": 3976725857442,
+      "received_monotonic_ns": 3976731944410
+    },
+    {
+      "request": "{\"id\":2,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (1,'AB');\"}",
+      "response": "{\"id\":2,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976732003651,
+      "received_monotonic_ns": 3976736055341
+    },
+    {
+      "request": "{\"id\":3,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (2,'中A');\"}",
+      "response": "{\"id\":3,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976736101819,
+      "received_monotonic_ns": 3976739684369
+    },
+    {
+      "request": "{\"id\":4,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (3,'😀中');\"}",
+      "response": "{\"id\":4,\"ok\":true,\"affected_rows\":1}",
+      "sent_monotonic_ns": 3976739725889,
+      "received_monotonic_ns": 3976743748289
+    },
+    {
+      "request": "{\"id\":5,\"op\":\"execute\",\"sql\":\"INSERT INTO t VALUES (4,'😀中A');\"}",
+      "response": "{\"id\":5,\"ok\":false,\"error\":{\"code\":\"VARCHAR_LENGTH\",\"message\":\"value is too long for word\"}}",
+      "sent_monotonic_ns": 3976743775775,
+      "received_monotonic_ns": 3976743932038
+    },
+    {
+      "request": "{\"id\":6,\"op\":\"execute\",\"sql\":\"SELECT id,word FROM t ORDER BY id;\"}",
+      "response": "{\"id\":6,\"ok\":true,\"columns\":[\"id\",\"word\"],\"rows\":[[1,\"AB\"],[2,\"中A\"],[3,\"😀中\"]]}",
+      "sent_monotonic_ns": 3976743957789,
+      "received_monotonic_ns": 3976744073692
+    }
+  ]
+}

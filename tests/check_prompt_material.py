@@ -187,6 +187,11 @@ def check(repo):
     digest = hashlib.sha256(data).hexdigest()
     if digest != manifest['material_sha256'] or len(data) != manifest['material_bytes']:
         raise ValueError('material bytes or digest differ from the manifest')
+    archive = manifest.get('full_material_archive')
+    if archive is not None:
+        original = (repo / archive['path']).read_bytes()
+        if len(original) != archive['bytes'] or hashlib.sha256(original).hexdigest() != archive['sha256']:
+            raise ValueError('full material archive bytes or digest differ from the manifest')
     summary = resolve_pointer(material, manifest['summary_pointer'])
     if not isinstance(summary, str) or not summary.strip():
         raise ValueError('material summary must be a nonempty string')

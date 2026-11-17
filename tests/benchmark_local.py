@@ -2,6 +2,7 @@
 
 import argparse
 from contextlib import contextmanager
+from decimal import Decimal, ROUND_HALF_UP
 import hashlib
 import json
 import math
@@ -48,11 +49,16 @@ def dataset(seed, vector_distribution="grid"):
 
     def continuous():
         values = [rng.uniform(-4, 4) for _ in range(DIMENSION)]
+        if vector_distribution == "decimal":
+            values = [round(value, 5) or 0.0 for value in values]
         return list(struct.unpack(f"<{DIMENSION}f", struct.pack(f"<{DIMENSION}f", *values)))
 
-    vector = continuous if vector_distribution == "continuous" else grid
+    vector = grid if vector_distribution == "grid" else continuous
     vectors = [vector() for _ in range(ROWS)]
     queries = [(rng.randrange(16) if i % 2 else -1, vector()) for i in range(QUERIES)]
+    if vector_distribution == "outside-range":
+        for index, (_, query) in enumerate(queries):
+            query[index % DIMENSION] = -4.25 if index % 3 else 4.125
     return buckets, vectors, queries
 
 
@@ -205,7 +211,8 @@ def summary(rounds):
         result[mode] = {"write_median": medians([row["write"][write] for row in rounds]),
                         "query_median": medians([row["query"][mode] for row in rounds]),
                         "local_efficiency_rounds": values,
-                        "local_efficiency_median": round(median(values), 6)
+                        "local_efficiency_median": float(Decimal(str(median(values))).quantize(
+                            Decimal("0.000001"), rounding=ROUND_HALF_UP))
                         if all(value is not None for value in values) else None}
     return result
 
@@ -217,7 +224,8 @@ def main():
     parser.add_argument("--probe", type=Path, required=True)
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--seed", type=int, default=20261109)
-    parser.add_argument("--vector-distribution", choices=("grid", "continuous"), default="grid")
+    parser.add_argument("--vector-distribution", choices=("grid", "continuous", "decimal", "outside-range"),
+                        default="grid")
     parser.add_argument("--index-exact", action="store_true", help="Create the same SQL index in all query modes")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()

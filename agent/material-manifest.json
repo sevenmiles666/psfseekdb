@@ -1,12 +1,17 @@
 {
   "format": "minivectordb-material-manifest-v3",
-  "code_base_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
   "canonical_path": "agent/conversation.json",
   "compatibility_path": "conversation.json",
-  "material_sha256": "c14bdea8799afb43ebf50beea95a0627313f9a06e37bd86d876003d1b266a3f6",
-  "material_bytes": 130601,
+  "material_sha256": "b66a1830282f948791acfcc48d1740d587a8f6b9d583c7b4986c5ccbb2345495",
+  "material_bytes": 130245,
   "summary_pointer": "/material_summary",
-  "note": "原有 Agent/工具对象完整保留；追加实际来源的 AI 技术交流及工具输入输出。正式评分与提测状态由平台决定。",
+  "evidence_scope": "sourced_user_agent_and_tool_records",
+  "code_base_commit": "9c0aa92005ab4858f42dc4ca32793056e20a5c73",
+  "full_material_archive": {
+    "path": "agent/evidence/learning-conversation.full.json",
+    "sha256": "490c7a38b812a790319ccd5d7658c9bdf2df053ae304c5e7358751fc0c24f3b2",
+    "bytes": 213010
+  },
   "runtime_files": [
     {
       "path": ".dockerignore",
@@ -22,32 +27,32 @@
     },
     {
       "path": "src/database.cpp",
-      "git_blob_sha1": "4d6a2f9fc8e9a596da5561e63283fa92fcdf5730",
-      "sha256": "3e880c786218ee45fe24ba70de31347823f3eadb1d501f56e9bc369c659c1152",
+      "git_blob_sha1": "1c1ea7e8d73135654393a547886f78d91e583403",
+      "sha256": "1e4681d4868d751487881ea7b113e2716692fb517fd403877b76f51923c3fde5",
       "mode": "100644"
     },
     {
       "path": "src/database.hpp",
-      "git_blob_sha1": "ca9c0f181c2c3ce2685d41afc50939f47db3ef9a",
-      "sha256": "e9b552b84a7f70bd5bfe973420cc90197cdf37aaa366a87179719882cb2a9641",
+      "git_blob_sha1": "761b38e34cde6c2499bd3d6fe822caf95bdf1e9c",
+      "sha256": "87fd9baf7ef9046cb3bcd388e87a8f960138f27cf0277c7a2520d8efef880b56",
       "mode": "100644"
     },
     {
       "path": "src/encoding.hpp",
-      "git_blob_sha1": "16864fe59b4bf5da79272455d5b90d8f54297f8d",
-      "sha256": "efa3587a613aa24f229eeb852725d7f1dfa8a5ef5534792bec08d08cbd9d5448",
+      "git_blob_sha1": "8d922cc00973bf9b1867d5dbd6b940c94c55f7ba",
+      "sha256": "ae089ab47cc073923907e92cc023c8bc462fab84d2f594d4117e2ec9d8269926",
       "mode": "100644"
     },
     {
       "path": "src/journal.cpp",
-      "git_blob_sha1": "4c92531b4892da617e9e1680427372b3264bb2d5",
-      "sha256": "2853fe5905ea1fb704dbb2260b6ee50a5d0fb3840a523413bac8457b4617372a",
+      "git_blob_sha1": "b2c39ba837eeda90bb6f653168c7874666e004ad",
+      "sha256": "583fc609998bc6ee82b119047fe90f16a1b5ff67056c1e970ccb91e30c83dfeb",
       "mode": "100644"
     },
     {
       "path": "src/journal.hpp",
-      "git_blob_sha1": "31e89a5cdf59a41a9c4e359eeaa05fc60cb29389",
-      "sha256": "55c93ab0fdc76142c342117df8b863adaf8488755275355ab802e909806c6dda",
+      "git_blob_sha1": "911090453b1d84f130a24d2c2b2b4a389bacff0e",
+      "sha256": "dc425b5d9c1b538bcaa662922f4b448a0240058e0e68345e62ed8971ea976014",
       "mode": "100644"
     },
     {
@@ -70,8 +75,8 @@
     },
     {
       "path": "src/sql.cpp",
-      "git_blob_sha1": "7ed5e45f6ec34ffc65753bcc147540f96785afb0",
-      "sha256": "f3e61850d5d9f6afb49279f38e969ec0cbbfb1865e6252b8b4917a77395a644f",
+      "git_blob_sha1": "415719ef75fc4520b07d16cc1e515ede52ccf0e9",
+      "sha256": "4c32437f1dd6bd7e50ba90d13af42619c08e78038e7767e8357c2460b30466df",
       "mode": "100644"
     },
     {
@@ -81,89 +86,5 @@
       "mode": "100644"
     }
   ],
-  "local_validation_only": true,
-  "local_verification_payload_sha256": "0f2331b3b215756878049a10c10da9bdf7e5809ede9e4fd6aecff214846dca1e",
-  "verification_tools": [
-    {
-      "path": "tests/run_learning_experiments.py",
-      "sha256": "e6cf277a4ae62eea6b7e1a83fbe04ae03732b99dcca4840c9a1bdef01b02d196"
-    },
-    {
-      "path": "tests/run_prompt_verification.py",
-      "sha256": "5264559adc82b241e77e537a344e26347693d389b6523fa18a67cc9217b0a95b"
-    },
-    {
-      "path": "tests/prompt_oracle.cpp",
-      "sha256": "3740f0a3b0e30c65182349a802e083aefb3dab87084307d866d0fe69309b8851"
-    },
-    {
-      "path": "tests/run_linux_resource_validation.py",
-      "sha256": "2f9596dbb10d3eecb4102e75f1c9acbf8f64b643e60291b566ee4e95f9ae0ff8"
-    },
-    {
-      "path": "tests/check_optimizations.py",
-      "sha256": "0cc69f8abbcb45774b9e6c892c71d528d0df7e598f2ed19d338f74355678b1c5"
-    },
-    {
-      "path": "tests/check_optimization_resources.py",
-      "sha256": "7b97b341d41a8579c7650e5f7b0b78fae486034641342bb289ce1ac43c98c052"
-    }
-  ],
-  "development_prompt": {
-    "path": "agent/learning_prompt.md",
-    "pointer": "/development_prompt_revision/content",
-    "sha256": "a46194fe8f97036f28bc4d85b2c66505f018ed13101178d468b481489aaf94bb",
-    "status": "used_for_local_optimization"
-  },
-  "local_engine_optimization_payload_sha256": "882ae688a9a8fa5195f53eda9e7d6da84a6bf8020b5f2201af230f922ef2cb69",
-  "runtime_revision_note": "code_base_commit 指向历史 ltc 基线。local_engine_optimization_source_commit 固定历史六项优化的源码。runtime_files 记录当前引擎和构建文件。",
-  "evidence_scope": "sourced_user_agent_and_tool_records",
-  "source_snapshot": {
-    "commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
-    "material_sha256_before_correction": "3ae237531c8a2a6c643846bcbce8537c087a9fa53101c275c1f497b0b5592bf8",
-    "historical_dialogue_preserved": false
-  },
-  "attribution_correction": {
-    "removed_user_records": 19,
-    "removed_learning_episode_count": 2,
-    "student_evidence_status": "not_available"
-  },
-  "preserved_tool_payloads": [
-    {
-      "pointer": "/experiments",
-      "sha256": "f8683f3184b5a3cea5b47eb243ea52a744fed72020fcd05edffcaf3be975721c"
-    },
-    {
-      "pointer": "/performance_iteration/experiments",
-      "sha256": "d96400f0955ccd282cd7d0fe66226bfcef2ffca37101688c8dfee91e472b481f"
-    },
-    {
-      "pointer": "/compact_storage_iteration/experiments",
-      "sha256": "3b111b6db13b9c957c9ca0a582f7ac13aeb164b85e5fe10bc97e9e6c823bf8ce"
-    },
-    {
-      "pointer": "/lossless_vector_iteration/experiments",
-      "sha256": "302f8651e317a0084bb83ad21c022c5fa589fac54cacd254c34f2db97767e619"
-    },
-    {
-      "pointer": "/atomicity_tool_results",
-      "sha256": "95d9aa847b968b1112c0784d91859779b1336f3b094d49879c8de0f1b7be0c2c"
-    }
-  ],
-  "ai_discussion": {
-    "pointer": "/ai_technical_discussion",
-    "source_thread_id": "01a1da75-1a21-74a3-b9ce-2ad7dd4af14d",
-    "payload_sha256": "3e13a5dffe5016cd2dec610bc74576bce14040ad5a948acd8845883adeedcc3a",
-    "incoming_prompt_count": 14,
-    "actual_tool_experiments": 10,
-    "student_evidence": false
-  },
-  "continuation_discussion": {
-    "pointer": "/continuation_technical_discussion",
-    "payload_sha256": "188b53c4c0f133349d183bea67daf74b316d2e7a036b99a876e9109b5062d73a",
-    "incoming_excerpt_count": 9,
-    "actual_experiment_groups": 3,
-    "student_evidence": false
-  },
-  "local_engine_optimization_source_commit": "f8b311582b030ae13f8b3137fe61d1f40123ee58"
+  "local_validation_only": true
 }
