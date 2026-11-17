@@ -181,11 +181,11 @@ public:
     throw SqlError("SYNTAX", "unexpected character at byte " + std::to_string(start));
   }
 
-  void vector_body(Vector &result) {
+  Vector vector_body() {
     const auto skip_spaces = [&] {
       while (is_space(peek())) ++position_;
     };
-    result.clear();
+    Vector result;
     skip_spaces();
     if (peek() != ']') {
       const char *const end = input_.data() + input_.size();
@@ -230,6 +230,7 @@ public:
     }
     if (peek() != ']') throw SqlError("SYNTAX", "expected ]");
     ++position_;
+    return result;
   }
 
 private:
@@ -353,15 +354,10 @@ public:
   }
 
   Vector vector() {
-    Vector result;
-    vector(result);
-    return result;
-  }
-
-  void vector(Vector &result) {
     if (token_.kind != TokenKind::Symbol || token_.text != "[") throw SqlError("SYNTAX", "expected [");
-    lexer_.vector_body(result);
+    Vector result = lexer_.vector_body();
     advance();
+    return result;
   }
 
   void finish() const {
@@ -619,15 +615,10 @@ private:
 Statement parse_sql(std::string_view sql) { return Parser(sql).statement(); }
 
 Vector parse_vector(std::string_view text) {
-  Vector result;
-  parse_vector(text, result);
-  return result;
-}
-
-void parse_vector(std::string_view text, Vector &result) {
   Parser parser(text);
-  parser.vector(result);
+  Vector result = parser.vector();
   parser.finish();
+  return result;
 }
 
 }  // namespace minivector
