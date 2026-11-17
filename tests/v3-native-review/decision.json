@@ -1,0 +1,18 @@
+{
+  "selected_runtime_commit": "0c7c24e47e53686450416d8a03d9d2e99d4c93b0",
+  "material_source_commit": "b97d50f501d233904a1cacf35e6319bc276c9c37",
+  "material_sha256": "b66a1830282f948791acfcc48d1740d587a8f6b9d583c7b4986c5ccbb2345495",
+  "formal_5000_target_met": null,
+  "formal_evaluation_performed": false,
+  "reason": "No official baseline or score for selected runtime. Local E cannot be converted to official points.",
+  "experiments": {
+    "integer_ilp": "Excluded: native query regressions on grid and short decimal",
+    "ordered_exact4": "Excluded pending stronger evidence: mixed timing gains, grid regression, no three-round container validation"
+  },
+  "local_comparison": "3 distributions x 3 paired rounds x 3 versions; full raw T/B/M retained; exact Recall=1 for both groups and bitwise restart checks passed",
+  "validation": {
+    "core_regressions": "PASS",
+    "32_MiB_resource_limit": "PASS",
+    "public_mysql_report": "official-result.json"
+  }
+}

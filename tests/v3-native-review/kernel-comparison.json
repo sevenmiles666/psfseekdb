@@ -1,0 +1,144 @@
+{
+  "rounds": [
+    {
+      "base": [
+        {
+          "dimension": 128,
+          "seconds": 0.498164,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 1.06424,
+          "checksum": 120000000
+        }
+      ],
+      "ilp": [
+        {
+          "dimension": 128,
+          "seconds": 0.4686,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 0.97313,
+          "checksum": 120000000
+        }
+      ]
+    },
+    {
+      "ilp": [
+        {
+          "dimension": 128,
+          "seconds": 0.472628,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 1.00378,
+          "checksum": 120000000
+        }
+      ],
+      "base": [
+        {
+          "dimension": 128,
+          "seconds": 0.469584,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 1.06335,
+          "checksum": 120000000
+        }
+      ]
+    },
+    {
+      "base": [
+        {
+          "dimension": 128,
+          "seconds": 0.515796,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 1.02039,
+          "checksum": 120000000
+        }
+      ],
+      "ilp": [
+        {
+          "dimension": 128,
+          "seconds": 0.43883,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 1.15803,
+          "checksum": 120000000
+        }
+      ]
+    },
+    {
+      "ilp": [
+        {
+          "dimension": 128,
+          "seconds": 0.639844,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 1.46308,
+          "checksum": 120000000
+        }
+      ],
+      "base": [
+        {
+          "dimension": 128,
+          "seconds": 0.574755,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 1.17181,
+          "checksum": 120000000
+        }
+      ]
+    },
+    {
+      "base": [
+        {
+          "dimension": 128,
+          "seconds": 0.615207,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 1.23881,
+          "checksum": 120000000
+        }
+      ],
+      "ilp": [
+        {
+          "dimension": 128,
+          "seconds": 0.434746,
+          "checksum": 120000000
+        },
+        {
+          "dimension": 256,
+          "seconds": 1.14389,
+          "checksum": 120000000
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "128": {
+      "base": 0.515796,
+      "ilp": 0.4686
+    },
+    "256": {
+      "base": 1.06424,
+      "ilp": 1.14389
+    }
+  }
+}

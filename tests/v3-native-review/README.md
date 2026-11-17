@@ -1,0 +1,3 @@
+Local three-way comparison against dccb61e and b97d50f. Three paired rounds per distribution, exact oracle and restart validation passed. Local E is not an official score; no formal 5000-point result is available. The independent-accumulator experiment regressed full queries and is excluded. Source runtime remains colleague commit 0c7c24e; conversation.json is preserved byte-for-byte from b97d50f (units 1-50). Raw measurements disclose the shared-device and resource-probe limitations.
+
+Ordered exact4 experiment is also excluded: mixed native timing results and no final container E validation. The 5000 official target remains unverified.
