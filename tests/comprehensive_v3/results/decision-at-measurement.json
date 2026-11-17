@@ -1,0 +1,26 @@
+{
+  "candidate": "comprehensive_v3",
+  "run_status": "COMPLETE",
+  "source_modified": false,
+  "local_E_higher_all_three_cases": true,
+  "all_six_metric_gate": false,
+  "all_six_metric_gate_cases": {
+    "grid": true,
+    "fp32-long": false,
+    "decimal-short": true
+  },
+  "candidate_retained": "promising_experiment_pending_long_fp32_query_improvement",
+  "reason": "Long FP32 query median +0.84%, not a demonstrated speedup; all data retained.",
+  "platform_best_retained": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+  "platform_submitted": false,
+  "github_pushed": false,
+  "prompt_modified": false,
+  "correctness": {
+    "new_write_projects": 18,
+    "new_query_projects": 18,
+    "new_queries_checked": 18000,
+    "both_groups_recall_at_10": 1,
+    "public_mysql_reused": "20/20",
+    "protocol_differential_reused": 185
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "candidate": "comprehensive_v3",
+  "source_sha256": {
+    "database.cpp": "f15b5f91bdf78effaee9d928178a8ecec363eff2cf233ba90a34ed470edbd6cd",
+    "database.hpp": "29d90c1fa34f59129a65500ec40b60b189795181420150c537752fa9a9efa72d",
+    "encoding.hpp": "ae089ab47cc073923907e92cc023c8bc462fab84d2f594d4117e2ec9d8269926",
+    "journal.cpp": "a8f49e8cc77661042687cc89dbccc1161b5d80923a7b4b9c860d872d8fc7e0ec",
+    "journal.hpp": "dc425b5d9c1b538bcaa662922f4b448a0240058e0e68345e62ed8971ea976014",
+    "main.cpp": "d8a969044644a64279adf2a45eba11fdb3dac39b433ad06cb76a4155ad9f3146",
+    "request.cpp": "7c7af2d1d19f04a3d2b3e04501f5f2ec5d188892a5a88aef17b92e57466a332b",
+    "request.hpp": "cb43806e4457fcef8cd645680ce7c30e6cdf1cb4d5805a189f6ba446184959dc",
+    "sql.cpp": "88ff82ded11313a8882680599e7bfb234fc68dcfc599a7b61327c9e1af25d3bf",
+    "sql.hpp": "a22e95a3981e6acad94fb45c60802ab0bd8c320cf0888cbb7c769116c0b3fbd7"
+  },
+  "images": {
+    "reference": {
+      "id": "sha256:8a2ef63db90f299dd4e784aa7aeece8c44768481d500178427d86bb378acdc03",
+      "binary_sha256": "f3b3df527b97dcf43102ffeacb694cd66904675984fc630f6cf779cdd743d089",
+      "tag": "minivectordb:dccb61e-backtest"
+    },
+    "candidate": {
+      "id": "sha256:f3863132c5840eb4f3bf44161fb0429d85ed610033cfa1393ec3d9200cc8f7bf",
+      "binary_sha256": "a7b02e0a417d366d803cee610d248c21031f7367ac6d62e0f99a8c814f12eee3",
+      "tag": "minivectordb:comprehensive-local"
+    }
+  },
+  "environment": "Linux-6.8.0-147-generic-x86_64-with-glibc2.39",
+  "machine": "x86_64",
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "original_source_modified": false,
+  "oracle": {
+    "path": "/data/mvdb-comprehensive-20261116/oracle",
+    "sha256": "8acaba90d3cced7a181785e4c609d6cc0a902b189a3620c89e756a023e430b64"
+  },
+  "harness_sha256": {
+    "benchmark_local.py": "60f721d4e34afa94c667c735896d12499055cfb88d8fdd7715d126331c6eee3e",
+    "benchmark_matrix.py": "4f5774c4f0e63c471bfc24ccfe90fbe95d6f43ced7a354f11df667f15acbff69",
+    "check_benchmark_negative_zero.py": "bec3cb3478cdc3b3c702456b666d0f266beb3201900669243385cad506ca278d",
+    "check_core.py": "37dcf7c50b750b5d364796d0feb97251c95dec10e67ae160d2af3d965b064e92",
+    "workload_matrix.py": "22fed0531fb78ff5e9164269fe3c5f799fa2858b573f9b9f3a9a7d057a77f4c8"
+  },
+  "temporary_cache_relocation": {
+    "files": 42,
+    "bytes": 114207188
+  },
+  "reused_correctness_evidence": {
+    "core-v3.log": {
+      "source": "/data/mvdb-dccb-backtest-20261117/core-v3.log",
+      "sha256": "fef79d4ccbafcd89f76d061e3da6bf9e6761cefe5587f1207f5ad0b72cb11662",
+      "scope": "Previously passed on the same verified source/binary. Not represented as a new execution."
+    },
+    "protocol-v3.log": {
+      "source": "/data/mvdb-dccb-backtest-20261117/protocol-v3.log",
+      "sha256": "09a0f5c8e0f281a4ecc97fa5ccf90da140c1aa10137780f7209995bb9fc6a12f",
+      "scope": "Previously passed on the same verified source/binary. Not represented as a new execution."
+    },
+    "public-v3.log": {
+      "source": "/data/mvdb-dccb-backtest-20261117/public-v3.log",
+      "sha256": "5b564451d6e23b81ce544d2b68dd7b16afdb2ca2288c99a6756451888551f85f",
+      "scope": "Previously passed on the same verified source/binary. Not represented as a new execution."
+    },
+    "resource-validation-v3.json": {
+      "source": "/data/mvdb-dccb-backtest-20261117/resource-validation-v3.json",
+      "sha256": "eb20a0300baa206ab7bad86485b7e59fc2f6d1ed115661b346e36841930d0062",
+      "scope": "Previously passed on the same verified source/binary. Not represented as a new execution."
+    }
+  },
+  "final_source_sha256": {
+    "database.cpp": "f15b5f91bdf78effaee9d928178a8ecec363eff2cf233ba90a34ed470edbd6cd",
+    "database.hpp": "29d90c1fa34f59129a65500ec40b60b189795181420150c537752fa9a9efa72d",
+    "encoding.hpp": "ae089ab47cc073923907e92cc023c8bc462fab84d2f594d4117e2ec9d8269926",
+    "journal.cpp": "a8f49e8cc77661042687cc89dbccc1161b5d80923a7b4b9c860d872d8fc7e0ec",
+    "journal.hpp": "dc425b5d9c1b538bcaa662922f4b448a0240058e0e68345e62ed8971ea976014",
+    "main.cpp": "d8a969044644a64279adf2a45eba11fdb3dac39b433ad06cb76a4155ad9f3146",
+    "request.cpp": "7c7af2d1d19f04a3d2b3e04501f5f2ec5d188892a5a88aef17b92e57466a332b",
+    "request.hpp": "cb43806e4457fcef8cd645680ce7c30e6cdf1cb4d5805a189f6ba446184959dc",
+    "sql.cpp": "88ff82ded11313a8882680599e7bfb234fc68dcfc599a7b61327c9e1af25d3bf",
+    "sql.hpp": "a22e95a3981e6acad94fb45c60802ab0bd8c320cf0888cbb7c769116c0b3fbd7"
+  }
+}

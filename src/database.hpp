@@ -103,6 +103,7 @@ private:
     std::vector<std::int32_t> quantized_norms;
     std::vector<std::uint8_t> negative_zeros;
     bool exact_codes = false;
+    bool biased_codes = false;
     bool can_group_quantized = false;
     std::size_t block_rows;
   };

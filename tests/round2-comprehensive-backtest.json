@@ -1,0 +1,484 @@
+{
+  "status": "PASS",
+  "reference_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+  "scope": "Local UTM/QEMU x86_64, GCC 13.3. Not native x86, not official E or platform score. User identifies dccb61e as current highest platform result.",
+  "distributions": {
+    "continuous": {
+      "dccb61e": {
+        "median": {
+          "write": {
+            "seconds": 6.2241230529998575,
+            "io_bytes": 5201920,
+            "memory_peak_bytes": 9744384
+          },
+          "query": {
+            "seconds": 5.331659749999744,
+            "io_bytes": 5206016,
+            "memory_peak_bytes": 16773120
+          },
+          "local_E_rounds": [
+            0.48313200497109055,
+            0.49998583980508293,
+            0.5042156825570968
+          ],
+          "local_E_median": 0.499986
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          },
+          "query": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          }
+        },
+        "all_six_medians_no_regression": true
+      },
+      "dccb61e_lto": {
+        "median": {
+          "write": {
+            "seconds": 5.970658652000566,
+            "io_bytes": 5201920,
+            "memory_peak_bytes": 8957952
+          },
+          "query": {
+            "seconds": 5.470655140999952,
+            "io_bytes": 5210112,
+            "memory_peak_bytes": 16007168
+          },
+          "local_E_rounds": [
+            0.4912303984264703,
+            0.50451187504263,
+            0.5034527227689465
+          ],
+          "local_E_median": 0.503453
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": -0.04072290969201331,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": -0.08070617906683486
+          },
+          "query": {
+            "seconds": 0.026069816439470817,
+            "io_bytes": 0.0007867820613689513,
+            "memory_peak_bytes": -0.045665445665445614
+          }
+        },
+        "all_six_medians_no_regression": false
+      },
+      "bcfaa72": {
+        "median": {
+          "write": {
+            "seconds": 5.804122679000102,
+            "io_bytes": 4517888,
+            "memory_peak_bytes": 9515008
+          },
+          "query": {
+            "seconds": 5.228350110000065,
+            "io_bytes": 4521984,
+            "memory_peak_bytes": 11141120
+          },
+          "local_E_rounds": [
+            0.5142174864673642,
+            0.49724677316126503,
+            0.5257343077018152
+          ],
+          "local_E_median": 0.514217
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": -0.06747944576663323,
+            "io_bytes": -0.13149606299212602,
+            "memory_peak_bytes": -0.023539302227826853
+          },
+          "query": {
+            "seconds": -0.019376637828339316,
+            "io_bytes": -0.1313926042486231,
+            "memory_peak_bytes": -0.3357753357753358
+          }
+        },
+        "all_six_medians_no_regression": true
+      },
+      "comprehensive_v3": {
+        "median": {
+          "write": {
+            "seconds": 5.535138989000188,
+            "io_bytes": 4521984,
+            "memory_peak_bytes": 8785920
+          },
+          "query": {
+            "seconds": 5.1817407869993986,
+            "io_bytes": 4526080,
+            "memory_peak_bytes": 10399744
+          },
+          "local_E_rounds": [
+            0.530575183513922,
+            0.5301700449603032,
+            0.5290010618162729
+          ],
+          "local_E_median": 0.53017
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": -0.11069576519178836,
+            "io_bytes": -0.13070866141732285,
+            "memory_peak_bytes": -0.09836065573770492
+          },
+          "query": {
+            "seconds": -0.02811862910050722,
+            "io_bytes": -0.13060582218725414,
+            "memory_peak_bytes": -0.37997557997557996
+          }
+        },
+        "all_six_medians_no_regression": true
+      }
+    },
+    "grid": {
+      "dccb61e": {
+        "median": {
+          "write": {
+            "seconds": 2.73181971699978,
+            "io_bytes": 1994752,
+            "memory_peak_bytes": 6316032
+          },
+          "query": {
+            "seconds": 4.716119027999412,
+            "io_bytes": 1998848,
+            "memory_peak_bytes": 8351744
+          },
+          "local_E_rounds": [
+            0.5000740107543241,
+            0.49976827374291277,
+            0.46726013166159525
+          ],
+          "local_E_median": 0.499768
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          },
+          "query": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          }
+        },
+        "all_six_medians_no_regression": true
+      },
+      "dccb61e_lto": {
+        "median": {
+          "write": {
+            "seconds": 2.706037371999628,
+            "io_bytes": 1994752,
+            "memory_peak_bytes": 5316608
+          },
+          "query": {
+            "seconds": 4.690749655999753,
+            "io_bytes": 1998848,
+            "memory_peak_bytes": 7548928
+          },
+          "local_E_rounds": [
+            0.5013233081826672,
+            0.5060647639807173,
+            0.49305653754061574
+          ],
+          "local_E_median": 0.501323
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": -0.00943779153496549,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": -0.1582360570687419
+          },
+          "query": {
+            "seconds": -0.005379290015591676,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": -0.09612555174104953
+          }
+        },
+        "all_six_medians_no_regression": true
+      },
+      "bcfaa72": {
+        "median": {
+          "write": {
+            "seconds": 2.4600833559998136,
+            "io_bytes": 1236992,
+            "memory_peak_bytes": 5836800
+          },
+          "query": {
+            "seconds": 4.785318567000104,
+            "io_bytes": 1241088,
+            "memory_peak_bytes": 7299072
+          },
+          "local_E_rounds": [
+            0.5215519769670057,
+            0.5238410784993818,
+            0.40599400037464867
+          ],
+          "local_E_median": 0.521552
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": -0.09947082499953586,
+            "io_bytes": -0.3798767967145791,
+            "memory_peak_bytes": -0.07587548638132291
+          },
+          "query": {
+            "seconds": 0.014672983991679933,
+            "io_bytes": -0.37909836065573765,
+            "memory_peak_bytes": -0.12604217753800884
+          }
+        },
+        "all_six_medians_no_regression": false
+      },
+      "comprehensive_v3": {
+        "median": {
+          "write": {
+            "seconds": 2.435740560999875,
+            "io_bytes": 1236992,
+            "memory_peak_bytes": 5042176
+          },
+          "query": {
+            "seconds": 4.246013025000138,
+            "io_bytes": 1241088,
+            "memory_peak_bytes": 6537216
+          },
+          "local_E_rounds": [
+            0.5421611113791313,
+            0.5408636003219235,
+            0.4966951761918555
+          ],
+          "local_E_median": 0.540864
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": -0.10838166009178452,
+            "io_bytes": -0.3798767967145791,
+            "memory_peak_bytes": -0.2016861219195849
+          },
+          "query": {
+            "seconds": -0.09968069088338793,
+            "io_bytes": -0.37909836065573765,
+            "memory_peak_bytes": -0.21726336439431093
+          }
+        },
+        "all_six_medians_no_regression": true
+      }
+    },
+    "decimal": {
+      "dccb61e": {
+        "median": {
+          "write": {
+            "seconds": 6.6304870390004,
+            "io_bytes": 5201920,
+            "memory_peak_bytes": 9748480
+          },
+          "query": {
+            "seconds": 5.652082024000265,
+            "io_bytes": 5210112,
+            "memory_peak_bytes": 16818176
+          },
+          "local_E_rounds": [
+            0.49991981011874415,
+            0.5024815320808161,
+            0.4130549769485039
+          ],
+          "local_E_median": 0.49992
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          },
+          "query": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          }
+        },
+        "all_six_medians_no_regression": true
+      },
+      "dccb61e_lto": {
+        "median": {
+          "write": {
+            "seconds": 5.821299629999885,
+            "io_bytes": 5206016,
+            "memory_peak_bytes": 9019392
+          },
+          "query": {
+            "seconds": 5.598238231999858,
+            "io_bytes": 5210112,
+            "memory_peak_bytes": 15998976
+          },
+          "local_E_rounds": [
+            0.5105467865506071,
+            0.5142718092715202,
+            0.4926973922625424
+          ],
+          "local_E_median": 0.510547
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": -0.12204041788195796,
+            "io_bytes": 0.0007874015748030594,
+            "memory_peak_bytes": -0.07478991596638651
+          },
+          "query": {
+            "seconds": -0.00952636422680564,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": -0.048709206039941555
+          }
+        },
+        "all_six_medians_no_regression": false
+      },
+      "bcfaa72": {
+        "median": {
+          "write": {
+            "seconds": 5.396325513000193,
+            "io_bytes": 3694592,
+            "memory_peak_bytes": 8372224
+          },
+          "query": {
+            "seconds": 5.263535130000491,
+            "io_bytes": 3702784,
+            "memory_peak_bytes": 9945088
+          },
+          "local_E_rounds": [
+            0.5492022384800251,
+            0.5501042695298671,
+            0.527941746954064
+          ],
+          "local_E_median": 0.549202
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": -0.18613436972893427,
+            "io_bytes": -0.28976377952755905,
+            "memory_peak_bytes": -0.14117647058823535
+          },
+          "query": {
+            "seconds": -0.06874402960712511,
+            "io_bytes": -0.289308176100629,
+            "memory_peak_bytes": -0.40867023867510954
+          }
+        },
+        "all_six_medians_no_regression": true
+      },
+      "comprehensive_v3": {
+        "median": {
+          "write": {
+            "seconds": 5.461965735000376,
+            "io_bytes": 3694592,
+            "memory_peak_bytes": 7581696
+          },
+          "query": {
+            "seconds": 6.00944106299994,
+            "io_bytes": 3698688,
+            "memory_peak_bytes": 9191424
+          },
+          "local_E_rounds": [
+            0.5265158056309266,
+            0.5557907623510528,
+            0.5383094040061697
+          ],
+          "local_E_median": 0.538309
+        },
+        "relative_to_dccb61e": {
+          "write": {
+            "seconds": -0.1762346109911388,
+            "io_bytes": -0.28976377952755905,
+            "memory_peak_bytes": -0.2222689075630252
+          },
+          "query": {
+            "seconds": 0.0632260886310978,
+            "io_bytes": -0.29009433962264153,
+            "memory_peak_bytes": -0.45348270823185577
+          }
+        },
+        "all_six_medians_no_regression": false
+      }
+    }
+  },
+  "timing_variation": {
+    "continuous": {
+      "dccb61e": {
+        "write": 1.4949120301202414,
+        "query": 1.0091359675822242
+      },
+      "dccb61e_lto": {
+        "write": 1.213144754654433,
+        "query": 1.0528875656246712
+      },
+      "bcfaa72": {
+        "write": 1.2510308893693454,
+        "query": 1.3198741475795097
+      },
+      "comprehensive_v3": {
+        "write": 1.059178102111332,
+        "query": 1.0426071368272842
+      }
+    },
+    "grid": {
+      "dccb61e": {
+        "write": 1.0265552008274308,
+        "query": 1.4174381232226132
+      },
+      "dccb61e_lto": {
+        "write": 1.1310103377919525,
+        "query": 1.1527151642926552
+      },
+      "bcfaa72": {
+        "write": 1.0361202792068536,
+        "query": 3.908030324656906
+      },
+      "comprehensive_v3": {
+        "write": 1.0286106572778502,
+        "query": 1.563531525492448
+      }
+    },
+    "decimal": {
+      "dccb61e": {
+        "write": 1.146037316639952,
+        "query": 2.8239024681613683
+      },
+      "dccb61e_lto": {
+        "write": 1.1411054433565881,
+        "query": 1.1677607439847537
+      },
+      "bcfaa72": {
+        "write": 1.0308912104035661,
+        "query": 1.2315738392805
+      },
+      "comprehensive_v3": {
+        "write": 1.2969353893348377,
+        "query": 1.1914690771626217
+      }
+    }
+  },
+  "decision": {
+    "status": "REJECTED_FOR_ALL_METRICS_REQUIREMENT",
+    "platform_best_retained": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+    "candidate": "comprehensive_v3",
+    "reason": "Five-decimal query median regresses 6.32% against dccb61e and 14.17% against bcfaa72 in this local run. Timing variation prevents claiming platform superiority.",
+    "write_projects": 36,
+    "query_projects": 36,
+    "topk_responses_checked": 36000,
+    "all_query_ids_distances_filters_exact": true,
+    "both_recall_groups": 1.0,
+    "public_mysql_dccb61e": "20/20",
+    "public_mysql_comprehensive_v3": "20/20",
+    "protocol_differential_requests": 185,
+    "source_and_build_verified": true,
+    "raw_io_arithmetic_and_memory_limits_checked": true,
+    "pushed_to_github": false,
+    "platform_submission": false,
+    "environment": "UTM/QEMU x86_64 on Apple Silicon, GCC13.3; fixed production GCC13.4 image unavailable"
+  }
+}

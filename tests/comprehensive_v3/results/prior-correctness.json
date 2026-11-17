@@ -1,0 +1,12 @@
+{
+  "scope": "Existing tests on the unchanged verified v3 artifact. New run does not rerun or relabel these as fresh.",
+  "binary_sha256": "a7b02e0a417d366d803cee610d248c21031f7367ac6d62e0f99a8c814f12eee3",
+  "source_evidence": "research/execution/2026-11-17-dccb-backtest/decision.json",
+  "results": {
+    "public_mysql_comprehensive_v3": "20/20",
+    "protocol_differential_requests": 185,
+    "all_query_ids_distances_filters_exact": true,
+    "source_and_build_verified": true
+  },
+  "additional_details": "../2026-11-17-dccb-backtest/linux/resource-validation-v3.json"
+}

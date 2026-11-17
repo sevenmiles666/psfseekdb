@@ -1,0 +1,241 @@
+{
+  "scope": "UTM/QEMU Linux x86_64, GCC 13.3. Local diagnostic E uses dccb61e, not the official baseline.",
+  "reference_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+  "candidate": "comprehensive_v3",
+  "cases": {
+    "grid": {
+      "reference": {
+        "median": {
+          "write": {
+            "seconds": 4.837583405000032,
+            "io_bytes": 1994752,
+            "memory_peak_bytes": 6119424
+          },
+          "query": {
+            "seconds": 11.67836247799994,
+            "io_bytes": 1998848,
+            "memory_peak_bytes": 8396800
+          },
+          "local_E_median": 0.50016,
+          "local_E_rounds": [
+            0.5001599005379725,
+            0.49420936639367863,
+            0.5087715494613784
+          ]
+        },
+        "relative_to_reference": {
+          "write": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          },
+          "query": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          }
+        }
+      },
+      "candidate": {
+        "median": {
+          "write": {
+            "seconds": 4.783360604999984,
+            "io_bytes": 1236992,
+            "memory_peak_bytes": 5050368
+          },
+          "query": {
+            "seconds": 10.354026534000013,
+            "io_bytes": 1241088,
+            "memory_peak_bytes": 6610944
+          },
+          "local_E_median": 0.536615,
+          "local_E_rounds": [
+            0.5366146559381955,
+            0.5091016733476953,
+            0.5464745587143044
+          ]
+        },
+        "relative_to_reference": {
+          "write": {
+            "seconds": -0.01120865429296869,
+            "io_bytes": -0.3798767967145791,
+            "memory_peak_bytes": -0.17469879518072284
+          },
+          "query": {
+            "seconds": -0.1134008253721146,
+            "io_bytes": -0.37909836065573765,
+            "memory_peak_bytes": -0.21268292682926826
+          }
+        }
+      },
+      "all_six_medians_no_regression": true,
+      "timing_max_over_min": {
+        "reference": {
+          "write": 1.1258133707289555,
+          "query": 1.0849685985880326
+        },
+        "candidate": {
+          "write": 1.6860278021203832,
+          "query": 1.1266349220832783
+        }
+      }
+    },
+    "fp32-long": {
+      "reference": {
+        "median": {
+          "write": {
+            "seconds": 8.99241036300009,
+            "io_bytes": 5197824,
+            "memory_peak_bytes": 9736192
+          },
+          "query": {
+            "seconds": 13.157701966999866,
+            "io_bytes": 5201920,
+            "memory_peak_bytes": 16748544
+          },
+          "local_E_median": 0.497952,
+          "local_E_rounds": [
+            0.4979515229656104,
+            0.4833278036476527,
+            0.5022436368709186
+          ]
+        },
+        "relative_to_reference": {
+          "write": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          },
+          "query": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          }
+        }
+      },
+      "candidate": {
+        "median": {
+          "write": {
+            "seconds": 8.372785061000059,
+            "io_bytes": 4513792,
+            "memory_peak_bytes": 8769536
+          },
+          "query": {
+            "seconds": 13.268679757999962,
+            "io_bytes": 4517888,
+            "memory_peak_bytes": 10354688
+          },
+          "local_E_median": 0.526374,
+          "local_E_rounds": [
+            0.5175661678880096,
+            0.5263741776326633,
+            0.5280574569630607
+          ]
+        },
+        "relative_to_reference": {
+          "write": {
+            "seconds": -0.0689053631882196,
+            "io_bytes": -0.13159968479117412,
+            "memory_peak_bytes": -0.09928481278923007
+          },
+          "query": {
+            "seconds": 0.008434435684774755,
+            "io_bytes": -0.13149606299212602,
+            "memory_peak_bytes": -0.3817559305453656
+          }
+        }
+      },
+      "all_six_medians_no_regression": false,
+      "timing_max_over_min": {
+        "reference": {
+          "write": 1.1359897518160234,
+          "query": 1.2070003196220518
+        },
+        "candidate": {
+          "write": 1.1339906604919345,
+          "query": 1.0613235646954007
+        }
+      }
+    },
+    "decimal-short": {
+      "reference": {
+        "median": {
+          "write": {
+            "seconds": 7.1325126429997,
+            "io_bytes": 5197824,
+            "memory_peak_bytes": 9539584
+          },
+          "query": {
+            "seconds": 13.540380695000295,
+            "io_bytes": 5201920,
+            "memory_peak_bytes": 16629760
+          },
+          "local_E_median": 0.49769,
+          "local_E_rounds": [
+            0.4950598920520954,
+            0.5054326552540385,
+            0.49768957741217595
+          ]
+        },
+        "relative_to_reference": {
+          "write": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          },
+          "query": {
+            "seconds": 0.0,
+            "io_bytes": 0.0,
+            "memory_peak_bytes": 0.0
+          }
+        }
+      },
+      "candidate": {
+        "median": {
+          "write": {
+            "seconds": 5.4227623140000105,
+            "io_bytes": 3694592,
+            "memory_peak_bytes": 7278592
+          },
+          "query": {
+            "seconds": 13.184065854999972,
+            "io_bytes": 3698688,
+            "memory_peak_bytes": 8974336
+          },
+          "local_E_median": 0.556433,
+          "local_E_rounds": [
+            0.5564333930117138,
+            0.5489249858103199,
+            0.560787481901659
+          ]
+        },
+        "relative_to_reference": {
+          "write": {
+            "seconds": -0.2397122044610389,
+            "io_bytes": -0.289204097714736,
+            "memory_peak_bytes": -0.23701159295835117
+          },
+          "query": {
+            "seconds": -0.02631497946966066,
+            "io_bytes": -0.2889763779527559,
+            "memory_peak_bytes": -0.4603448275862069
+          }
+        }
+      },
+      "all_six_medians_no_regression": true,
+      "timing_max_over_min": {
+        "reference": {
+          "write": 1.387514745899578,
+          "query": 1.0962758184846788
+        },
+        "candidate": {
+          "write": 1.0879243326533656,
+          "query": 1.1352783824978612
+        }
+      }
+    }
+  },
+  "accepted_as_comprehensive_improvement": false,
+  "decision": "not_accepted",
+  "platform_best_retained": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15"
+}

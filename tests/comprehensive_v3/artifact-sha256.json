@@ -1,0 +1,18 @@
+{
+  "benchmark_local.py": "60f721d4e34afa94c667c735896d12499055cfb88d8fdd7715d126331c6eee3e",
+  "check_core.py": "37dcf7c50b750b5d364796d0feb97251c95dec10e67ae160d2af3d965b064e92",
+  "check_benchmark_negative_zero.py": "bec3cb3478cdc3b3c702456b666d0f266beb3201900669243385cad506ca278d",
+  "workload_matrix.py": "22fed0531fb78ff5e9164269fe3c5f799fa2858b573f9b9f3a9a7d057a77f4c8",
+  "README.md": "9f5f857bcc1cba39c4560717e3634e487e2aacd41cf2203aa48284045ff634c6",
+  "benchmark_matrix.py": "4f5774c4f0e63c471bfc24ccfe90fbe95d6f43ced7a354f11df667f15acbff69",
+  "results/summary.json": "0668d384844c7353321b28936635cece8fbe187b11234395c52997328718e2e5",
+  "results/prior-correctness.json": "d2ef2c6abdc9597c13e57e756921eb316ab00ff13342f65fcc43cb35544043eb",
+  "results/execution-audit.json": "bf097f097dc7091a1b9998b18c97a85aedaa46d79f2f0fe2a61562aa3ac414cb",
+  "results/measurements.md": "3c26952dc2462384d28fe3ff8b69111f273ff65e4634d36550fb439d0cad4e0f",
+  "results/grid.json": "2d7cc421241aadbd58810cde49accab93cfb7b3910749fe5e2dae00b610a5f52",
+  "results/decimal-short.json": "3c41979eb8f92f0988c61a3ef7def5cf50c3478651becc17e817ce6c012959a7",
+  "results/fp32-long.json": "4109001dc4a9ed59fc4b92a1d936ca1729c8f80565e908f70886e9aa9ac24093",
+  "results/source-provenance.json": "af2962ec46b266710937829bb655d516536caf12c0dd5d48976fb2bb8cd05205",
+  "results/validation-complete.json": "b6d1e2713bd8336bb0a1a380800e8b910ec803dcd81a0b3d278e8d384aeb574d",
+  "results/decision-at-measurement.json": "6ce03b4eaf4e264f415509b71c943ec69b77f22bfce4076872e7f72946c74826"
+}

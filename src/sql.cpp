@@ -502,6 +502,8 @@ private:
     expect("values");
     do {
       Row row;
+      // Batch rows normally share a width. Avoid growing every row repeatedly.
+      if (!result.rows.empty()) row.reserve(result.rows.back().size());
       expect("(");
       do {
         row.push_back(value());

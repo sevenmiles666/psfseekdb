@@ -278,6 +278,7 @@ double estimate_squared_distance_f32(const float *left, const float *right, std:
   }
   return result;
 }
+template <bool Biased = false>
 __attribute__((target("avx2")))
 std::int32_t quantized_dot(const std::int8_t *left, const std::int8_t *right, std::size_t size) {
   auto lanes = _mm256_setzero_si256();
@@ -287,7 +288,9 @@ std::int32_t quantized_dot(const std::int8_t *left, const std::int8_t *right, st
     const auto x = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(left + i));
     const auto y = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(right + i));
     // Two products of components in [-127,127] fit in each int16 lane.
-    const auto pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(y), _mm256_sign_epi8(x, y));
+    __m256i pairs;
+    if constexpr (Biased) pairs = _mm256_maddubs_epi16(x, y);
+    else pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(y), _mm256_sign_epi8(x, y));
     lanes = _mm256_add_epi32(lanes, _mm256_madd_epi16(pairs, ones));
   }
   auto sum = _mm_add_epi32(_mm256_castsi256_si128(lanes), _mm256_extracti128_si256(lanes, 1));
@@ -295,11 +298,13 @@ std::int32_t quantized_dot(const std::int8_t *left, const std::int8_t *right, st
   sum = _mm_hadd_epi32(sum, sum);
   std::int32_t result = _mm_cvtsi128_si32(sum);
   for (; i < size; ++i) {
-    result += int(left[i]) * int(right[i]);
+    if constexpr (Biased) result += int(static_cast<std::uint8_t>(left[i])) * int(right[i]);
+    else result += int(left[i]) * int(right[i]);
   }
   return result;
 }
 
+template <int Bias = 0>
 __attribute__((target("avx2"), always_inline))
 inline __m256i quantized_block_dots(const std::int8_t *vectors, const std::int8_t *query, std::size_t size) {
   const auto ones = _mm256_set1_epi16(1);
@@ -309,13 +314,20 @@ inline __m256i quantized_block_dots(const std::int8_t *vectors, const std::int8_
     std::memcpy(&packed, query + i, sizeof(packed));
     const auto q = _mm256_set1_epi32(packed);
     const auto rows = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(vectors + quantized_block_rows * i));
-    const auto pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(q), _mm256_sign_epi8(rows, q));
+    __m256i pairs;
+    if constexpr (Bias != 0) {
+      // Row codes in [-64,64] become unsigned [0,128]. Even two
+      // products with query codes in [-127,127] fit in a signed int16.
+      pairs = _mm256_maddubs_epi16(rows, q);
+    } else {
+      pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(q), _mm256_sign_epi8(rows, q));
+    }
     sum = _mm256_add_epi32(sum, _mm256_madd_epi16(pairs, ones));
   }
   return sum;
 }
 
-template <std::size_t Dimension = 0>
+template <std::size_t Dimension = 0, int Bias = 0>
 __attribute__((target("avx2"), always_inline))
 inline std::size_t next_quantized_block(const std::int8_t *vectors, const std::int32_t *norms,
                                         const std::int8_t *query, std::size_t size, std::int32_t cutoff,
@@ -324,7 +336,7 @@ inline std::size_t next_quantized_block(const std::int8_t *vectors, const std::i
   if constexpr (Dimension != 0) size = Dimension;
   const auto bound = _mm256_set1_epi32(cutoff);
   for (; begin < end; begin += quantized_block_rows) {
-    const auto sum = quantized_block_dots(vectors + begin * size, query, size);
+    const auto sum = quantized_block_dots<Bias>(vectors + begin * size, query, size);
     const auto row_norms = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(norms + begin));
     const auto distance = _mm256_sub_epi32(row_norms, _mm256_add_epi32(sum, sum));
     const auto excluded = _mm256_cmpgt_epi32(distance, bound);
@@ -340,13 +352,32 @@ inline std::size_t next_quantized_block(const std::int8_t *vectors, const std::i
 __attribute__((target("avx2")))
 std::size_t find_quantized_block(const std::int8_t *vectors, const std::int32_t *norms,
                                  const std::int8_t *query, std::size_t size, std::int32_t cutoff,
-                                 std::size_t begin, std::size_t end, std::int32_t *distances, unsigned &mask) {
+                                 std::size_t begin, std::size_t end, std::int32_t *distances, unsigned &mask,
+                                 std::int32_t = 0) {
   if (size == 128) {
     return next_quantized_block<128>(vectors, norms, query, size, cutoff, begin, end, distances, mask);
   }
   return next_quantized_block(vectors, norms, query, size, cutoff, begin, end, distances, mask);
 }
 
+__attribute__((target("avx2")))
+std::size_t find_bounded_quantized_block(const std::int8_t *vectors, const std::int32_t *norms,
+                                         const std::int8_t *query, std::size_t size, std::int32_t cutoff,
+                                         std::size_t begin, std::size_t end, std::int32_t *distances, unsigned &mask,
+                                         std::int32_t correction) {
+  const auto found = size == 128
+      ? next_quantized_block<128, 64>(vectors, norms, query, size, cutoff - correction,
+                                      begin, end, distances, mask)
+      : next_quantized_block<0, 64>(vectors, norms, query, size, cutoff - correction,
+                                   begin, end, distances, mask);
+  if (mask != 0) {
+    // Undo the dot product's constant bias: 2 * 64 * sum(query).
+    for (std::size_t i = 0; i < quantized_block_rows; ++i) distances[i] += correction;
+  }
+  return found;
+}
+
+template <bool Biased = false>
 __attribute__((target("avx2")))
 std::int32_t quantized_block_row_dot(const std::int8_t *block, std::size_t row,
                                     const std::int8_t *query, std::size_t size) {
@@ -363,7 +394,9 @@ std::int32_t quantized_block_row_dot(const std::int8_t *block, std::size_t row,
     const auto values = _mm256_setr_epi32(load(i), load(i + 4), load(i + 8), load(i + 12),
                                          load(i + 16), load(i + 20), load(i + 24), load(i + 28));
     const auto q = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(query + i));
-    const auto pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(q), _mm256_sign_epi8(values, q));
+    __m256i pairs;
+    if constexpr (Biased) pairs = _mm256_maddubs_epi16(values, q);
+    else pairs = _mm256_maddubs_epi16(_mm256_abs_epi8(q), _mm256_sign_epi8(values, q));
     sum = _mm256_add_epi32(sum, _mm256_madd_epi16(pairs, ones));
   }
   auto total = _mm_add_epi32(_mm256_castsi256_si128(sum), _mm256_extracti128_si256(sum, 1));
@@ -395,7 +428,8 @@ std::int32_t quantized_dot_ssse3(const std::int8_t *left, const std::int8_t *rig
 __attribute__((target("ssse3")))
 std::size_t find_quantized_block_ssse3(const std::int8_t *vectors, const std::int32_t *norms,
                                        const std::int8_t *query, std::size_t size, std::int32_t cutoff,
-                                       std::size_t begin, std::size_t end, std::int32_t *distances, unsigned &mask) {
+                                       std::size_t begin, std::size_t end, std::int32_t *distances, unsigned &mask,
+                                       std::int32_t = 0) {
   const auto bound = _mm_set1_epi32(cutoff);
   for (; begin < end; begin += quantized_block_rows) {
     const auto *start = vectors + begin * size;
@@ -452,7 +486,7 @@ using QuantizedKernel = std::int32_t (*)(const std::int8_t *, const std::int8_t 
 
 using BlockKernel = std::size_t (*)(const std::int8_t *, const std::int32_t *, const std::int8_t *,
                                      std::size_t, std::int32_t, std::size_t, std::size_t,
-                                     std::int32_t *, unsigned &);
+                                     std::int32_t *, unsigned &, std::int32_t);
 using BlockRowKernel = std::int32_t (*)(const std::int8_t *, std::size_t, const std::int8_t *, std::size_t);
 
 struct QuantizedBlockKernels {
@@ -460,20 +494,25 @@ struct QuantizedBlockKernels {
   BlockRowKernel row = nullptr;
 };
 
-QuantizedBlockKernels block_kernels() {
+QuantizedBlockKernels block_kernels(bool bounded_codes = false) {
 #if defined(__x86_64__) && defined(__GNUC__)
-  if (__builtin_cpu_supports("avx2")) return {find_quantized_block, quantized_block_row_dot};
+  if (__builtin_cpu_supports("avx2")) return {
+      bounded_codes ? find_bounded_quantized_block : find_quantized_block,
+      bounded_codes ? quantized_block_row_dot<true> : quantized_block_row_dot<false>};
   if (__builtin_cpu_supports("ssse3")) return {find_quantized_block_ssse3, quantized_block_row_dot_ssse3};
 #endif
+  (void)bounded_codes;
   return {};
 }
 
-QuantizedKernel integer_distance_kernel() {
+QuantizedKernel integer_distance_kernel(bool biased_codes = false) {
 #if defined(__x86_64__) && defined(__GNUC__)
-  if (__builtin_cpu_supports("avx2")) return quantized_dot;
+  if (__builtin_cpu_supports("avx2")) return biased_codes ? quantized_dot<true> : quantized_dot<false>;
+  if (biased_codes) return nullptr;
   if (__builtin_cpu_supports("ssse3")) return quantized_dot_ssse3;
   return nullptr;
 #else
+  (void)biased_codes;
   return nullptr;
 #endif
 }
@@ -874,7 +913,8 @@ void Database::rebuild_index(Table &table) {
 }
 
 void Database::record_row_change(Table &table, std::int64_t key, std::optional<StoredRow> row, bool replay) {
-  const auto current = table.rows.find(key);
+  const auto current = table.rows.empty() || key > table.rows.rbegin()->first
+      ? table.rows.end() : table.rows.find(key);
   const auto previous = current == table.rows.end() ? std::nullopt : std::optional{current->second};
   undo_.push_back({table.id, UndoKind::Row, key, previous});
   set_row(table, key, row, replay);
@@ -884,7 +924,9 @@ void Database::set_row(Table &table, std::int64_t key, std::optional<StoredRow> 
   invalidate_cache(table.id);
   if (table.index && !replay) table.index->needs_rebuild = true;
   if (row) {
-    table.rows.insert_or_assign(key, *row);
+    // An end hint keeps ascending bulk inserts constant-time. Other key
+    // orders retain the map's ordinary lookup and replacement semantics.
+    table.rows.insert_or_assign(table.rows.end(), key, *row);
   } else {
     table.rows.erase(key);
   }
@@ -1014,6 +1056,7 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
   if (cache.exact_codes) codes.resize(dimension);
   float max_abs = 0;
   float inverse = 0;
+  bool bounded_codes = true;
   for (const auto &entry : table.rows) {
     EncodedVector encoded{};
     load_row(table, entry.second.reference, buffer, row, quantize ? &encoded : nullptr,
@@ -1038,6 +1081,7 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
         exact = exact_scaled_byte(vector[i], inverse, code);
         if (!exact) break;
         codes[i] = static_cast<std::int8_t>(code);
+        if (code < -64 || code > 64) bounded_codes = false;
         norm += code * code;
       }
       if (exact) {
@@ -1119,6 +1163,14 @@ Database::SearchCache *Database::search_cache(Table &table, std::size_t vector_c
   if (cache.exact_codes) {
     if (max_abs == 0) cache.quantization_step = 1.0;
     if (cache.negative_zeros.empty()) used -= sign_bytes;
+    if (bounded_codes && integer_distance_kernel(true)) {
+      // A reversible in-place offset lets PMADDUBSW consume the original
+      // full-precision codes directly, without abs/sign operations per block.
+      for (auto &code : cache.quantized) {
+        code = static_cast<std::int8_t>(static_cast<std::uint8_t>(code) + 64U);
+      }
+      cache.biased_codes = true;
+    }
   }
   if (!cache.exact_codes) {
     if (quantize && (cache.journal_view || quantized_bytes <= budget - used) && max_abs != 0) {
@@ -1352,7 +1404,7 @@ std::uint64_t Database::insert(Insert &statement) {
       values[position] = convert(target.columns[position], std::move(row[i]), &values[position]);
     }
     const std::int64_t key = std::get<std::int64_t>(values[target.primary_key]);
-    if (target.rows.count(key) != 0) {
+    if (!target.rows.empty() && key <= target.rows.rbegin()->first && target.rows.count(key) != 0) {
       throw SqlError("DUPLICATE_KEY", "duplicate primary key " + std::to_string(key));
     }
     put_row(target, key, values, payload);
@@ -1530,6 +1582,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     QuantizedKernel dot = nullptr;
     std::vector<std::int8_t> query_quantized;
     std::int32_t query_norm = 0;
+    std::int32_t block_correction = 0;
     double error_radius = 0.0;
     QuantizedBlockKernels blocks;
     bool exact_query = false;
@@ -1537,7 +1590,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         std::all_of(query.begin(), query.end(), [&](float value) {
           return std::abs(value) <= 160.0 * cache->quantization_step;
         })) {
-      dot = integer_distance_kernel();
+      dot = integer_distance_kernel(cache->biased_codes);
       query_quantized.reserve(query.size());
       exact_query = cache->exact_codes;
       const float inverse = static_cast<float>(1.0 / cache->quantization_step);
@@ -1557,7 +1610,10 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         query_error_squared += error * error;
       }
       error_radius = cache->quantization_error + quantization_error_bound(query_error_squared, query.size());
-      if (cache->block_rows != 0) blocks = block_kernels();
+      if (cache->biased_codes) {
+        for (const auto code : query_quantized) block_correction += 128 * code;
+      }
+      if (cache->block_rows != 0) blocks = block_kernels(cache->biased_codes);
     }
     double cutoff = std::numeric_limits<double>::infinity();
     double worst_squared = cutoff;
@@ -1631,7 +1687,8 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
       const auto position = quantized_position(index);
       const float scale = static_cast<float>(cache->quantization_step);
       for (std::size_t i = 0; i < query.size(); ++i) {
-        const auto value = cache->quantized[quantized_offset(position, i, query.size(), cache->block_rows)];
+        const auto code = cache->quantized[quantized_offset(position, i, query.size(), cache->block_rows)];
+        const int value = cache->biased_codes ? static_cast<std::uint8_t>(code) - 64 : code;
         const auto component = offset + i;
         decoded[i] = value == 0 && !cache->negative_zeros.empty() &&
             (cache->negative_zeros[component / 8] & (1U << (component % 8)))
@@ -1641,6 +1698,12 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
     };
     const auto refine_shortlist = [&] {
       const auto approximate_cutoff = cutoff;
+      // Seed the exact heap with the closest coded rows to tighten its bound
+      // before decoding the remaining contenders. Codes and bounds stay exact.
+      if (shortlist.size() > limit) {
+        std::nth_element(shortlist.begin(), shortlist.begin() + limit, shortlist.end(),
+            [](const auto &left, const auto &right) { return left.second < right.second; });
+      }
       for (const auto &[index, distance] : shortlist) {
         if (distance <= std::min(approximate_cutoff, cutoff)) {
           consider_distance(cache->keys[index], {}, squared_distance(cached_vector(index), query), index);
@@ -1660,6 +1723,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
           } else {
             cross = dot(cache->quantized.data() + position * query.size(), query_quantized.data(), query.size());
           }
+          if (cache->biased_codes) cross -= block_correction / 2;
           distance = cache->quantized_norms[position] + query_norm - 2 * cross;
         }
         if (*distance > cutoff) return;
@@ -1746,7 +1810,7 @@ Execution Database::select(const Select &statement, const RowSink &sink, SearchM
         unsigned mask = 0;
         begin = blocks.block(cache->quantized.data(), cache->quantized_norms.data(),
                              query_quantized.data(), query.size(), static_cast<std::int32_t>(std::ceil(bound)),
-                             begin, block_end, distances.data(), mask);
+                             begin, block_end, distances.data(), mask, block_correction);
         if (begin == block_end) break;
         while (mask != 0) {
           const unsigned lane = static_cast<unsigned>(__builtin_ctz(mask));

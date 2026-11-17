@@ -1,0 +1,33 @@
+{
+  "candidate": "comprehensive_v3",
+  "user_confirmed": true,
+  "source_sha256": {
+    "database.cpp": "f15b5f91bdf78effaee9d928178a8ecec363eff2cf233ba90a34ed470edbd6cd",
+    "database.hpp": "29d90c1fa34f59129a65500ec40b60b189795181420150c537752fa9a9efa72d",
+    "encoding.hpp": "ae089ab47cc073923907e92cc023c8bc462fab84d2f594d4117e2ec9d8269926",
+    "journal.cpp": "a8f49e8cc77661042687cc89dbccc1161b5d80923a7b4b9c860d872d8fc7e0ec",
+    "journal.hpp": "dc425b5d9c1b538bcaa662922f4b448a0240058e0e68345e62ed8971ea976014",
+    "main.cpp": "d8a969044644a64279adf2a45eba11fdb3dac39b433ad06cb76a4155ad9f3146",
+    "request.cpp": "7c7af2d1d19f04a3d2b3e04501f5f2ec5d188892a5a88aef17b92e57466a332b",
+    "request.hpp": "cb43806e4457fcef8cd645680ce7c30e6cdf1cb4d5805a189f6ba446184959dc",
+    "sql.cpp": "88ff82ded11313a8882680599e7bfb234fc68dcfc599a7b61327c9e1af25d3bf",
+    "sql.hpp": "a22e95a3981e6acad94fb45c60802ab0bd8c320cf0888cbb7c769116c0b3fbd7"
+  },
+  "candidate_binary_sha256": "a7b02e0a417d366d803cee610d248c21031f7367ac6d62e0f99a8c814f12eee3",
+  "candidate_image_id": "sha256:f3863132c5840eb4f3bf44161fb0429d85ed610033cfa1393ec3d9200cc8f7bf",
+  "reference_commit": "dccb61eb98b9f6a98cee30d59aca5684d9fedc15",
+  "seed": 20261117,
+  "cases": [
+    "grid",
+    "fp32-long",
+    "decimal-short"
+  ],
+  "rounds_per_case": 3,
+  "source_modified": false,
+  "prompt_modified": false,
+  "protocol_modified": false,
+  "platform_submitted": false,
+  "github_pushed": false,
+  "prior_correctness_evidence": "../2026-11-17-dccb-backtest/decision.json",
+  "method_change": "Preserve short-decimal SQL text separately from FP32 truth. Signed-zero decoder used only for untimed persistence verification. Existing v3 code and build retained."
+}

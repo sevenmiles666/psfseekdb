@@ -1,8 +1,11 @@
 #include "database.hpp"
 #include "request.hpp"
 
+#include <algorithm>
+#include <array>
 #include <charconv>
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <limits>
 #include <locale>
@@ -11,73 +14,123 @@ namespace {
 
 using namespace minivector;
 
-void json_string(std::ostream &out, std::string_view value) {
-  constexpr char hex[] = "0123456789abcdef";
-  out << '"';
-  for (const unsigned char ch : value) {
-    if (ch == '"' || ch == '\\') {
-      out << '\\' << static_cast<char>(ch);
-    } else if (ch < 0x20) {
-      out << "\\u00" << hex[ch >> 4] << hex[ch & 15];
-    } else {
-      out << static_cast<char>(ch);
+// Keep streamed results bounded while avoiding an ostream operation per token.
+class JsonOutput {
+public:
+  void append(std::string_view value) {
+    while (!value.empty()) {
+      const auto count = std::min(value.size(), buffer_.size() - used_);
+      std::memcpy(buffer_.data() + used_, value.data(), count);
+      used_ += count;
+      value.remove_prefix(count);
+      if (used_ == buffer_.size()) drain();
     }
   }
-  out << '"';
+
+  void put(char value) {
+    buffer_[used_++] = value;
+    if (used_ == buffer_.size()) drain();
+  }
+
+  template <class Integer>
+  void integer(Integer value) {
+    char digits[32];
+    const auto result = std::to_chars(digits, digits + sizeof(digits), value);
+    if (result.ec != std::errc{}) throw std::runtime_error("format JSON integer");
+    append({digits, static_cast<std::size_t>(result.ptr - digits)});
+  }
+
+  void finish() {
+    drain();
+    std::cout.flush();
+  }
+
+private:
+  void drain() {
+    std::cout.write(buffer_.data(), static_cast<std::streamsize>(used_));
+    used_ = 0;
+  }
+
+  std::array<char, 1024> buffer_;
+  std::size_t used_ = 0;
+};
+
+void json_string(JsonOutput &out, std::string_view value) {
+  constexpr char hex[] = "0123456789abcdef";
+  out.put('"');
+  std::size_t start = 0;
+  for (std::size_t i = 0; i < value.size(); ++i) {
+    const auto ch = static_cast<unsigned char>(value[i]);
+    if (ch >= 0x20 && ch != '"' && ch != '\\') continue;
+    out.append(value.substr(start, i - start));
+    if (ch == '"' || ch == '\\') {
+      out.put('\\');
+      out.put(static_cast<char>(ch));
+    } else {
+      out.append("\\u00");
+      out.put(hex[ch >> 4]);
+      out.put(hex[ch & 15]);
+    }
+    start = i + 1;
+  }
+  out.append(value.substr(start));
+  out.put('"');
 }
 
 template <class Float>
-void json_float(std::ostream &out, Float value) {
+void json_float(JsonOutput &out, Float value) {
   if (!std::isfinite(value)) throw std::runtime_error("non-finite JSON number");
   char buffer[64];
   const auto formatted = std::to_chars(buffer, buffer + sizeof(buffer), value,
                                        std::chars_format::general,
                                        std::numeric_limits<Float>::max_digits10);
   if (formatted.ec != std::errc{}) throw std::runtime_error("format JSON number");
-  out.write(buffer, formatted.ptr - buffer);
+  out.append({buffer, static_cast<std::size_t>(formatted.ptr - buffer)});
 }
 
-void json_value(std::ostream &out, const Value &value) {
+void json_value(JsonOutput &out, const Value &value) {
   if (const auto *integer = std::get_if<std::int64_t>(&value)) {
-    out << *integer;
+    out.integer(*integer);
   } else if (const auto *text = std::get_if<std::string>(&value)) {
     json_string(out, *text);
   } else if (const auto *vector = std::get_if<Vector>(&value)) {
-    out << '[';
+    out.put('[');
     for (std::size_t i = 0; i < vector->size(); ++i) {
-      if (i != 0) out << ',';
+      if (i != 0) out.put(',');
       json_float(out, (*vector)[i]);
     }
-    out << ']';
+    out.put(']');
   } else {
     json_float(out, std::get<double>(value));
   }
 }
 
-void write_row(const Row &row) {
-  std::cout << '[';
+void write_row(JsonOutput &out, const Row &row) {
+  out.put('[');
   for (std::size_t i = 0; i < row.size(); ++i) {
-    if (i != 0) std::cout << ',';
-    json_value(std::cout, row[i]);
+    if (i != 0) out.put(',');
+    json_value(out, row[i]);
   }
-  std::cout << ']';
+  out.put(']');
 }
 
-void write_response_prefix(std::string_view id, bool ok) {
-  std::cout << "{\"id\":" << id << ",\"ok\":" << (ok ? "true" : "false");
+void write_response_prefix(JsonOutput &out, std::string_view id, bool ok) {
+  out.append("{\"id\":");
+  out.append(id);
+  out.append(ok ? ",\"ok\":true" : ",\"ok\":false");
 }
 
-void write_query_prefix(std::string_view id, const std::vector<std::string> &columns) {
-  write_response_prefix(id, true);
-  std::cout << ",\"columns\":[";
+void write_query_prefix(JsonOutput &out, std::string_view id, const std::vector<std::string> &columns) {
+  write_response_prefix(out, id, true);
+  out.append(",\"columns\":[");
   for (std::size_t i = 0; i < columns.size(); ++i) {
-    if (i != 0) std::cout << ',';
-    json_string(std::cout, columns[i]);
+    if (i != 0) out.put(',');
+    json_string(out, columns[i]);
   }
-  std::cout << "],\"rows\":[";
+  out.append("],\"rows\":[");
 }
 
-void execute_request(Database &database, const Request &request) {
+void execute_request(Database &database, JsonOutput &out, const Request &request) {
   if (!request.operation || request_text(*request.operation) != "execute") {
     throw SqlError("UNSUPPORTED_OP", "expected execute or shutdown");
   }
@@ -91,25 +144,28 @@ void execute_request(Database &database, const Request &request) {
   const auto mode = search_mode == "ann" ? SearchMode::Ann : SearchMode::Exact;
   bool first_row = true;
   const auto emit_row = [&](const Row &row) {
-    if (!first_row) std::cout << ',';
-    write_row(row);
+    if (!first_row) out.put(',');
+    write_row(out, row);
     first_row = false;
   };
   const auto emit_columns = [&](const std::vector<std::string> &columns) {
-    write_query_prefix(request.id, columns);
+    write_query_prefix(out, request.id, columns);
   };
   const Execution result = database.execute(request_text(*request.sql), emit_row, mode, emit_columns);
   if (result.columns.empty()) {
-    write_response_prefix(request.id, true);
-    std::cout << ",\"affected_rows\":" << result.count;
+    write_response_prefix(out, request.id, true);
+    out.append(",\"affected_rows\":");
+    out.integer(result.count);
   } else {
-    std::cout << ']';
+    out.put(']');
   }
-  std::cout << "}\n" << std::flush;
+  out.append("}\n");
+  out.finish();
 }
 
 int run(const std::filesystem::path &directory, SearchMode default_mode) {
   Database database(directory);
+  JsonOutput out;
   std::cout << "{\"type\":\"ready\"}\n" << std::flush;
   std::string line;
   while (std::getline(std::cin, line)) {
@@ -119,18 +175,20 @@ int run(const std::filesystem::path &directory, SearchMode default_mode) {
       id = request.id;
       if (request.operation && request_text(*request.operation) == "shutdown") {
         database.close();
-        write_response_prefix(id, true);
-        std::cout << "}\n" << std::flush;
+        write_response_prefix(out, id, true);
+        out.append("}\n");
+        out.finish();
         return 0;
       }
-      execute_request(database, request);
+      execute_request(database, out, request);
     } catch (const SqlError &error) {
-      write_response_prefix(id, false);
-      std::cout << ",\"error\":{\"code\":";
-      json_string(std::cout, error.code());
-      std::cout << ",\"message\":";
-      json_string(std::cout, error.what());
-      std::cout << "}}\n" << std::flush;
+      write_response_prefix(out, id, false);
+      out.append(",\"error\":{\"code\":");
+      json_string(out, error.code());
+      out.append(",\"message\":");
+      json_string(out, error.what());
+      out.append("}}\n");
+      out.finish();
     }
   }
   database.close();

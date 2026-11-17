@@ -191,9 +191,9 @@ bool Journal::read_frame(std::uint64_t offset, RecordRef &record, Bytes &out) {
   if (offset > size_ || size_ - offset < frame_header_size) {
     return false;
   }
-  Bytes header(frame_header_size);
+  std::array<std::uint8_t, frame_header_size> header;
   read_bytes(offset, header.data(), header.size());
-  Reader reader(header);
+  Reader reader(header.data(), header.size());
   const std::uint32_t length = reader.u32();
   const std::uint32_t crc = reader.u32();
   if (length == 0 || length > size_ - offset - frame_header_size) {

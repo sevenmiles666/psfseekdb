@@ -8,6 +8,10 @@
 #include <utility>
 #include <vector>
 
+#if defined(__x86_64__) && defined(__GNUC__)
+#include <emmintrin.h>
+#endif
+
 namespace minivector {
 namespace {
 
@@ -101,6 +105,21 @@ private:
     std::string result;
     std::size_t start = position_;
     while (position_ < text_.size()) {
+#if defined(__x86_64__) && defined(__GNUC__)
+      if (text_.size() - position_ >= 16) {
+        const auto bytes = _mm_loadu_si128(reinterpret_cast<const __m128i *>(text_.data() + position_));
+        const auto controls = _mm_cmpeq_epi8(_mm_and_si128(bytes, _mm_set1_epi8(-32)), _mm_setzero_si128());
+        const auto quotes = _mm_cmpeq_epi8(bytes, _mm_set1_epi8('"'));
+        const auto escapes = _mm_cmpeq_epi8(bytes, _mm_set1_epi8('\\'));
+        const auto special = static_cast<unsigned>(_mm_movemask_epi8(
+            _mm_or_si128(controls, _mm_or_si128(quotes, escapes))));
+        if (special == 0) {
+          position_ += 16;
+          continue;
+        }
+        position_ += static_cast<unsigned>(__builtin_ctz(special));
+      } else
+#endif
       if (text_.size() - position_ >= sizeof(std::uint64_t)) {
         std::uint64_t word;
         std::memcpy(&word, text_.data() + position_, sizeof(word));

@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "candidate": "comprehensive_v3",
+  "cases": [
+    "grid",
+    "fp32-long",
+    "decimal-short"
+  ],
+  "rounds_per_case": 3,
+  "source_modified": false,
+  "platform_submitted": false,
+  "github_pushed": false
+}
